@@ -61,14 +61,16 @@ export default function PetDetail() {
     }
   };
 
+  const validatePhoto = trpc.analysis.validatePhoto.useMutation();
+
   const handleUpload = async () => {
     if (!file || !pet) return;
 
     setUploading(true);
-    toast.info("Uploading and analyzing...");
+    toast.info("Uploading...");
 
     try {
-      // Upload file to server (we'll need to implement this endpoint)
+      // Upload file to server
       const formData = new FormData();
       formData.append("file", file);
 
@@ -85,6 +87,38 @@ export default function PetDetail() {
 
       // Determine media type
       const mediaType = file.type.startsWith("video/") ? "video" : "image";
+
+      // Validate photo quality for images (skip for videos)
+      if (mediaType === "image") {
+        toast.info("Checking photo quality...");
+        const qualityCheck = await validatePhoto.mutateAsync({ imageUrl: url });
+
+        if (!qualityCheck.canProceed) {
+          setUploading(false);
+          toast.error("Photo quality issue detected", {
+            description: qualityCheck.issues.join(", "),
+          });
+          
+          // Show suggestions
+          if (qualityCheck.tips && qualityCheck.tips.length > 0) {
+            setTimeout(() => {
+              toast.info("Tips to improve your photo:", {
+                description: qualityCheck.tips.join(" • "),
+                duration: 8000,
+              });
+            }, 1000);
+          }
+          return;
+        }
+
+        if (qualityCheck.score < 70) {
+          toast.warning("Photo quality could be better", {
+            description: "Analysis will proceed, but better lighting or focus may improve results.",
+          });
+        }
+      }
+
+      toast.info("Analyzing behavior...");
 
       // Create analysis
       createAnalysis.mutate({

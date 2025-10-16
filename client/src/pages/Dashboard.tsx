@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
 import { PawPrint, Plus, Sparkles, Upload, ShoppingCart, Gift, Coins } from "lucide-react";
+import { PhotoTips } from "@/components/PhotoTips";
 import { Link } from "wouter";
 import { APP_TITLE, getLoginUrl } from "@/const";
 import { toast } from "sonner";
@@ -108,6 +109,9 @@ export default function Dashboard() {
               Add your pets and start understanding their behavior better.
             </p>
           </div>
+
+          {/* Photo Tips */}
+          <PhotoTips />
 
           {/* Quick Actions */}
           <div className="grid md:grid-cols-3 gap-6">

@@ -46,6 +46,14 @@ export const appRouter = router({
 
   // Behavior analysis
   analysis: router({
+    validatePhoto: protectedProcedure
+      .input(z.object({ imageUrl: z.string() }))
+      .mutation(async ({ input }) => {
+        const { validatePhotoQuality, getPhotoTips } = await import("./photoQuality");
+        const result = await validatePhotoQuality(input.imageUrl);
+        const tips = getPhotoTips(result.issues);
+        return { ...result, tips };
+      }),
     create: protectedProcedure
       .input(
         z.object({
