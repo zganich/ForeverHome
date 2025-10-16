@@ -18,4 +18,48 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * Pet profiles - each user can have multiple pets
+ */
+export const pets = mysqlTable("pets", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  userId: varchar("userId", { length: 64 }).notNull().references(() => users.id),
+  name: varchar("name", { length: 100 }).notNull(),
+  species: mysqlEnum("species", ["dog", "cat", "other"]).notNull(),
+  breed: varchar("breed", { length: 100 }),
+  age: varchar("age", { length: 50 }), // "2 years", "6 months", etc.
+  photoUrl: text("photoUrl"),
+  createdAt: timestamp("createdAt").defaultNow(),
+});
+
+export type Pet = typeof pets.$inferSelect;
+export type InsertPet = typeof pets.$inferInsert;
+
+/**
+ * Behavior analyses - each analysis is tied to a pet
+ */
+export const analyses = mysqlTable("analyses", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  petId: varchar("petId", { length: 64 }).notNull().references(() => pets.id),
+  mediaUrl: text("mediaUrl").notNull(),
+  mediaType: mysqlEnum("mediaType", ["image", "video"]).notNull(),
+  userContext: text("userContext"), // User's description of the situation
+  
+  // AI agent outputs (stored as JSON)
+  visionData: text("visionData"), // JSON string
+  contextData: text("contextData"), // JSON string
+  synthesisData: text("synthesisData"), // JSON string
+  recommendations: text("recommendations"), // JSON string
+  
+  // Top-level results for quick access
+  primaryBehavior: varchar("primaryBehavior", { length: 100 }),
+  confidenceScore: varchar("confidenceScore", { length: 10 }), // "85%"
+  
+  // User feedback
+  userFeedback: mysqlEnum("userFeedback", ["helpful", "not_helpful"]),
+  
+  createdAt: timestamp("createdAt").defaultNow(),
+});
+
+export type Analysis = typeof analyses.$inferSelect;
+export type InsertAnalysis = typeof analyses.$inferInsert;

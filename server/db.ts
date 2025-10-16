@@ -85,4 +85,77 @@ export async function getUser(id: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// ===== PET QUERIES =====
+
+import { analyses, pets, InsertPet, Pet, InsertAnalysis, Analysis } from "../drizzle/schema";
+import { nanoid } from "nanoid";
+import { desc } from "drizzle-orm";
+
+export async function createPet(userId: string, data: Omit<InsertPet, "id" | "userId">): Promise<Pet> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const pet: InsertPet = {
+    id: nanoid(),
+    userId,
+    ...data,
+  };
+
+  await db.insert(pets).values(pet);
+  return pet as Pet;
+}
+
+export async function getUserPets(userId: string): Promise<Pet[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(pets).where(eq(pets.userId, userId)).orderBy(desc(pets.createdAt));
+}
+
+export async function getPet(petId: string): Promise<Pet | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(pets).where(eq(pets.id, petId)).limit(1);
+  return result[0];
+}
+
+// ===== ANALYSIS QUERIES =====
+
+export async function createAnalysis(data: Omit<InsertAnalysis, "id">): Promise<Analysis> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const analysis: InsertAnalysis = {
+    id: nanoid(),
+    ...data,
+  };
+
+  await db.insert(analyses).values(analysis);
+  return analysis as Analysis;
+}
+
+export async function getPetAnalyses(petId: string): Promise<Analysis[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(analyses).where(eq(analyses.petId, petId)).orderBy(desc(analyses.createdAt));
+}
+
+export async function getAnalysis(analysisId: string): Promise<Analysis | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(analyses).where(eq(analyses.id, analysisId)).limit(1);
+  return result[0];
+}
+
+export async function updateAnalysisFeedback(
+  analysisId: string,
+  feedback: "helpful" | "not_helpful"
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(analyses).set({ userFeedback: feedback }).where(eq(analyses.id, analysisId));
+}
