@@ -99,14 +99,22 @@ export default function Home() {
                 <p>
                   Created by Chantell, an animal lover who has dedicated her life to caring for pets, 
                   this app represents decades of wondering what her companions were trying to tell her. 
-                  After 17 beautiful years with Paisley, her beloved dog, Chantell's two sons experienced 
-                  the heartbreak of saying goodbye to the only dog they'd ever known.
+                  Paisley, Luna, and Q have been part of her family since her two boys were babies—three 
+                  beloved dogs who taught them about unconditional love, loyalty, and the deep bonds we 
+                  share with our pets.
                 </p>
 
                 <p>
-                  Paisley taught them that every tail wag, every bark, every quiet moment had meaning. 
+                  After 17 beautiful years, Paisley crossed the rainbow bridge, leaving behind precious 
+                  memories and two boys who had never known life without her. But the love continues with 
+                  Luna and Q, who remind the family every day that every tail wag, every bark, every quiet 
+                  moment has meaning.
+                </p>
+
+                <p>
                   InterpWhat honors that bond by helping pet owners everywhere understand their companions 
-                  on a deeper level—<strong>and now, hear what they would say if they could speak</strong>.
+                  on a deeper level—<strong>and now, hear what they would say if they could speak</strong>. 
+                  For Paisley's memory, and for Luna, Q, and every pet who deserves to be understood.
                 </p>
 
                 <div className="bg-accent/10 p-6 rounded-lg border border-accent/20">
