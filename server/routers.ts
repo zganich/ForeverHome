@@ -3,6 +3,8 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
+import { createCheckoutSession, CREDIT_PACKS, type CreditPackId } from "./stripe";
+import { getUserCredits, activateBetaTester, isBetaTester } from "./credits";
 
 export const appRouter = router({
   system: systemRouter,
@@ -132,6 +134,57 @@ export const appRouter = router({
         }
 
         await updateAnalysisFeedback(input.analysisId, input.feedback);
+        return { success: true };
+      }),
+  }),
+
+  // Payment and credits
+  payment: router({
+    getCreditPacks: publicProcedure.query(() => {
+      return Object.values(CREDIT_PACKS);
+    }),
+    createCheckout: protectedProcedure
+      .input(
+        z.object({
+          packId: z.enum(["starter", "value", "power"]),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const successUrl = `${process.env.VITE_APP_URL || "http://localhost:3000"}/dashboard?payment=success`;
+        const cancelUrl = `${process.env.VITE_APP_URL || "http://localhost:3000"}/dashboard?payment=cancelled`;
+
+        const checkoutUrl = await createCheckoutSession(
+          ctx.user.id,
+          input.packId as CreditPackId,
+          successUrl,
+          cancelUrl
+        );
+
+        if (!checkoutUrl) {
+          throw new Error("Failed to create checkout session");
+        }
+
+        return { url: checkoutUrl };
+      }),
+  }),
+
+  credits: router({
+    getBalance: protectedProcedure.query(async ({ ctx }) => {
+      const credits = await getUserCredits(ctx.user.id);
+      const betaTester = await isBetaTester(ctx.user.id);
+      return { credits, isBetaTester: betaTester };
+    }),
+    redeemBetaCode: protectedProcedure
+      .input(
+        z.object({
+          code: z.string(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const success = await activateBetaTester(ctx.user.id, input.code);
+        if (!success) {
+          throw new Error("Invalid beta code");
+        }
         return { success: true };
       }),
   }),

@@ -15,6 +15,13 @@
       "when": 1760573322312,
       "tag": "0001_dear_multiple_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1760580613820,
+      "tag": "0002_condemned_zarek",
+      "breakpoints": true
     }
   ]
 }

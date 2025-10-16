@@ -1,15 +1,45 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { PawPrint, Plus, Sparkles, Upload } from "lucide-react";
+import { PawPrint, Plus, Sparkles, Upload, ShoppingCart, Gift, Coins } from "lucide-react";
 import { Link } from "wouter";
 import { APP_TITLE, getLoginUrl } from "@/const";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export default function Dashboard() {
   const { user, isAuthenticated, loading, logout } = useAuth();
+  const [betaCode, setBetaCode] = useState("");
+  const [isRedeemOpen, setIsRedeemOpen] = useState(false);
+
   const { data: pets, isLoading: petsLoading } = trpc.pets.list.useQuery(undefined, {
     enabled: isAuthenticated,
+  });
+  const { data: balance } = trpc.credits.getBalance.useQuery(undefined, { enabled: isAuthenticated });
+  const utils = trpc.useUtils();
+
+  const redeemCode = trpc.credits.redeemBetaCode.useMutation({
+    onSuccess: () => {
+      toast.success("🎉 Beta code redeemed! You now have unlimited credits!");
+      setIsRedeemOpen(false);
+      setBetaCode("");
+      utils.credits.getBalance.invalidate();
+    },
+    onError: (error) => {
+      toast.error(`Failed to redeem code: ${error.message}`);
+    },
   });
 
   if (loading) {
@@ -44,7 +74,23 @@ export default function Dashboard() {
             </div>
           </Link>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">Hi, {user?.name || "there"}!</span>
+            {balance && (
+              <Card className="border-primary/20">
+                <CardContent className="pt-3 pb-3 px-4">
+                  <div className="flex items-center gap-3">
+                    <Coins className="w-5 h-5 text-primary" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Credits</p>
+                      <p className="text-lg font-bold text-primary">{balance.isBetaTester ? "∞" : balance.credits}</p>
+                    </div>
+                    {balance.isBetaTester && (
+                      <Badge className="bg-gradient-to-r from-primary to-accent ml-2 text-xs">🏆 Founding</Badge>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            <span className="text-sm text-muted-foreground hidden md:block">Hi, {user?.name || "there"}!</span>
             <Button variant="outline" onClick={() => logout()}>
               Sign Out
             </Button>
@@ -61,6 +107,73 @@ export default function Dashboard() {
             <p className="text-xl text-muted-foreground">
               Add your pets and start understanding their behavior better.
             </p>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="grid md:grid-cols-3 gap-6">
+            <Link href="/pets/new">
+              <Card className="border-2 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Plus className="w-5 h-5" />
+                    Add a New Pet
+                  </CardTitle>
+                  <CardDescription>Create a profile for your furry friend</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+
+            <Link href="/purchase">
+              <Card className="border-2 border-accent/20 hover:border-accent/40 transition-colors cursor-pointer">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ShoppingCart className="w-5 h-5" />
+                    Get More Credits
+                  </CardTitle>
+                  <CardDescription>Purchase analysis credits</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+
+            <Dialog open={isRedeemOpen} onOpenChange={setIsRedeemOpen}>
+              <DialogTrigger asChild>
+                <Card className="border-2 border-secondary/20 hover:border-secondary/40 transition-colors cursor-pointer">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Gift className="w-5 h-5" />
+                      Redeem Beta Code
+                    </CardTitle>
+                    <CardDescription>Have a beta invite code?</CardDescription>
+                  </CardHeader>
+                </Card>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Redeem Beta Code</DialogTitle>
+                  <DialogDescription>
+                    Enter your beta invite code to unlock unlimited free analyses and Founding Member status.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="betaCode">Beta Code</Label>
+                    <Input
+                      id="betaCode"
+                      placeholder="BETA-XXXXX-XXXX"
+                      value={betaCode}
+                      onChange={(e) => setBetaCode(e.target.value.toUpperCase())}
+                    />
+                  </div>
+                  <Button
+                    className="w-full"
+                    onClick={() => redeemCode.mutate({ code: betaCode })}
+                    disabled={!betaCode || redeemCode.isPending}
+                  >
+                    {redeemCode.isPending ? "Redeeming..." : "Redeem Code"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Pets Section */}
@@ -117,9 +230,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <h4 className="text-xl font-semibold mb-2">No pets yet</h4>
-                    <p className="text-muted-foreground mb-6">
-                      Add your first pet to start analyzing their behavior.
-                    </p>
+                    <p className="text-muted-foreground mb-6">Add your first pet to start analyzing their behavior.</p>
                     <Button asChild>
                       <Link href="/pets/new">
                         <Plus className="w-4 h-4 mr-2" />
@@ -132,17 +243,25 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Quick Actions */}
+          {/* Quick Tips */}
           <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
             <CardHeader>
               <CardTitle>Quick Tips</CardTitle>
               <CardDescription>Get the most accurate analysis</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-              <p>✨ <strong>Good lighting:</strong> Make sure your pet is well-lit and clearly visible</p>
-              <p>📹 <strong>Short videos:</strong> 5-30 seconds works best for behavior analysis</p>
-              <p>🎯 <strong>Focus on behavior:</strong> Capture the specific behavior you want to understand</p>
-              <p>📝 <strong>Add context:</strong> Tell us what was happening when you captured the media</p>
+              <p>
+                ✨ <strong>Good lighting:</strong> Make sure your pet is well-lit and clearly visible
+              </p>
+              <p>
+                📹 <strong>Short videos:</strong> 5-30 seconds works best for behavior analysis
+              </p>
+              <p>
+                🎯 <strong>Focus on behavior:</strong> Capture the specific behavior you want to understand
+              </p>
+              <p>
+                📝 <strong>Add context:</strong> Tell us what was happening when you captured the media
+              </p>
             </CardContent>
           </Card>
         </div>

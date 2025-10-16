@@ -1,4 +1,4 @@
-import { mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -11,8 +11,12 @@ export const users = mysqlTable("users", {
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  credits: int("credits").default(3).notNull(), // Free tier: 3 credits per month
+  isBetaTester: boolean("isBetaTester").default(false).notNull(),
+  betaInviteCode: varchar("betaInviteCode", { length: 64 }),
   createdAt: timestamp("createdAt").defaultNow(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow(),
+  lastCreditRefresh: timestamp("lastCreditRefresh").defaultNow(),
 });
 
 export type User = typeof users.$inferSelect;
@@ -63,3 +67,19 @@ export const analyses = mysqlTable("analyses", {
 
 export type Analysis = typeof analyses.$inferSelect;
 export type InsertAnalysis = typeof analyses.$inferInsert;
+
+/**
+ * Credit purchases table
+ */
+export const purchases = mysqlTable("purchases", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  userId: varchar("userId", { length: 64 }).notNull().references(() => users.id),
+  stripePaymentId: varchar("stripePaymentId", { length: 255 }),
+  amount: int("amount").notNull(), // Amount in cents
+  credits: int("credits").notNull(), // Number of credits purchased
+  status: mysqlEnum("status", ["pending", "completed", "failed"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow(),
+});
+
+export type Purchase = typeof purchases.$inferSelect;
+export type InsertPurchase = typeof purchases.$inferInsert;
