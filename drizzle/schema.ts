@@ -47,10 +47,12 @@ export type InsertPet = typeof pets.$inferInsert;
  */
 export const analyses = mysqlTable("analyses", {
   id: varchar("id", { length: 64 }).primaryKey(),
-  petId: varchar("petId", { length: 64 }).notNull().references(() => pets.id),
+  petId: varchar("petId", { length: 64 }).notNull(),
   mediaUrl: text("mediaUrl").notNull(),
   mediaType: mysqlEnum("mediaType", ["image", "video"]).notNull(),
-  userContext: text("userContext"), // User's description of the situation
+  userContext: text("userContext"),
+  photoDate: timestamp("photoDate"),
+  petAgeAtPhoto: varchar("petAgeAtPhoto", { length: 64 }), // User's description of the situation
   
   // AI agent outputs (stored as JSON)
   visionData: text("visionData"), // JSON string

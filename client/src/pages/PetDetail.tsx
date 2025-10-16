@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { PawPrint, ArrowLeft, Upload, Sparkles, Clock } from "lucide-react";
+import { PetTimeline } from "@/components/PetTimeline";
 import { useState, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { APP_TITLE } from "@/const";
@@ -18,6 +19,8 @@ export default function PetDetail() {
   const [file, setFile] = useState<File | null>(null);
   const [userContext, setUserContext] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [photoDate, setPhotoDate] = useState<string>("");
+  const [petAgeAtPhoto, setPetAgeAtPhoto] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: pet, isLoading: petLoading } = trpc.pets.list.useQuery(undefined, {
@@ -126,6 +129,8 @@ export default function PetDetail() {
         mediaUrl: url,
         mediaType,
         userContext: userContext.trim() || undefined,
+        photoDate: photoDate ? new Date(photoDate) : undefined,
+        petAgeAtPhoto: petAgeAtPhoto.trim() || undefined,
       });
     } catch (error) {
       console.error("Upload error:", error);
@@ -266,6 +271,44 @@ export default function PetDetail() {
                 </p>
               </div>
 
+              {/* Historical Photo Options */}
+              <div className="bg-accent/10 p-4 rounded-lg border border-accent/20 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-accent" />
+                  <Label className="text-sm font-semibold">Is this an older photo?</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Help our AI learn {pet.name}'s behavior over time by dating older photos
+                </p>
+                
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="photoDate" className="text-sm">When was this taken?</Label>
+                    <Input
+                      id="photoDate"
+                      type="date"
+                      value={photoDate}
+                      onChange={(e) => setPhotoDate(e.target.value)}
+                      max={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="petAge" className="text-sm">How old was {pet.name}?</Label>
+                    <Input
+                      id="petAge"
+                      placeholder="e.g., '6 months' or '2 years'"
+                      value={petAgeAtPhoto}
+                      onChange={(e) => setPetAgeAtPhoto(e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <p className="text-xs text-muted-foreground italic">
+                  💡 The more historical photos you upload, the better our AI understands {pet.name}'s unique patterns!
+                </p>
+              </div>
+
               {/* Submit Button */}
               <Button
                 className="w-full"
@@ -288,45 +331,15 @@ export default function PetDetail() {
             </CardContent>
           </Card>
 
-          {/* Analysis History */}
-          <div className="space-y-4">
-            <h3 className="text-2xl font-semibold">Analysis History</h3>
-            {analysesLoading ? (
-              <div className="text-center py-8">
-                <Sparkles className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
-                <p className="text-muted-foreground">Loading history...</p>
-              </div>
-            ) : analyses && analyses.length > 0 ? (
-              <div className="grid gap-4">
-                {analyses.map((analysis) => (
-                  <Link key={analysis.id} href={`/analysis/${analysis.id}`}>
-                    <Card className="cursor-pointer hover:border-primary/50 transition-all hover:shadow-lg">
-                      <CardContent className="flex items-center justify-between p-6">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-lg">{analysis.primaryBehavior || "Analysis"}</h4>
-                          <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
-                            <Clock className="w-4 h-4" />
-                            {new Date(analysis.createdAt!).toLocaleDateString()} at{" "}
-                            {new Date(analysis.createdAt!).toLocaleTimeString()}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-primary">{analysis.confidenceScore}</div>
-                          <p className="text-xs text-muted-foreground">confidence</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <Card className="border-dashed">
-                <CardContent className="text-center py-12">
-                  <p className="text-muted-foreground">No analyses yet. Upload a photo or video to get started!</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          {/* Pet Timeline */}
+          {analysesLoading ? (
+            <div className="text-center py-8">
+              <Sparkles className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
+              <p className="text-muted-foreground">Loading timeline...</p>
+            </div>
+          ) : (
+            <PetTimeline analyses={analyses || []} petName={pet.name} />
+          )}
         </div>
       </main>
     </div>

@@ -61,6 +61,8 @@ export const appRouter = router({
           mediaUrl: z.string(),
           mediaType: z.enum(["image", "video"]),
           userContext: z.string().optional(),
+          photoDate: z.date().optional(),
+          petAgeAtPhoto: z.string().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -82,6 +84,8 @@ export const appRouter = router({
           mediaUrl: input.mediaUrl,
           mediaType: input.mediaType,
           userContext: input.userContext,
+          photoDate: input.photoDate,
+          petAgeAtPhoto: input.petAgeAtPhoto,
           visionData: JSON.stringify(result.vision),
           contextData: JSON.stringify(result.context),
           synthesisData: JSON.stringify(result.synthesis),
