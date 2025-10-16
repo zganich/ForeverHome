@@ -279,6 +279,8 @@ export async function analyzeBehavior(
   context: ContextEnrichment;
   synthesis: BehaviorSynthesis;
   recommendations: Recommendations;
+  personalityVoice: string;
+  personality: string;
 }> {
   // Run agents in sequence
   const vision = await visionAgent(imageUrl, pet.species);
@@ -286,11 +288,21 @@ export async function analyzeBehavior(
   const synthesis = await synthesisAgent(vision, context, userContext);
   const recommendations = await recommendationAgent(synthesis);
 
+  // Generate personality-based voice interpretation
+  const personality = pet.personality || "goofy";
+  const { generatePersonalityVoice } = await import("./textToSpeech");
+  
+  // Create a conversational interpretation from the synthesis
+  const baseInterpretation = `${synthesis.primaryBehavior}. ${synthesis.reasoning}`;
+  const personalityVoice = generatePersonalityVoice(baseInterpretation, personality as any);
+
   return {
     vision,
     context,
     synthesis,
     recommendations,
+    personalityVoice,
+    personality,
   };
 }
 

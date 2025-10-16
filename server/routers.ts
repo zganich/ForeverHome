@@ -34,6 +34,8 @@ export const appRouter = router({
           breed: z.string().optional(),
           age: z.string().optional(),
           photoUrl: z.string().optional(),
+          personality: z.enum(["goofy", "wise", "sassy", "serious", "excited", "sleepy", "dramatic"]).optional(),
+          voiceStyle: z.string().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {

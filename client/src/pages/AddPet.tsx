@@ -18,6 +18,7 @@ export default function AddPet() {
   const [species, setSpecies] = useState<"dog" | "cat" | "other">("dog");
   const [breed, setBreed] = useState("");
   const [age, setAge] = useState("");
+  const [personality, setPersonality] = useState<"goofy" | "wise" | "sassy" | "serious" | "excited" | "sleepy" | "dramatic">("goofy");
 
   const createPet = trpc.pets.create.useMutation({
     onSuccess: (pet) => {
@@ -40,6 +41,8 @@ export default function AddPet() {
       species,
       breed: breed.trim() || undefined,
       age: age.trim() || undefined,
+      personality,
+      voiceStyle: "alloy",
     });
   };
 
@@ -139,6 +142,27 @@ export default function AddPet() {
                   />
                   <p className="text-xs text-muted-foreground">
                     Age helps us understand age-appropriate behaviors
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="personality">Personality Voice 🎤</Label>
+                  <Select value={personality} onValueChange={(value: any) => setPersonality(value)}>
+                    <SelectTrigger id="personality">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="goofy">🤪 Goofy - Playful & silly</SelectItem>
+                      <SelectItem value="wise">🧙 Wise - Calm & philosophical</SelectItem>
+                      <SelectItem value="sassy">💅 Sassy - Witty with attitude</SelectItem>
+                      <SelectItem value="serious">🎩 Serious - Professional</SelectItem>
+                      <SelectItem value="excited">🎉 Excited - High energy</SelectItem>
+                      <SelectItem value="sleepy">😴 Sleepy - Calm & drowsy</SelectItem>
+                      <SelectItem value="dramatic">🎭 Dramatic - Theatrical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Choose how your pet's thoughts will be expressed in voice
                   </p>
                 </div>
 

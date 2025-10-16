@@ -22,6 +22,20 @@
       "when": 1760580613820,
       "tag": "0002_condemned_zarek",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1760603331711,
+      "tag": "0003_lying_shadowcat",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1760603549541,
+      "tag": "0004_numerous_red_shift",
+      "breakpoints": true
     }
   ]
 }

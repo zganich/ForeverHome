@@ -32,10 +32,13 @@ export const pets = mysqlTable("pets", {
   species: mysqlEnum("species", ["dog", "cat", "other"]).notNull(),
   breed: varchar("breed", { length: 100 }),
   age: varchar("age", { length: 50 }), // "2 years", "6 months", etc.
-  photoUrl: text("photoUrl"),
+  photoUrl: varchar("photoUrl", { length: 500 }),
+  notes: text("notes"),
+  personality: mysqlEnum("personality", ["goofy", "wise", "sassy", "serious", "excited", "sleepy", "dramatic"]).default("goofy"),
+  voiceStyle: varchar("voiceStyle", { length: 50 }).default("alloy"),
+  behaviorPatterns: text("behaviorPatterns"),
   createdAt: timestamp("createdAt").defaultNow(),
 });
-
 export type Pet = typeof pets.$inferSelect;
 export type InsertPet = typeof pets.$inferInsert;
 
@@ -61,6 +64,10 @@ export const analyses = mysqlTable("analyses", {
   
   // User feedback
   userFeedback: mysqlEnum("userFeedback", ["helpful", "not_helpful"]),
+  
+  // Voice features
+  audioUrl: varchar("audioUrl", { length: 500 }),
+  personalityVoice: text("personalityVoice"),
   
   createdAt: timestamp("createdAt").defaultNow(),
 });
