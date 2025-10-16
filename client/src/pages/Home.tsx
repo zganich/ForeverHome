@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
-import { PawPrint, Sparkles, Heart, TrendingUp, Shield, Users } from "lucide-react";
+import { PawPrint, Sparkles, Heart, TrendingUp, Shield, Users, Volume2, Mic } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Home() {
@@ -40,20 +40,21 @@ export default function Home() {
         <div className="max-w-4xl mx-auto text-center space-y-8">
           <div className="inline-block">
             <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center mb-6 animate-pulse">
-              <Sparkles className="w-10 h-10 text-primary-foreground" />
+              <Volume2 className="w-10 h-10 text-primary-foreground" />
             </div>
           </div>
           
           <h2 className="text-5xl md:text-6xl font-bold leading-tight">
-            Understand Your Pet's
+            Hear What Your Pet Is
             <span className="block bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
-              Every Emotion
+              Really Saying
             </span>
           </h2>
           
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Upload a photo or video of your pet, and our advanced AI instantly analyzes their behavior, 
-            emotions, and body language—giving you insights that help you care for them better.
+            emotions, and body language—<strong className="text-foreground">then tells you what they're thinking in their own voice</strong>. 
+            Choose from 7 unique personality voices to bring your pet's thoughts to life.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
@@ -105,7 +106,7 @@ export default function Home() {
                 <p>
                   Paisley taught them that every tail wag, every bark, every quiet moment had meaning. 
                   InterpWhat honors that bond by helping pet owners everywhere understand their companions 
-                  on a deeper level—before it's too late.
+                  on a deeper level—<strong>and now, hear what they would say if they could speak</strong>.
                 </p>
 
                 <div className="bg-accent/10 p-6 rounded-lg border border-accent/20">
@@ -133,7 +134,7 @@ export default function Home() {
       <section id="how-it-works" className="container mx-auto px-6 py-20">
         <div className="text-center mb-16">
           <h3 className="text-4xl font-bold mb-4">How It Works</h3>
-          <p className="text-xl text-muted-foreground">Three simple steps to understand your pet</p>
+          <p className="text-xl text-muted-foreground">Three simple steps to hear your pet's voice</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -164,11 +165,11 @@ export default function Home() {
           <Card className="border-2 hover:border-primary/50 transition-colors">
             <CardContent className="pt-6 text-center space-y-4">
               <div className="w-16 h-16 mx-auto rounded-full bg-secondary/10 flex items-center justify-center">
-                <span className="text-3xl font-bold text-secondary">3</span>
+                <Volume2 className="w-8 h-8 text-secondary" />
               </div>
-              <h4 className="text-xl font-bold">Get Actionable Insights</h4>
+              <h4 className="text-xl font-bold">Hear Your Pet's Voice</h4>
               <p className="text-muted-foreground">
-                Receive clear explanations and specific recommendations to help your pet.
+                Get insights delivered in your pet's chosen personality voice—from Goofy to Wise, Sassy to Serious!
               </p>
             </CardContent>
           </Card>
@@ -183,6 +184,17 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <Card className="border-2 border-primary/30">
+              <CardContent className="pt-6 space-y-3">
+                <Volume2 className="w-10 h-10 text-primary" />
+                <h4 className="text-xl font-bold">Hear Your Pet's Voice</h4>
+                <p className="text-muted-foreground">
+                  Choose from 7 unique personality voices (Goofy, Wise, Sassy, Serious, Excited, Sleepy, Dramatic) 
+                  to hear what your pet is really thinking—in their own words!
+                </p>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardContent className="pt-6 space-y-3">
                 <Sparkles className="w-10 h-10 text-primary" />
@@ -232,19 +244,8 @@ export default function Home() {
                 <Users className="w-10 h-10 text-primary" />
                 <h4 className="text-xl font-bold">Multi-Pet Support</h4>
                 <p className="text-muted-foreground">
-                  Track and analyze all your pets in one place, with separate profiles and 
-                  history for each companion.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6 space-y-3">
-                <PawPrint className="w-10 h-10 text-accent" />
-                <h4 className="text-xl font-bold">Works for All Pets</h4>
-                <p className="text-muted-foreground">
-                  Dogs, cats, and other pets—our AI understands the unique behaviors of 
-                  different species.
+                  Track and analyze all your pets in one place, with separate profiles, 
+                  personalities, and history for each companion.
                 </p>
               </CardContent>
             </Card>
@@ -260,7 +261,7 @@ export default function Home() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          <Card className="border-2">
+          <Card>
             <CardContent className="pt-6 space-y-4">
               <h4 className="text-2xl font-bold">Free</h4>
               <div className="text-4xl font-bold">$0</div>
@@ -268,34 +269,37 @@ export default function Home() {
               <ul className="space-y-2 text-sm">
                 <li>✓ 3 analyses per month</li>
                 <li>✓ All core features</li>
+                <li>✓ Pet voice included</li>
                 <li>✓ Email support</li>
               </ul>
             </CardContent>
           </Card>
 
-          <Card className="border-2 border-primary shadow-lg scale-105">
+          <Card className="border-2 border-primary">
             <CardContent className="pt-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-2xl font-bold">Value Pack</h4>
-                <span className="text-xs font-bold bg-primary text-primary-foreground px-2 py-1 rounded">BEST VALUE</span>
+              <div className="inline-block bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold">
+                BEST VALUE
               </div>
+              <h4 className="text-2xl font-bold">Value Pack</h4>
               <div className="text-4xl font-bold">$9.99</div>
               <p className="text-muted-foreground">25 analyses • Credits never expire</p>
               <ul className="space-y-2 text-sm">
                 <li>✓ Just $0.40 per analysis</li>
+                <li>✓ All personality voices</li>
                 <li>✓ Unlock personalization</li>
                 <li>✓ Support shelter animals</li>
               </ul>
             </CardContent>
           </Card>
 
-          <Card className="border-2">
+          <Card>
             <CardContent className="pt-6 space-y-4">
               <h4 className="text-2xl font-bold">Power Pack</h4>
               <div className="text-4xl font-bold">$19.99</div>
               <p className="text-muted-foreground">60 analyses • Best price per use</p>
               <ul className="space-y-2 text-sm">
                 <li>✓ Just $0.33 per analysis</li>
+                <li>✓ All personality voices</li>
                 <li>✓ Full personalization</li>
                 <li>✓ Priority support</li>
               </ul>
@@ -303,16 +307,18 @@ export default function Home() {
           </Card>
         </div>
 
-        <p className="text-center text-muted-foreground mt-8">
+        <p className="text-center text-sm text-muted-foreground mt-8">
           All credit packs include a donation to no-kill animal shelters 🐾
         </p>
       </section>
 
       {/* CTA */}
-      <section className="bg-gradient-to-r from-primary to-accent py-20">
-        <div className="container mx-auto px-6 text-center text-primary-foreground">
-          <h3 className="text-4xl font-bold mb-6">Ready to Understand Your Pet Better?</h3>
-          <p className="text-xl mb-8 opacity-90">
+      <section className="bg-gradient-to-r from-primary via-accent to-secondary py-20">
+        <div className="container mx-auto px-6 text-center">
+          <h3 className="text-4xl font-bold text-primary-foreground mb-6">
+            Ready to Understand Your Pet Better?
+          </h3>
+          <p className="text-xl text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
             Join pet owners who are building deeper connections with their companions.
           </p>
           {isAuthenticated ? (
@@ -321,31 +327,31 @@ export default function Home() {
             </Button>
           ) : (
             <Button size="lg" variant="secondary" asChild className="text-lg px-8 py-6">
-              <a href={getLoginUrl()}>Start Free Today</a>
+              <a href={getLoginUrl()}>Get Started Free</a>
             </Button>
           )}
-          <p className="text-sm mt-4 opacity-75">No credit card required • 3 free analyses every month</p>
+          <p className="text-sm text-primary-foreground/80 mt-6">
+            No credit card required • 3 free analyses every month
+          </p>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="border-t bg-card py-12">
         <div className="container mx-auto px-6">
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <PawPrint className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold">{APP_TITLE}</span>
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex items-center gap-3">
+              <PawPrint className="w-6 h-6 text-primary" />
+              <span className="font-bold text-lg">{APP_TITLE}</span>
             </div>
-            <p className="text-muted-foreground">
-              Built with ❤️ for Chantell, her boys, and in memory of Paisley
+            <p className="text-sm text-muted-foreground max-w-md">
+              Built with ❤️ by Chantell, her boys, and in memory of Paisley.
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Every pet deserves to be understood. 🐾
             </p>
             <p className="text-xs text-muted-foreground">
-              © 2025 InterpWhat. All rights reserved.
+              © {new Date().getFullYear()} InterpWhat. All rights reserved.
             </p>
           </div>
         </div>
