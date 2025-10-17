@@ -31,6 +31,8 @@ export const pets = mysqlTable("pets", {
   name: varchar("name", { length: 100 }).notNull(),
   species: mysqlEnum("species", ["dog", "cat", "other"]).notNull(),
   breed: varchar("breed", { length: 100 }),
+  breedConfidence: varchar("breedConfidence", { length: 20 }), // low, medium, high
+  breedCandidates: text("breedCandidates"), // JSON array of top 3 breed predictions
   age: varchar("age", { length: 50 }), // "2 years", "6 months", etc.
   photoUrl: varchar("photoUrl", { length: 500 }),
   notes: text("notes"),

@@ -22,6 +22,17 @@ export const appRouter = router({
 
   // Pet management
   pets: router({
+    identifyBreed: protectedProcedure
+      .input(
+        z.object({
+          imageUrl: z.string(),
+          species: z.enum(["dog", "cat", "other"]),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { identifyBreed } = await import("./breedIdentification");
+        return identifyBreed(input.imageUrl, input.species);
+      }),
     list: protectedProcedure.query(async ({ ctx }) => {
       const { getUserPets } = await import("./db");
       return getUserPets(ctx.user.id);

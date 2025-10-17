@@ -19,6 +19,61 @@ export default function AddPet() {
   const [breed, setBreed] = useState("");
   const [age, setAge] = useState("");
   const [personality, setPersonality] = useState<"goofy" | "wise" | "sassy" | "serious" | "excited" | "sleepy" | "dramatic">("goofy");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [identifyingBreed, setIdentifyingBreed] = useState(false);
+
+  const identifyBreedMutation = trpc.pets.identifyBreed.useMutation({
+    onSuccess: (result) => {
+      setBreed(result.primaryBreed);
+      toast.success(`Breed identified: ${result.primaryBreed} (${result.confidence} confidence)`);
+      if (result.confidence === "low") {
+        toast.info("Low confidence. You may want to try a clearer photo or enter breed manually.");
+      }
+    },
+    onError: (error) => {
+      toast.error(`Failed to identify breed: ${error.message}`);
+    },
+  });
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleIdentifyBreed = async () => {
+    if (!photoPreview) {
+      toast.error("Please upload a photo first");
+      return;
+    }
+    setIdentifyingBreed(true);
+    try {
+      // Upload photo to get URL
+      const formData = new FormData();
+      if (photoFile) {
+        formData.append("file", photoFile);
+      }
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      if (data.url) {
+        identifyBreedMutation.mutate({ imageUrl: data.url, species });
+      }
+    } catch (error) {
+      toast.error("Failed to upload photo");
+    } finally {
+      setIdentifyingBreed(false);
+    }
+  };
 
   const createPet = trpc.pets.create.useMutation({
     onSuccess: (pet) => {
@@ -119,17 +174,48 @@ export default function AddPet() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="breed">Breed (optional)</Label>
-                  <Input
-                    id="breed"
-                    placeholder="e.g., Golden Retriever, Siamese, Mixed"
-                    value={breed}
-                    onChange={(e) => setBreed(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Helps us provide breed-specific behavior insights
-                  </p>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Pet Photo (optional)</Label>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                    />
+                    {photoPreview && (
+                      <div className="mt-2">
+                        <img
+                          src={photoPreview}
+                          alt="Pet preview"
+                          className="w-32 h-32 object-cover rounded-lg"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="breed">Breed (optional)</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="breed"
+                        placeholder="e.g., Golden Retriever, Siamese, Mixed"
+                        value={breed}
+                        onChange={(e) => setBreed(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleIdentifyBreed}
+                        disabled={!photoPreview || identifyingBreed || identifyBreedMutation.isPending}
+                      >
+                        {identifyingBreed || identifyBreedMutation.isPending ? "Identifying..." : "AI Identify"}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Upload a photo and click "AI Identify" to auto-detect breed, or enter manually
+                    </p>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
