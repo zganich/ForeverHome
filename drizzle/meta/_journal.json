@@ -57,6 +57,13 @@
       "when": 1760670546494,
       "tag": "0007_known_ironclad",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1760671058141,
+      "tag": "0008_useful_crusher_hogan",
+      "breakpoints": true
     }
   ]
 }

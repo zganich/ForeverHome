@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { PawPrint, Plus, Sparkles, Upload, ShoppingCart, Gift, Coins } from "lucide-react";
+import { PawPrint, Plus, Sparkles, Upload, ShoppingCart, Gift, Coins, GitCompare } from "lucide-react";
 import { PhotoTips } from "@/components/PhotoTips";
 import { Link } from "wouter";
 import { APP_TITLE, getLoginUrl } from "@/const";
@@ -115,6 +115,19 @@ export default function Dashboard() {
 
           {/* Quick Actions */}
           <div className="grid md:grid-cols-3 gap-6">
+            {pets && pets.length >= 2 && (
+              <Link href="/compare">
+                <Card className="border-2 border-mint-500/20 hover:border-mint-500/40 transition-colors cursor-pointer">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <GitCompare className="w-5 h-5" />
+                      Compare Pets
+                    </CardTitle>
+                    <CardDescription>See how your pets differ</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+            )}
             <Link href="/pets/new">
               <Card className="border-2 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer">
                 <CardHeader>

@@ -3,7 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
-import { createCheckoutSession, CREDIT_PACKS, type CreditPackId } from "./stripe";
+import { createCheckoutSession, createSubscriptionCheckout, CREDIT_PACKS, SUBSCRIPTION_PLANS, type CreditPackId, type SubscriptionPlanId } from "./stripe";
 import { getUserCredits, activateBetaTester, isBetaTester } from "./credits";
 
 export const appRouter = router({
@@ -223,6 +223,32 @@ export const appRouter = router({
     getCreditPacks: publicProcedure.query(() => {
       return Object.values(CREDIT_PACKS);
     }),
+    getSubscriptionPlans: publicProcedure.query(() => {
+      return Object.values(SUBSCRIPTION_PLANS);
+    }),
+    createSubscriptionCheckout: protectedProcedure
+      .input(
+        z.object({
+          planId: z.enum(["essential", "premium", "shelter"]),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const successUrl = `${process.env.VITE_APP_URL || "http://localhost:3000"}/dashboard?subscription=success`;
+        const cancelUrl = `${process.env.VITE_APP_URL || "http://localhost:3000"}/subscribe?subscription=cancelled`;
+
+        const checkoutUrl = await createSubscriptionCheckout(
+          ctx.user.id,
+          input.planId as SubscriptionPlanId,
+          successUrl,
+          cancelUrl
+        );
+
+        if (!checkoutUrl) {
+          throw new Error("Failed to create subscription checkout session");
+        }
+
+        return { url: checkoutUrl };
+      }),
     createCheckout: protectedProcedure
       .input(
         z.object({

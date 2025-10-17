@@ -41,6 +41,62 @@ export const CREDIT_PACKS = {
 export type CreditPackId = keyof typeof CREDIT_PACKS;
 
 /**
+ * Subscription plans
+ */
+export const SUBSCRIPTION_PLANS = {
+  essential: {
+    id: "essential",
+    name: "Essential",
+    price: 999, // $9.99/month in cents
+    priceDisplay: "$9.99",
+    interval: "month" as const,
+    features: [
+      "15 analyses per month",
+      "Breed identification",
+      "Reminders & notifications",
+      "Email support",
+      "Pet timeline",
+    ],
+    analysisLimit: 15,
+  },
+  premium: {
+    id: "premium",
+    name: "Premium",
+    price: 1999, // $19.99/month in cents
+    priceDisplay: "$19.99",
+    interval: "month" as const,
+    features: [
+      "Unlimited analyses",
+      "Priority support",
+      "Advanced insights",
+      "Multi-pet comparison",
+      "Medical records storage",
+      "All Essential features",
+    ],
+    analysisLimit: -1, // unlimited
+    badge: "POPULAR",
+  },
+  shelter: {
+    id: "shelter",
+    name: "Shelter Partner",
+    price: 9900, // $99/3 months = $33/month in cents (billed quarterly)
+    priceDisplay: "$99",
+    interval: "quarter" as const,
+    features: [
+      "Everything in Premium",
+      "3-month commitment",
+      "$10 donation to shelter",
+      "Tax-deductible portion",
+      "Perfect for new adopters",
+    ],
+    analysisLimit: -1,
+    shelterDonation: 1000, // $10 in cents
+  },
+} as const;
+
+export type SubscriptionPlanId = keyof typeof SUBSCRIPTION_PLANS;
+
+/**
  * Create a Stripe checkout session for credit purchase
  */
 export async function createCheckoutSession(
@@ -86,6 +142,77 @@ export async function createCheckoutSession(
     return session.url;
   } catch (error) {
     console.error("[Stripe] Failed to create checkout session:", error);
+    return null;
+  }
+}
+
+/**
+ * Create a Stripe checkout session for subscription
+ */
+export async function createSubscriptionCheckout(
+  userId: string,
+  planId: SubscriptionPlanId,
+  successUrl: string,
+  cancelUrl: string
+): Promise<string | null> {
+  if (!stripe) {
+    console.error("[Stripe] Stripe not initialized - missing STRIPE_SECRET_KEY");
+    return null;
+  }
+
+  const plan = SUBSCRIPTION_PLANS[planId];
+
+  try {
+    // Create or retrieve customer
+    const customers = await stripe.customers.list({ limit: 1, email: userId });
+    let customerId: string;
+
+    if (customers.data.length > 0) {
+      customerId = customers.data[0].id;
+    } else {
+      const customer = await stripe.customers.create({
+        metadata: { userId },
+      });
+      customerId = customer.id;
+    }
+
+    // Determine billing interval
+    const interval = plan.interval === "quarter" ? "month" : plan.interval;
+    const intervalCount = plan.interval === "quarter" ? 3 : 1;
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: `InterpWhat ${plan.name}`,
+              description: plan.features.join(", "),
+            },
+            unit_amount: plan.price,
+            recurring: {
+              interval,
+              interval_count: intervalCount,
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      mode: "subscription",
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      client_reference_id: userId,
+      metadata: {
+        userId,
+        planId,
+      },
+    });
+
+    return session.url;
+  } catch (error) {
+    console.error("[Stripe] Failed to create subscription checkout:", error);
     return null;
   }
 }
