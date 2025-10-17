@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { PawPrint, ArrowLeft, Upload, Sparkles, Clock } from "lucide-react";
 import { PetTimeline } from "@/components/PetTimeline";
+import Reminders from "@/components/Reminders";
 import { useState, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { APP_TITLE } from "@/const";
@@ -338,7 +339,10 @@ export default function PetDetail() {
               <p className="text-muted-foreground">Loading timeline...</p>
             </div>
           ) : (
-            <PetTimeline analyses={analyses || []} petName={pet.name} />
+            <>
+              <Reminders petId={id!} />
+              <PetTimeline analyses={analyses || []} petName={pet.name} />
+            </>
           )}
         </div>
       </main>

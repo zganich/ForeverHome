@@ -80,6 +80,27 @@ export type Analysis = typeof analyses.$inferSelect;
 export type InsertAnalysis = typeof analyses.$inferInsert;
 
 /**
+ * Reminders table for medication, vet appointments, grooming, etc.
+ */
+export const reminders = mysqlTable("reminders", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  userId: varchar("userId", { length: 64 }).notNull(),
+  petId: varchar("petId", { length: 64 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  type: mysqlEnum("type", ["medication", "vet", "grooming", "training", "custom"]).notNull(),
+  dueDate: timestamp("dueDate").notNull(),
+  isRecurring: mysqlEnum("isRecurring", ["none", "daily", "weekly", "monthly", "yearly"]).default("none").notNull(),
+  isCompleted: mysqlEnum("isCompleted", ["no", "yes"]).default("no").notNull(),
+  notificationSent: mysqlEnum("notificationSent", ["no", "yes"]).default("no").notNull(),
+  createdAt: timestamp("createdAt").defaultNow(),
+  completedAt: timestamp("completedAt"),
+});
+
+export type Reminder = typeof reminders.$inferSelect;
+export type InsertReminder = typeof reminders.$inferInsert;
+
+/**
  * Credit purchases table
  */
 export const purchases = mysqlTable("purchases", {

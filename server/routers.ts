@@ -20,6 +20,61 @@ export const appRouter = router({
     }),
   }),
 
+  // Reminders
+  reminders: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { getUserReminders } = await import("./reminders");
+      return getUserReminders(ctx.user.id);
+    }),
+    upcoming: protectedProcedure.query(async ({ ctx }) => {
+      const { getUpcomingReminders } = await import("./reminders");
+      return getUpcomingReminders(ctx.user.id);
+    }),
+    forPet: protectedProcedure
+      .input(z.object({ petId: z.string() }))
+      .query(async ({ input }) => {
+        const { getPetReminders } = await import("./reminders");
+        return getPetReminders(input.petId);
+      }),
+    create: protectedProcedure
+      .input(
+        z.object({
+          petId: z.string(),
+          title: z.string().min(1),
+          description: z.string().optional(),
+          type: z.enum(["medication", "vet", "grooming", "training", "custom"]),
+          dueDate: z.date(),
+          isRecurring: z.enum(["none", "daily", "weekly", "monthly", "yearly"]).default("none"),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const { createReminder } = await import("./reminders");
+        return createReminder({
+          userId: ctx.user.id,
+          petId: input.petId,
+          title: input.title,
+          description: input.description || null,
+          type: input.type,
+          dueDate: input.dueDate,
+          isRecurring: input.isRecurring,
+          isCompleted: "no",
+          notificationSent: "no",
+        });
+      }),
+    complete: protectedProcedure
+      .input(z.object({ reminderId: z.string() }))
+      .mutation(async ({ input }) => {
+        const { completeReminder } = await import("./reminders");
+        return completeReminder(input.reminderId);
+      }),
+    delete: protectedProcedure
+      .input(z.object({ reminderId: z.string() }))
+      .mutation(async ({ input }) => {
+        const { deleteReminder } = await import("./reminders");
+        return deleteReminder(input.reminderId);
+      }),
+  }),
+
   // Pet management
   pets: router({
     identifyBreed: protectedProcedure
