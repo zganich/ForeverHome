@@ -12,6 +12,7 @@ import AddPet from "./pages/AddPet";
 import PetDetail from "./pages/PetDetail";
 import AnalysisResult from "./pages/AnalysisResult";
 import PurchaseCredits from "./pages/PurchaseCredits";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -25,6 +26,7 @@ function Router() {
       <Route path={"/pets/:id"} component={PetDetail} />
       <Route path={"/analysis/:id"} component={AnalysisResult} />
       <Route path={"/purchase"} component={PurchaseCredits} />
+      <Route path={"/admin/dashboard"} component={AdminDashboard} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

@@ -1,4 +1,4 @@
-import { boolean, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, date, decimal, int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -118,3 +118,105 @@ export const purchases = mysqlTable("purchases", {
 
 export type Purchase = typeof purchases.$inferSelect;
 export type InsertPurchase = typeof purchases.$inferInsert;
+
+
+/**
+ * Shelter Partners - Organizations that refer adopters to InterpWhat
+ */
+export const shelterPartners = mysqlTable("shelter_partners", {
+  id: int("id").primaryKey().autoincrement(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  phone: varchar("phone", { length: 50 }),
+  address: text("address"),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 50 }),
+  zip: varchar("zip", { length: 20 }),
+  website: varchar("website", { length: 255 }),
+  status: mysqlEnum("status", ["pending", "active", "inactive"]).default("pending").notNull(),
+  partnershipType: mysqlEnum("partnershipType", ["organizational", "enterprise"]).default("organizational").notNull(),
+  revenueSharePercentage: decimal("revenueSharePercentage", { precision: 5, scale: 2 }).default("10.00").notNull(),
+  totalAdopterSignups: int("totalAdopterSignups").default(0).notNull(),
+  totalRevenueShared: decimal("totalRevenueShared", { precision: 10, scale: 2 }).default("0.00").notNull(),
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
+});
+
+export type ShelterPartner = typeof shelterPartners.$inferSelect;
+export type InsertShelterPartner = typeof shelterPartners.$inferInsert;
+
+/**
+ * Adoption Verifications - Verify rescue pet adoptions for lifetime discount
+ */
+export const adoptionVerifications = mysqlTable("adoption_verifications", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: varchar("userId", { length: 64 }).notNull().references(() => users.id, { onDelete: "cascade" }),
+  shelterPartnerId: int("shelterPartnerId").references(() => shelterPartners.id, { onDelete: "set null" }),
+  adoptionDate: date("adoptionDate"),
+  petName: varchar("petName", { length: 100 }),
+  petType: mysqlEnum("petType", ["dog", "cat", "other"]),
+  paperworkUrl: varchar("paperworkUrl", { length: 500 }),
+  status: mysqlEnum("status", ["pending", "verified", "rejected"]).default("pending").notNull(),
+  verifiedAt: timestamp("verifiedAt"),
+  verifiedBy: int("verifiedBy"),
+  rejectionReason: text("rejectionReason"),
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
+});
+
+export type AdoptionVerification = typeof adoptionVerifications.$inferSelect;
+export type InsertAdoptionVerification = typeof adoptionVerifications.$inferInsert;
+
+/**
+ * Email Campaigns - Track marketing email campaigns
+ */
+export const emailCampaigns = mysqlTable("email_campaigns", {
+  id: int("id").primaryKey().autoincrement(),
+  campaignName: varchar("campaignName", { length: 255 }).notNull(),
+  campaignType: mysqlEnum("campaignType", ["announcement", "shelter_outreach", "newsletter", "promotional"]).notNull(),
+  subject: varchar("subject", { length: 500 }),
+  sentCount: int("sentCount").default(0).notNull(),
+  openCount: int("openCount").default(0).notNull(),
+  clickCount: int("clickCount").default(0).notNull(),
+  conversionCount: int("conversionCount").default(0).notNull(),
+  sentAt: timestamp("sentAt"),
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
+});
+
+export type EmailCampaign = typeof emailCampaigns.$inferSelect;
+export type InsertEmailCampaign = typeof emailCampaigns.$inferInsert;
+
+/**
+ * Email Recipients - Track individual email sends and engagement
+ */
+export const emailRecipients = mysqlTable("email_recipients", {
+  id: int("id").primaryKey().autoincrement(),
+  campaignId: int("campaignId").notNull().references(() => emailCampaigns.id, { onDelete: "cascade" }),
+  email: varchar("email", { length: 255 }).notNull(),
+  userId: varchar("userId", { length: 64 }).references(() => users.id, { onDelete: "set null" }),
+  shelterPartnerId: int("shelterPartnerId").references(() => shelterPartners.id, { onDelete: "set null" }),
+  status: mysqlEnum("status", ["sent", "opened", "clicked", "bounced", "unsubscribed"]).default("sent").notNull(),
+  sentAt: timestamp("sentAt").defaultNow(),
+  openedAt: timestamp("openedAt"),
+  clickedAt: timestamp("clickedAt"),
+});
+
+export type EmailRecipient = typeof emailRecipients.$inferSelect;
+export type InsertEmailRecipient = typeof emailRecipients.$inferInsert;
+
+/**
+ * Analytics Events - General event tracking for admin dashboard
+ */
+export const analyticsEvents = mysqlTable("analytics_events", {
+  id: int("id").primaryKey().autoincrement(),
+  eventType: varchar("eventType", { length: 100 }).notNull(),
+  userId: varchar("userId", { length: 64 }).references(() => users.id, { onDelete: "set null" }),
+  shelterPartnerId: int("shelterPartnerId").references(() => shelterPartners.id, { onDelete: "set null" }),
+  eventData: json("eventData"),
+  createdAt: timestamp("createdAt").defaultNow(),
+});
+
+export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
+export type InsertAnalyticsEvent = typeof analyticsEvents.$inferInsert;
+

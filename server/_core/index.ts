@@ -38,6 +38,9 @@ async function startServer() {
   // File upload endpoint
   const uploadRouter = await import("../upload");
   app.use("/api", uploadRouter.default);
+  // Admin routes
+  const { registerAdminRoutes } = await import("../routes/admin");
+  registerAdminRoutes(app);
   // tRPC API
   app.use(
     "/api/trpc",
