@@ -1,0 +1,43 @@
+graph TB
+    Start([User Uploads Photo/Video]) --> Input[User Input<br/>• Media file<br/>• Pet profile<br/>• Optional context]
+    Input --> Orch[🎯 Orchestrator<br/>Coordinates pipeline]
+    
+    Orch --> Vision[👁️ Vision Agent<br/>GPT-4 Vision<br/><br/>Analyzes:<br/>• Body posture<br/>• Facial expression<br/>• Environment]
+    
+    Vision --> VisionOut[Vision Analysis<br/>• Posture description<br/>• Expression details<br/>• Context notes<br/>• Confidence: 0-100]
+    
+    VisionOut --> Context[🧬 Context Agent<br/>GPT-4<br/><br/>Enriches with:<br/>• Breed traits<br/>• Age factors<br/>• Behavior patterns]
+    
+    Context --> ContextOut[Context Enrichment<br/>• Breed-specific info<br/>• Age considerations<br/>• Historical patterns]
+    
+    ContextOut --> Synthesis[🧠 Synthesis Agent<br/>GPT-4<br/><br/>Combines data:<br/>• All previous outputs<br/>• User context<br/>• Expert knowledge]
+    
+    Synthesis --> SynthOut[Behavior Synthesis<br/>• Primary behavior<br/>• Confidence score<br/>• Detailed reasoning<br/>• Alternatives]
+    
+    SynthOut --> Recommend[💡 Recommendation Agent<br/>GPT-4<br/><br/>Generates:<br/>• Actionable steps<br/>• Safety warnings<br/>• Vet consultation flag]
+    
+    Recommend --> RecOut[Recommendations<br/>• 2-3 specific actions<br/>• Safety warnings<br/>• Vet needed: yes/no]
+    
+    RecOut --> DB[(💾 Database<br/>Stores complete analysis)]
+    
+    DB --> Display[📊 Results Display<br/>Beautiful UI with:<br/>• Behavior label<br/>• Confidence<br/>• Explanation<br/>• Recommendations<br/>• Feedback buttons]
+    
+    Display --> Feedback{User Feedback}
+    Feedback -->|Helpful| Learn[🔄 Future: Memory Agent<br/>Learn from feedback]
+    Feedback -->|Not Helpful| Learn
+    
+    Learn -.->|Improves future analyses| Orch
+    
+    style Start fill:#e1bee7
+    style Orch fill:#ce93d8
+    style Vision fill:#90caf9
+    style Context fill:#a5d6a7
+    style Synthesis fill:#ffcc80
+    style Recommend fill:#ef9a9a
+    style Display fill:#80deea
+    style Learn fill:#f48fb1
+    
+    style VisionOut fill:#e3f2fd
+    style ContextOut fill:#e8f5e9
+    style SynthOut fill:#fff3e0
+    style RecOut fill:#ffebee

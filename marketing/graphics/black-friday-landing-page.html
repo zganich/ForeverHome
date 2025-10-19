@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InterpWhat Black Friday - 50% Off Premium</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 80px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '🐾';
+            position: absolute;
+            font-size: 200px;
+            opacity: 0.1;
+            top: -50px;
+            left: -50px;
+            transform: rotate(-15deg);
+        }
+        
+        .hero::after {
+            content: '🐾';
+            position: absolute;
+            font-size: 200px;
+            opacity: 0.1;
+            bottom: -50px;
+            right: -50px;
+            transform: rotate(15deg);
+        }
+        
+        .logo {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
+        .badge {
+            display: inline-block;
+            background-color: #FCD34D;
+            color: #78350F;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .hero h1 {
+            font-size: 56px;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+        
+        .discount {
+            font-size: 96px;
+            font-weight: bold;
+            color: #FCD34D;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+            margin: 30px 0;
+        }
+        
+        .hero p {
+            font-size: 24px;
+            margin-bottom: 15px;
+            opacity: 0.95;
+        }
+        
+        .countdown {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 40px 0;
+        }
+        
+        .countdown-item {
+            background: rgba(255,255,255,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            min-width: 100px;
+        }
+        
+        .countdown-number {
+            font-size: 48px;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .countdown-label {
+            font-size: 14px;
+            text-transform: uppercase;
+            opacity: 0.9;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background-color: white;
+            color: #764ba2;
+            padding: 20px 50px;
+            font-size: 20px;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 50px;
+            margin-top: 30px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .features {
+            max-width: 1200px;
+            margin: 80px auto;
+            padding: 0 20px;
+        }
+        
+        .features h2 {
+            text-align: center;
+            font-size: 42px;
+            margin-bottom: 50px;
+            color: #1a1a1a;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+        
+        .feature-card {
+            text-align: center;
+            padding: 40px 30px;
+            border-radius: 15px;
+            background: #f8f9fa;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .feature-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        .feature-card h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #764ba2;
+        }
+        
+        .feature-card p {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .pricing {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 20px;
+            text-align: center;
+        }
+        
+        .pricing h2 {
+            font-size: 42px;
+            margin-bottom: 20px;
+        }
+        
+        .pricing-cards {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            max-width: 1000px;
+            margin: 50px auto 0;
+            flex-wrap: wrap;
+        }
+        
+        .pricing-card {
+            background: white;
+            color: #333;
+            padding: 40px 30px;
+            border-radius: 15px;
+            flex: 1;
+            min-width: 280px;
+            max-width: 350px;
+        }
+        
+        .pricing-card.featured {
+            transform: scale(1.05);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            border: 3px solid #FCD34D;
+        }
+        
+        .pricing-badge {
+            background: #FCD34D;
+            color: #78350F;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        
+        .pricing-card h3 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #764ba2;
+        }
+        
+        .price {
+            font-size: 48px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin: 20px 0;
+        }
+        
+        .price span {
+            font-size: 20px;
+            color: #666;
+            font-weight: normal;
+        }
+        
+        .original-price {
+            text-decoration: line-through;
+            color: #999;
+            font-size: 24px;
+            display: block;
+            margin-top: -15px;
+            margin-bottom: 15px;
+        }
+        
+        .feature-list {
+            list-style: none;
+            text-align: left;
+            margin: 30px 0;
+        }
+        
+        .feature-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        
+        .feature-list li:before {
+            content: "✓ ";
+            color: #10B981;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .testimonials {
+            max-width: 1200px;
+            margin: 80px auto;
+            padding: 0 20px;
+        }
+        
+        .testimonials h2 {
+            text-align: center;
+            font-size: 42px;
+            margin-bottom: 50px;
+        }
+        
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        
+        .testimonial {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            border-left: 4px solid #764ba2;
+        }
+        
+        .testimonial-text {
+            font-style: italic;
+            margin-bottom: 15px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        .testimonial-author {
+            font-weight: 600;
+            color: #764ba2;
+        }
+        
+        .faq {
+            max-width: 800px;
+            margin: 80px auto;
+            padding: 0 20px;
+        }
+        
+        .faq h2 {
+            text-align: center;
+            font-size: 42px;
+            margin-bottom: 50px;
+        }
+        
+        .faq-item {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        
+        .faq-question {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #764ba2;
+        }
+        
+        .faq-answer {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .final-cta {
+            background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%);
+            padding: 80px 20px;
+            text-align: center;
+        }
+        
+        .final-cta h2 {
+            font-size: 48px;
+            color: #78350F;
+            margin-bottom: 20px;
+        }
+        
+        .final-cta p {
+            font-size: 20px;
+            color: #78350F;
+            margin-bottom: 30px;
+        }
+        
+        .final-cta .cta-button {
+            background: #78350F;
+            color: white;
+        }
+        
+        footer {
+            background: #1a1a1a;
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        footer p {
+            margin: 10px 0;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 36px;
+            }
+            
+            .discount {
+                font-size: 64px;
+            }
+            
+            .countdown {
+                gap: 15px;
+            }
+            
+            .countdown-item {
+                min-width: 70px;
+                padding: 15px;
+            }
+            
+            .countdown-number {
+                font-size: 32px;
+            }
+            
+            .pricing-card.featured {
+                transform: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div class="logo">🐾 InterpWhat</div>
+        <div class="badge">Black Friday Exclusive</div>
+        <h1>The Ultimate Pet Parent<br>Upgrade is Here</h1>
+        <div class="discount">50% OFF</div>
+        <p>Your First Year of InterpWhat Premium</p>
+        <p style="font-size: 20px; opacity: 0.9;">Just <strong>$119.94</strong> for the entire year (normally $239.88)</p>
+        
+        <div class="countdown">
+            <div class="countdown-item">
+                <span class="countdown-number" id="days">03</span>
+                <span class="countdown-label">Days</span>
+            </div>
+            <div class="countdown-item">
+                <span class="countdown-number" id="hours">12</span>
+                <span class="countdown-label">Hours</span>
+            </div>
+            <div class="countdown-item">
+                <span class="countdown-number" id="minutes">45</span>
+                <span class="countdown-label">Minutes</span>
+            </div>
+            <div class="countdown-item">
+                <span class="countdown-number" id="seconds">30</span>
+                <span class="countdown-label">Seconds</span>
+            </div>
+        </div>
+        
+        <a href="#" class="cta-button">Claim Your 50% Off Now →</a>
+        <p style="font-size: 14px; margin-top: 20px; opacity: 0.9;">⏰ Offer ends November 26 at midnight</p>
+    </section>
+    
+    <section class="features">
+        <h2>Everything You Need to Be the Best Pet Parent</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎤</div>
+                <h3>Pet Voice™</h3>
+                <p>Hear what your pet is thinking in one of 7 fun personality voices. Turn behavior analysis into an emotional experience.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🧬</div>
+                <h3>AI Breed ID</h3>
+                <p>Discover your pet's breed mix with a single photo. Understand their heritage, health risks, and temperament.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔔</div>
+                <h3>Care Reminders</h3>
+                <p>Never miss a vet appointment, medication dose, or grooming session. Stay organized and give consistent care.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🐾</div>
+                <h3>Multi-Pet Comparison</h3>
+                <p>Compare behaviors and timelines across multiple pets. Understand the unique dynamics of your pack.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📅</div>
+                <h3>Pet Timeline™</h3>
+                <p>Track your pet's behavioral evolution from puppyhood to senior years. Spot patterns and celebrate growth.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>30 Monthly Analyses</h3>
+                <p>Get instant AI-powered insights whenever you need them. Understand your pet's behavior in 15-25 seconds.</p>
+            </div>
+        </div>
+    </section>
+    
+    <section class="pricing">
+        <h2>Choose Your Plan</h2>
+        <p style="font-size: 18px; margin-bottom: 20px;">All plans include Pet Voice™ and Pet Timeline™</p>
+        
+        <div class="pricing-cards">
+            <div class="pricing-card">
+                <h3>Essential</h3>
+                <div class="price">$9.99<span>/month</span></div>
+                <ul class="feature-list">
+                    <li>10 AI analyses per month</li>
+                    <li>Pet Voice™ analysis</li>
+                    <li>Pet Timeline™ tracking</li>
+                    <li>Email support</li>
+                </ul>
+                <a href="#" class="cta-button" style="background: #764ba2; color: white; padding: 15px 30px; font-size: 16px;">Get Started</a>
+            </div>
+            
+            <div class="pricing-card featured">
+                <div class="pricing-badge">🔥 Black Friday Deal</div>
+                <h3>Premium</h3>
+                <div class="price">$119.94<span>/year</span></div>
+                <div class="original-price">$239.88/year</div>
+                <ul class="feature-list">
+                    <li>30 AI analyses per month</li>
+                    <li>Pet Voice™ analysis</li>
+                    <li>Pet Timeline™ tracking</li>
+                    <li><strong>AI Breed Identification</strong></li>
+                    <li><strong>Care Reminders</strong></li>
+                    <li><strong>Multi-Pet Comparison</strong></li>
+                    <li>Priority support</li>
+                </ul>
+                <a href="#" class="cta-button" style="background: #764ba2; color: white; padding: 15px 30px; font-size: 16px;">Claim 50% Off Now</a>
+            </div>
+        </div>
+    </section>
+    
+    <section class="testimonials">
+        <h2>What Pet Parents Are Saying</h2>
+        <div class="testimonial-grid">
+            <div class="testimonial">
+                <p class="testimonial-text">"I literally cried when I heard my dog's voice for the first time. InterpWhat has completely changed how I understand Max. The reminders feature is a lifesaver!"</p>
+                <p class="testimonial-author">— Sarah M., Beta Tester</p>
+            </div>
+            <div class="testimonial">
+                <p class="testimonial-text">"The Breed ID feature revealed my rescue is part Border Collie! It explains so much about her energy levels. Now I can give her the right amount of exercise."</p>
+                <p class="testimonial-author">— Mike T., Premium User</p>
+            </div>
+            <div class="testimonial">
+                <p class="testimonial-text">"With three dogs, the Multi-Pet Comparison is invaluable. I can finally see why they interact the way they do. This app is worth every penny."</p>
+                <p class="testimonial-author">— Jessica L., Premium User</p>
+            </div>
+        </div>
+    </section>
+    
+    <section class="faq">
+        <h2>Frequently Asked Questions</h2>
+        
+        <div class="faq-item">
+            <div class="faq-question">Is this a one-time payment?</div>
+            <div class="faq-answer">Yes! The Black Friday offer is a one-time payment of $119.94 for your entire first year of Premium. After that, it renews at the standard rate of $239.88/year (or you can switch to monthly).</div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">Can I cancel anytime?</div>
+            <div class="faq-answer">Absolutely. You can cancel your subscription at any time. If you cancel during your first year, you'll continue to have access until the end of your prepaid period.</div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">How many pets can I add?</div>
+            <div class="faq-answer">With Premium, you can add unlimited pets! Each pet gets their own profile, timeline, and personalized insights.</div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">What happens after my first year?</div>
+            <div class="faq-answer">Your subscription will automatically renew at $239.88/year (still just $19.99/month). You can cancel or change your plan anytime before renewal.</div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">Is this offer really ending?</div>
+            <div class="faq-answer">Yes! This 50% off deal is only available from November 22-26, 2025. After that, Premium returns to full price.</div>
+        </div>
+    </section>
+    
+    <section class="final-cta">
+        <h2>Don't Miss Out on 50% Off</h2>
+        <p>Join hundreds of pet parents who are already using InterpWhat Premium<br>to understand, care for, and manage their pets' lives.</p>
+        <a href="#" class="cta-button">Claim Your Black Friday Deal →</a>
+        <p style="font-size: 14px; margin-top: 20px;">⏰ Offer ends November 26 at midnight</p>
+    </section>
+    
+    <footer>
+        <p><strong>InterpWhat</strong> - Understanding Your Pet, Together</p>
+        <p>Built with ❤️ in memory of Paisley</p>
+        <p style="font-size: 12px; margin-top: 20px;">© 2025 InterpWhat. All rights reserved.</p>
+    </footer>
+    
+    <script>
+        // Simple countdown timer (you'll need to set the actual end date)
+        function updateCountdown() {
+            // Set your Black Friday end date here
+            const endDate = new Date('2025-11-26T23:59:59').getTime();
+            const now = new Date().getTime();
+            const distance = endDate - now;
+            
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            document.getElementById('days').textContent = String(days).padStart(2, '0');
+            document.getElementById('hours').textContent = String(hours).padStart(2, '0');
+            document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
+            document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+            
+            if (distance < 0) {
+                document.querySelector('.countdown').innerHTML = '<p style="font-size: 24px;">Offer has ended</p>';
+            }
+        }
+        
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,33 @@
+InterpWhat-Marketing/
+├── DIRECTORY-STRUCTURE.txt
+├── email-sequences
+│   ├── announcement-email-1.html
+│   ├── announcement-email-1.txt
+│   ├── announcement-email-2.html
+│   └── announcement-email-2.txt
+├── graphics
+│   ├── black-friday-hero.png
+│   ├── black-friday-landing-page.html
+│   ├── email-header.png
+│   ├── feature-showcase.png
+│   ├── instagram-story.png
+│   ├── references
+│   │   ├── dog-cat-together.jpg
+│   │   ├── happy-cat-owner.jpg
+│   │   └── happy-owner-dog.jpg
+│   └── social-media-square.png
+├── partner-outreach
+│   ├── PARTNER-OUTREACH-PLAN.md
+│   ├── influencer-email-sequence.md
+│   ├── shelter-email-sequence.md
+│   └── vet-email-sequence.md
+├── revenue-drivers
+│   ├── InterpWhat-Black-Friday-Playbook-v3.md
+│   ├── InterpWhat-Sales-One-Pager-v3.md
+│   ├── REVENUE-STRATEGY.md
+│   └── interpwhat-email-cadence-v3.md
+└── social-media
+    ├── CONTENT-IDEAS-LIBRARY.md
+    └── SOCIAL-MEDIA-EXECUTION-PLAN.md
+
+6 directories, 24 files
