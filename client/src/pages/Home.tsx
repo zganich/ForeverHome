@@ -1,8 +1,8 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { APP_TITLE, getLoginUrl } from "@/const";
-import { PawPrint, Sparkles, Heart, TrendingUp, Shield, Users, Volume2, Mic, Bell, GitCompareArrows, Dog } from "lucide-react";
+import { PawPrint, Sparkles, Heart, TrendingUp, Shield, Users, Volume2, Mic, Bell, GitCompareArrows, Dog, Check } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Home() {
@@ -146,56 +146,62 @@ export default function Home() {
                 <p className="text-muted-foreground">
                   Our viral-hit feature! Choose from 7 unique personality voices to hear what your pet is really thinking—in their own words. Upload a photo or video and get instant insights in 15-25 seconds.
                 </p>
+                <p className="text-sm text-primary font-semibold">✓ Available in all plans</p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-2 border-primary/30">
               <CardContent className="pt-6 space-y-3">
-                <Dog className="w-10 h-10 text-primary" />
+                <Dog className="w-10 h-10 text-accent" />
                 <h4 className="text-xl font-bold">AI Breed Identification</h4>
                 <p className="text-muted-foreground">
-                  Curious about your rescue's heritage? Upload a photo and our advanced AI will identify the most likely breeds with confidence scores, helping you understand their unique traits and health considerations.
+                  Curious about your rescue's heritage? Upload a photo and our AI instantly identifies breed mixes, typical traits, and health considerations specific to your pet's genetic background.
                 </p>
+                <p className="text-sm text-accent font-semibold">✓ Premium feature</p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-2 border-primary/30">
               <CardContent className="pt-6 space-y-3">
-                <Bell className="w-10 h-10 text-accent" />
-                <h4 className="text-xl font-bold">Care Reminders & Notifications</h4>
+                <Bell className="w-10 h-10 text-secondary" />
+                <h4 className="text-xl font-bold">Care Reminders</h4>
                 <p className="text-muted-foreground">
-                  Never miss a vet appointment, medication dose, grooming session, or feeding time again. Schedule custom reminders and receive timely notifications to stay on top of your pet's care routine.
+                  Never miss a vet appointment, medication dose, or grooming session. Set custom reminders for each pet and receive notifications exactly when you need them.
                 </p>
+                <p className="text-sm text-secondary font-semibold">✓ Premium feature</p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-2 border-primary/30">
               <CardContent className="pt-6 space-y-3">
-                <GitCompareArrows className="w-10 h-10 text-secondary" />
+                <GitCompareArrows className="w-10 h-10 text-primary" />
                 <h4 className="text-xl font-bold">Multi-Pet Comparison</h4>
                 <p className="text-muted-foreground">
-                  Own more than one pet? Compare their behaviors, timelines, and personalities side-by-side to understand their unique dynamics and how they interact with each other.
+                  Managing multiple pets? Compare behaviors, health patterns, and personality traits side-by-side to understand how your pets interact and what makes each one unique.
                 </p>
+                <p className="text-sm text-primary font-semibold">✓ Premium feature</p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-2 border-primary/30">
               <CardContent className="pt-6 space-y-3">
-                <TrendingUp className="w-10 h-10 text-primary" />
+                <TrendingUp className="w-10 h-10 text-accent" />
                 <h4 className="text-xl font-bold">Pet Timeline™</h4>
                 <p className="text-muted-foreground">
-                  Track your pet's behavioral evolution from their early years to the present. Understand patterns, celebrate milestones, and detect changes early to ensure their long-term well-being.
+                  Track your pet's journey from day one. View all analyses, milestones, and behavioral changes in a beautiful timeline that tells your pet's complete story.
                 </p>
+                <p className="text-sm text-accent font-semibold">✓ Available in all plans</p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-2 border-primary/30">
               <CardContent className="pt-6 space-y-3">
-                <Shield className="w-10 h-10 text-destructive" />
-                <h4 className="text-xl font-bold">Photo Quality Protection</h4>
+                <Shield className="w-10 h-10 text-secondary" />
+                <h4 className="text-xl font-bold">Advanced Insights</h4>
                 <p className="text-muted-foreground">
-                  Our system validates your photo quality before using a credit, ensuring you always get accurate, high-quality AI analysis. No wasted credits on blurry or unclear images.
+                  Get detailed behavioral analysis, health indicators, and personalized recommendations based on your pet's unique patterns and history.
                 </p>
+                <p className="text-sm text-secondary font-semibold">✓ Premium feature</p>
               </CardContent>
             </Card>
           </div>
@@ -211,78 +217,202 @@ export default function Home() {
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {/* Essential Plan */}
-          <Card>
-            <CardContent className="pt-6 space-y-4 text-center">
-              <h4 className="text-2xl font-bold">Essential</h4>
-              <div className="text-4xl font-bold">$9<span className="text-2xl text-muted-foreground">.99/mo</span></div>
-              <p className="text-muted-foreground h-12">Perfect for the everyday pet owner.</p>
+          <Card className="border-2">
+            <CardContent className="pt-6 space-y-6">
+              <div className="text-center space-y-2">
+                <h4 className="text-2xl font-bold">Essential</h4>
+                <div className="text-5xl font-bold">
+                  $14<span className="text-3xl text-muted-foreground">.99</span>
+                </div>
+                <p className="text-sm text-muted-foreground">per month</p>
+                <p className="text-muted-foreground h-12">Perfect for the everyday pet owner.</p>
+              </div>
+
               <Button variant="outline" className="w-full" asChild>
                 <a href={getLoginUrl()}>Choose Essential</a>
               </Button>
-              <ul className="space-y-3 text-sm text-left pt-4">
-                <li className="flex items-center gap-2">✓ <span className="font-bold">3</span> pet profiles</li>
-                <li className="flex items-center gap-2">✓ <span className="font-bold">10</span> AI Analyses per month</li>
-                <li className="flex items-center gap-2">✓ Pet Voice™ Analysis</li>
-                <li className="flex items-center gap-2">✓ Pet Timeline™ Tracking</li>
-                <li className="flex items-center gap-2">✓ Basic Behavior Insights</li>
-                <li className="flex items-center gap-2">✓ Email Support (48-hour response)</li>
-              </ul>
+
+              <div className="space-y-4 pt-4">
+                <div className="space-y-3">
+                  <p className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">What's Included</p>
+                  <ul className="space-y-3 text-sm">
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <span><strong>3 pet profiles</strong> - Perfect for most households</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <span><strong>15 AI analyses per month</strong> - ~1 every 2 days</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <span><strong>Pet Voice™ Analysis</strong> - 7 personality voices</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <span><strong>Pet Timeline™</strong> - Track history & milestones</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <span><strong>Basic Behavior Insights</strong> - Understand patterns</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <span><strong>Email Support</strong> - 48-hour response time</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="border-t pt-4">
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Why this price?</strong> Less than a bag of premium dog food, but helps you understand your pet every single day.
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
           {/* Premium Plan */}
-          <Card className="border-2 border-primary relative">
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold">
+          <Card className="border-2 border-primary relative shadow-xl">
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1.5 rounded-full text-sm font-bold shadow-lg">
               MOST POPULAR
             </div>
-            <CardContent className="pt-10 space-y-4 text-center">
-              <h4 className="text-2xl font-bold">Premium</h4>
-              <div className="text-4xl font-bold">$19<span className="text-2xl text-muted-foreground">.99/mo</span></div>
-              <p className="text-muted-foreground h-12">For dedicated pet enthusiasts.</p>
+            <CardContent className="pt-10 space-y-6">
+              <div className="text-center space-y-2">
+                <h4 className="text-2xl font-bold">Premium</h4>
+                <div className="text-5xl font-bold">
+                  $29<span className="text-3xl text-muted-foreground">.99</span>
+                </div>
+                <p className="text-sm text-muted-foreground">per month</p>
+                <p className="text-muted-foreground h-12">For dedicated pet enthusiasts.</p>
+              </div>
+
               <Button className="w-full" asChild>
                 <a href={getLoginUrl()}>Choose Premium</a>
               </Button>
-              <ul className="space-y-3 text-sm text-left pt-4">
-                <li className="flex items-center gap-2">✓ <span className="font-bold">Unlimited</span> pet profiles</li>
-                <li className="flex items-center gap-2">✓ <span className="font-bold">30</span> AI Analyses per month</li>
-                <li className="flex items-center gap-2">✓ All Essential features, plus:</li>
-                <li className="flex items-center gap-2 font-bold text-primary">✓ AI Breed Identification (unlimited)</li>
-                <li className="flex items-center gap-2 font-bold text-primary">✓ Care Reminders & Notifications</li>
-                <li className="flex items-center gap-2 font-bold text-primary">✓ Multi-Pet Comparison</li>
-                <li className="flex items-center gap-2">✓ Advanced Behavioral Insights</li>
-                <li className="flex items-center gap-2">✓ Priority Support (24-hour response)</li>
-                <li className="flex items-center gap-2">✓ Export Reports (PDF)</li>
-              </ul>
+
+              <div className="space-y-4 pt-4">
+                <div className="space-y-3">
+                  <p className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Everything in Essential, plus:</p>
+                  <ul className="space-y-3 text-sm">
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <span><strong>Unlimited pet profiles</strong> - For multi-pet households</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <span><strong>Unlimited AI analyses</strong> - Analyze as often as you need</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <span><strong className="text-primary">AI Breed Identification</strong> - Unlimited breed scans</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <span><strong className="text-primary">Care Reminders & Notifications</strong> - Never miss important tasks</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <span><strong className="text-primary">Multi-Pet Comparison</strong> - Compare behaviors side-by-side</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <span><strong>Advanced Behavioral Insights</strong> - Deeper analysis</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <span><strong>Priority Support</strong> - 24-hour response time</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <span><strong>Export Reports (PDF)</strong> - Share with your vet</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="border-t pt-4 bg-primary/5 -mx-6 px-6 py-4 rounded-b-lg">
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Why this price?</strong> Fi collar costs $19/mo for just GPS. InterpWhat tells you HOW your pet feels, WHY they act that way, and WHAT to do—all for just $10 more.
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
           {/* Rescue Adopter Plan */}
-          <Card className="border-2 border-accent/50">
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground px-3 py-1 rounded-full text-xs font-bold">
+          <Card className="border-2 border-accent/50 relative">
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground px-4 py-1.5 rounded-full text-sm font-bold shadow-lg">
               RESCUE HERO
             </div>
-            <CardContent className="pt-10 space-y-4 text-center">
-              <h4 className="text-2xl font-bold">Rescue Adopter</h4>
-              <div className="text-4xl font-bold">$14<span className="text-2xl text-muted-foreground">.99/mo</span></div>
-              <p className="text-muted-foreground h-12">Lifetime discount for rescue pet parents.</p>
-              <Button variant="outline" className="w-full border-accent text-accent" asChild>
+            <CardContent className="pt-10 space-y-6">
+              <div className="text-center space-y-2">
+                <h4 className="text-2xl font-bold">Rescue Adopter</h4>
+                <div className="text-5xl font-bold">
+                  $24<span className="text-3xl text-muted-foreground">.99</span>
+                </div>
+                <p className="text-sm text-muted-foreground">per month</p>
+                <p className="text-muted-foreground h-12">Lifetime discount for rescue pet parents.</p>
+              </div>
+
+              <Button variant="outline" className="w-full border-accent text-accent hover:bg-accent hover:text-accent-foreground" asChild>
                 <a href={getLoginUrl()}>Verify Adoption</a>
               </Button>
-              <ul className="space-y-3 text-sm text-left pt-4">
-                <li className="flex items-center gap-2">✓ All <span className="font-bold">Premium</span> features</li>
-                <li className="flex items-center gap-2">✓ <span className="font-bold">Lifetime</span> $5/mo discount</li>
-                <li className="flex items-center gap-2">✓ "Rescue Pet Parent" badge</li>
-                <li className="flex items-center gap-2">✓ Priority support</li>
-                <li className="flex items-center gap-2">✓ Support your shelter (10% share)</li>
-              </ul>
-              <p className="text-xs text-muted-foreground pt-2">Adoption verification required</p>
+
+              <div className="space-y-4 pt-4">
+                <div className="space-y-3">
+                  <p className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">All Premium Features, plus:</p>
+                  <ul className="space-y-3 text-sm">
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
+                      <span><strong className="text-accent">Lifetime $5/mo discount</strong> - Forever</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
+                      <span><strong>"Rescue Pet Parent" badge</strong> - Show your pride</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
+                      <span><strong>Support your shelter</strong> - 10% revenue share</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
+                      <span><strong>Priority support</strong> - 24-hour response</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="border-t pt-4">
+                  <p className="text-xs text-muted-foreground mb-3">
+                    <strong>Adoption verification required:</strong> Upload adoption paperwork or shelter confirmation. One discount per person (covers unlimited pets).
+                  </p>
+                  <p className="text-xs text-accent font-semibold">
+                    You saved a life. We honor that with a lifetime discount.
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        <p className="text-center text-sm text-muted-foreground mt-8">
-          A portion of all subscriptions supports no-kill animal shelters and rescue organizations 🐾
-        </p>
+        <div className="mt-12 text-center space-y-4">
+          <p className="text-sm text-muted-foreground">
+            A portion of all subscriptions supports no-kill animal shelters and rescue organizations 🐾
+          </p>
+          <div className="flex flex-wrap justify-center gap-6 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              <span>Cancel anytime, no questions asked</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Heart className="w-4 h-4" />
+              <span>No credit card required to start</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              <span>Trusted by thousands of pet parents</span>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Social Proof / Testimonials */}
