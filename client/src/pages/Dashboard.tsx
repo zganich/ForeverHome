@@ -1,4 +1,5 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,12 +17,14 @@ import { trpc } from "@/lib/trpc";
 import { PawPrint, Plus, Sparkles, Upload, ShoppingCart, Gift, Coins, GitCompare } from "lucide-react";
 import { PhotoTips } from "@/components/PhotoTips";
 import { Link } from "wouter";
-import { APP_TITLE, getLoginUrl } from "@/const";
+import { APP_TITLE } from "@/const";
 import { toast } from "sonner";
 import { useState } from "react";
 
 export default function Dashboard() {
-  const { user, isAuthenticated, loading, logout } = useAuth();
+  const { user, loading, signOut } = useSupabaseAuth();
+  const isAuthenticated = !!user;
+  const [, setLocation] = useLocation();
   const [betaCode, setBetaCode] = useState("");
   const [isRedeemOpen, setIsRedeemOpen] = useState(false);
 
@@ -55,7 +58,7 @@ export default function Dashboard() {
   }
 
   if (!isAuthenticated) {
-    window.location.href = getLoginUrl();
+    setLocation("/login");
     return null;
   }
 
@@ -92,7 +95,7 @@ export default function Dashboard() {
               </Card>
             )}
             <span className="text-sm text-muted-foreground hidden md:block">Hi, {user?.name || "there"}!</span>
-            <Button variant="outline" onClick={() => logout()}>
+            <Button variant="outline" onClick={() => signOut()}>
               Sign Out
             </Button>
           </div>
