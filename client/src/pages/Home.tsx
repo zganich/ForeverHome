@@ -1,12 +1,13 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { APP_TITLE, getLoginUrl } from "@/const";
+import { APP_TITLE } from "@/const";
+import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
 import { PawPrint, Sparkles, Heart, TrendingUp, Shield, Users, Volume2, Mic, Bell, GitCompareArrows, Dog } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Home() {
-  const { isAuthenticated } = useAuth();
+  const { user } = useSupabaseAuth();
+  const isAuthenticated = !!user;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/10">
@@ -28,7 +29,7 @@ export default function Home() {
               </Button>
             ) : (
               <Button asChild>
-                <a href={getLoginUrl()}>Sign In</a>
+                <Link href="/login">Sign In</Link>
               </Button>
             )}
           </div>
@@ -63,7 +64,7 @@ export default function Home() {
             ) : (
               <>
                 <Button size="lg" asChild className="text-lg px-8 py-6">
-                  <a href={getLoginUrl()}>Get Started Free</a>
+                  <Link href="/login">Get Started Free</Link>
                 </Button>
                 <Button size="lg" variant="outline" asChild className="text-lg px-8 py-6">
                   <a href="#features">Explore Features</a>

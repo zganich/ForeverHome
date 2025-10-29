@@ -1,75 +1,12 @@
 {
   "version": "7",
-  "dialect": "mysql",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "5",
-      "when": 1760573279395,
-      "tag": "0000_pretty_metal_master",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1760573322312,
-      "tag": "0001_dear_multiple_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1760580613820,
-      "tag": "0002_condemned_zarek",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1760603331711,
-      "tag": "0003_lying_shadowcat",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "5",
-      "when": 1760603549541,
-      "tag": "0004_numerous_red_shift",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "5",
-      "when": 1760648380002,
-      "tag": "0005_strange_juggernaut",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "5",
-      "when": 1760669780917,
-      "tag": "0006_magical_peter_quill",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "5",
-      "when": 1760670546494,
-      "tag": "0007_known_ironclad",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "5",
-      "when": 1760671058141,
-      "tag": "0008_useful_crusher_hogan",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "5",
-      "when": 1760823809389,
-      "tag": "0009_hesitant_galactus",
+      "version": "7",
+      "when": 1761694744551,
+      "tag": "0000_fearless_layla_miller",
       "breakpoints": true
     }
   ]
