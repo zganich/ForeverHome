@@ -218,7 +218,7 @@ export default function Home() {
               <div className="text-4xl font-bold">$9<span className="text-2xl text-muted-foreground">.99/mo</span></div>
               <p className="text-muted-foreground h-12">Perfect for the everyday pet owner.</p>
               <Button variant="outline" className="w-full" asChild>
-                <a href={getLoginUrl()}>Choose Essential</a>
+                <Link href="/login">Choose Essential</Link>
               </Button>
               <ul className="space-y-3 text-sm text-left pt-4">
                 <li className="flex items-center gap-2">✓ <span className="font-bold">3</span> pet profiles</li>
@@ -241,7 +241,7 @@ export default function Home() {
               <div className="text-4xl font-bold">$19<span className="text-2xl text-muted-foreground">.99/mo</span></div>
               <p className="text-muted-foreground h-12">For dedicated pet enthusiasts.</p>
               <Button className="w-full" asChild>
-                <a href={getLoginUrl()}>Choose Premium</a>
+                <Link href="/login">Choose Premium</Link>
               </Button>
               <ul className="space-y-3 text-sm text-left pt-4">
                 <li className="flex items-center gap-2">✓ <span className="font-bold">Unlimited</span> pet profiles</li>
@@ -267,7 +267,7 @@ export default function Home() {
               <div className="text-4xl font-bold">$14<span className="text-2xl text-muted-foreground">.99/mo</span></div>
               <p className="text-muted-foreground h-12">Lifetime discount for rescue pet parents.</p>
               <Button variant="outline" className="w-full border-accent text-accent" asChild>
-                <a href={getLoginUrl()}>Verify Adoption</a>
+                <Link href="/login">Verify Adoption</Link>
               </Button>
               <ul className="space-y-3 text-sm text-left pt-4">
                 <li className="flex items-center gap-2">✓ All <span className="font-bold">Premium</span> features</li>
@@ -355,7 +355,7 @@ export default function Home() {
             </Button>
           ) : (
             <Button size="lg" variant="secondary" asChild className="text-lg px-8 py-6">
-              <a href={getLoginUrl()}>Get Started Free</a>
+              <Link href="/login">Get Started Free</Link>
             </Button>
           )}
           <p className="text-sm text-primary-foreground/80 mt-4">
