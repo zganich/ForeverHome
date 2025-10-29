@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { APP_TITLE, APP_LOGO } from '@/const';
 
 export default function Login() {
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
   const { signIn, signUp } = useSupabaseAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
@@ -35,7 +35,7 @@ export default function Login() {
           toast.error(error.message);
         } else {
           toast.success('Welcome back!');
-          navigate('/dashboard');
+          setLocation('/dashboard');
         }
       }
     } catch (error) {
