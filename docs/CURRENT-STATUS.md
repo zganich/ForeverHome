@@ -107,7 +107,7 @@
 ### Stack
 - **Frontend:** React 19, Tailwind CSS 4, shadcn/ui, Wouter
 - **Backend:** Express 4, tRPC 11, Node.js 22
-- **Database:** MySQL (Drizzle ORM)
+- **Database:** PostgreSQL (Drizzle ORM)
 - **Storage:** S3 (Manus built-in)
 - **AI:** GPT-4 Vision (Manus LLM)
 - **Auth:** Manus OAuth

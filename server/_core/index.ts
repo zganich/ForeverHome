@@ -27,20 +27,37 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
-async function startServer() {
+/**
+ * Create and configure Express app
+ * Works for both local development and Vercel serverless
+ */
+export async function createApp(): Promise<express.Express> {
   const app = express();
-  const server = createServer(app);
+  
+  // Redirect www to non-www (fixes SSL certificate issue)
+  app.use((req, res, next) => {
+    if (req.hostname && req.hostname.startsWith('www.')) {
+      const nonWwwHost = req.hostname.replace(/^www\./, '');
+      return res.redirect(301, `https://${nonWwwHost}${req.url}`);
+    }
+    next();
+  });
+  
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  
   // File upload endpoint
   const uploadRouter = await import("../upload");
   app.use("/api", uploadRouter.default);
+  
   // Admin routes
   const { registerAdminRoutes } = await import("../routes/admin");
   registerAdminRoutes(app);
+  
   // tRPC API
   app.use(
     "/api/trpc",
@@ -49,7 +66,18 @@ async function startServer() {
       createContext,
     })
   );
-  // development mode uses Vite, production mode uses static files
+  
+  return app;
+}
+
+/**
+ * Setup app for local development or production server
+ */
+async function startServer() {
+  const app = await createApp();
+  const server = createServer(app);
+  
+  // Development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
@@ -68,4 +96,7 @@ async function startServer() {
   });
 }
 
-startServer().catch(console.error);
+// Start server for local development (not in Vercel)
+if (process.env.VERCEL !== "1") {
+  startServer().catch(console.error);
+}

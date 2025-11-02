@@ -1,0 +1,142 @@
+# InterpWhat - Cursor Rules for LLM Collaboration
+
+## Project Overview
+InterpWhat is an AI-powered pet behavior analysis platform that helps pet owners understand their pets through:
+- **Pet Voice™ Analysis** - AI interprets pet behavior from photos/videos with personality-driven voice
+- **AI Breed Identification** - Identify breeds from photos
+- **Care Reminders** - Medication, vet visits, grooming
+- **Multi-Pet Comparison** - Compare behaviors across multiple pets
+- **Pet Timeline™** - Track pet history and milestones
+
+## Tech Stack
+**Frontend:**
+- React 19.2.0 + TypeScript
+- Wouter (routing)
+- TanStack Query (data fetching)
+- Tailwind CSS 4 + shadcn/ui components
+- Vite (build tool)
+
+**Backend:**
+- Node.js 22.13.0 + Express
+- tRPC (type-safe API layer)
+- Drizzle ORM + PostgreSQL (via DATABASE_URL)
+- TypeScript throughout
+
+**AI & Services:**
+- OpenAI GPT-4 Vision (behavior analysis)
+- OpenAI TTS (voice generation)
+- Supabase Auth (client-side authentication)
+- Stripe (payments)
+- Built-in Forge API (file storage via Manus)
+
+## Key Directories
+- `client/src/` - Frontend React application
+  - `pages/` - Page components (Home, Dashboard, Login, etc.)
+  - `components/` - Reusable UI components
+  - `contexts/` - React contexts (SupabaseAuthContext)
+  - `lib/` - Utilities and Supabase client
+- `server/` - Backend Express application
+  - `_core/` - Core server utilities (env, trpc, context, etc.)
+  - `routers.ts` - tRPC API routes
+  - `routes/` - Express routes (admin)
+  - `aiAgents.ts` - AI behavior analysis logic
+  - `db.ts` - Database queries (Drizzle ORM)
+- `drizzle/` - Database schema and migrations
+  - `schema.ts` - Main database schema
+- `docs/` - Project documentation
+  - `CURRENT-STATUS.md` - **Start here** for project status
+  - `README.md` - Documentation index
+  - `product/` - Product requirements and strategy
+  - `technical/` - Architecture documentation
+
+## Development Workflow
+1. **Always start new chats by reading:**
+   - `README.md` (project overview)
+   - `docs/CURRENT-STATUS.md` (current state)
+   - `docs/README.md` (documentation index)
+   - `CURSOR-STARTUP.md` (new chat checklist)
+
+2. **Before asking questions, check:**
+   - Existing documentation in `docs/`
+   - Code comments and existing implementations
+   - Type definitions in `shared/types.ts`
+
+3. **Context Management:**
+   - Monitor context usage (visible in Cursor)
+   - **CRITICAL**: Start new chat when context reaches 50% (hard limit)
+   - At 40% context: Prepare to wrap up current task
+   - At 50% context: Complete current work, commit, and start new chat
+   - Reference files by path rather than reading full contents when possible
+   - See `docs/CONTEXT-MANAGEMENT.md` for detailed guidelines
+
+## Code Style Preferences
+- TypeScript strict mode enabled
+- Use functional components with hooks
+- Prefer composition over inheritance
+- Use tRPC for all API communication
+- Follow existing patterns in codebase
+- Add JSDoc comments for complex functions
+
+## Integration Points
+
+### GitHub
+- Repository: `https://github.com/zganich/interpwhat.git`
+- Already connected via git remote
+
+### Supabase
+- Used for client-side authentication only
+- Environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- See `client/src/lib/supabase.ts` for client setup
+- See `docs/integrations/GITHUB-SUPABASE-RAILWAY.md` for full integration details
+
+### Database
+- PostgreSQL via `DATABASE_URL` environment variable
+- Managed by Drizzle ORM
+- Schema defined in `drizzle/schema.ts`
+- Migrations in `drizzle/migrations/`
+
+### Railway
+- Deployment platform (documented in integration docs)
+- Environment variables configured via Railway dashboard
+
+## Important Files to Reference
+- `server/_core/env.ts` - Environment variable definitions
+- `shared/types.ts` - Shared TypeScript types
+- `shared/const.ts` - Shared constants
+- `drizzle/schema.ts` - Database schema
+- `vercel.json` - Deployment configuration
+
+## Development Commands
+- `pnpm dev` - Start development server
+- `pnpm build` - Build for production
+- `pnpm start` - Start production server
+- `pnpm check` - TypeScript type checking
+- `pnpm db:push` - Run database migrations
+
+## Key Principles
+1. **Check documentation first** - Most answers are in `docs/`
+2. **Stay on task** - Focus on the current feature/issue
+3. **Maintain context efficiency** - Reference files, don't re-read unnecessarily
+4. **Follow existing patterns** - Consistency is key
+5. **Ask clarifying questions** when requirements are ambiguous
+
+## Common Patterns
+- Authentication: Uses Supabase Auth via `SupabaseAuthContext`
+- API Calls: Use tRPC from `server/routers.ts`
+- File Uploads: Via `server/upload.ts` using Forge API storage
+- AI Analysis: Via `server/aiAgents.ts` using OpenAI
+- Database: Drizzle ORM queries in `server/db.ts`
+
+## When Starting New Features
+1. Review `docs/CURRENT-STATUS.md` for current state
+2. Check `docs/product/InterpWhat-PRD-v2-Final.md` for requirements
+3. Review similar existing implementations
+4. Follow the established directory structure
+5. Update relevant documentation after completion
+
+## Notes
+- The project uses Manus platform (OAuth, storage via Forge API)
+- Database is PostgreSQL (despite README mentioning MySQL)
+- All sensitive data should be in environment variables
+- Never commit `.env` file (use `.env.example` as template)
+

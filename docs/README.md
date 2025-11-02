@@ -1,6 +1,6 @@
 # InterpWhat Documentation Index
 
-**Last Updated:** October 16, 2025
+**Last Updated:** November 2024
 
 This directory contains all current InterpWhat documentation, organized by category.
 
@@ -20,6 +20,13 @@ This directory contains all current InterpWhat documentation, organized by categ
 - **[System Architecture](./technical/interpwhat-architecture.md)** - Overall system design and infrastructure
 - **[AI Architecture](./technical/interpwhat-ai-architecture.md)** - AI agent swarm design and implementation
 
+### Integration & Setup
+- **[Vercel Deployment Guide](./VERCEL-DEPLOYMENT.md)** - **PRIMARY** - Complete Vercel deployment guide
+- **[GitHub, Supabase & Deployment Integration](./integrations/GITHUB-SUPABASE-RAILWAY.md)** - Complete setup guide for all external services
+- **[Railway Deployment Guide](./RAILWAY-DEPLOYMENT.md)** - Railway deployment details, SSL, and troubleshooting
+- **[Development Best Practices](./BEST-PRACTICES.md)** - Standards, conventions, and guidelines for development
+- **[Context Management Guide](./CONTEXT-MANAGEMENT.md)** - **IMPORTANT**: Context usage guidelines and reset procedures
+
 ### Marketing Materials
 Located in `/home/ubuntu/InterpWhat-Marketing/`:
 - **[Launch Package Summary](../InterpWhat-Marketing/LAUNCH-PACKAGE-SUMMARY.md)** - Complete launch plan and materials
@@ -36,9 +43,10 @@ Located in `/home/ubuntu/InterpWhat-Marketing/`:
 ## 📂 Directory Structure
 
 ```
-InterpWhat-Documentation/
+docs/
 ├── README.md (this file)
 ├── CURRENT-STATUS.md (start here!)
+├── BEST-PRACTICES.md (development standards)
 ├── product/
 │   ├── InterpWhat-PRD-v2-Final.md
 │   ├── interpwhat-financial-analysis.md
@@ -46,7 +54,8 @@ InterpWhat-Documentation/
 ├── technical/
 │   ├── interpwhat-architecture.md
 │   └── interpwhat-ai-architecture.md
-├── research/ (empty - for future research docs)
+├── integrations/
+│   └── GITHUB-SUPABASE-RAILWAY.md (setup guide)
 └── archive/ (outdated documents)
 ```
 
@@ -121,10 +130,22 @@ These files are preserved in the `archive/` directory for historical reference.
 If you're new to InterpWhat, read these documents in order:
 
 1. **[CURRENT-STATUS.md](./CURRENT-STATUS.md)** - Understand what InterpWhat is and where we are
-2. **[Quick Reference Guide](../InterpWhat-Quick-Reference/README.md)** - Get oriented with file locations and checklists
-3. **[Launch Package Summary](../InterpWhat-Marketing/LAUNCH-PACKAGE-SUMMARY.md)** - Understand the go-to-market strategy
-4. **[PRD](./product/InterpWhat-PRD-v2-Final.md)** - Deep dive into product requirements
-5. **[Architecture Docs](./technical/)** - Understand the technical implementation
+2. **[Quick Reference Guide](../InterpWhat-Quick-Reference/README.md)** - Get oriented with file locations and checklists (if exists)
+3. **[CURSOR-STARTUP.md](../CURSOR-STARTUP.md)** - **For AI Assistants**: New chat session checklist
+4. **[Launch Package Summary](../marketing/LAUNCH-PACKAGE-SUMMARY.md)** - Understand the go-to-market strategy
+5. **[PRD](./product/InterpWhat-PRD-v2-Final.md)** - Deep dive into product requirements
+6. **[Architecture Docs](./technical/)** - Understand the technical implementation
+7. **[Integration Guide](./integrations/GITHUB-SUPABASE-RAILWAY.md)** - Set up GitHub, Supabase, and Railway
+
+## 🤖 For AI Assistants (Cursor/LLMs)
+
+**Start every new chat session with:**
+1. Read **[CURSOR-STARTUP.md](../CURSOR-STARTUP.md)** - Complete the checklist
+2. Review **[CURRENT-STATUS.md](./CURRENT-STATUS.md)** - Get current project state
+3. Check **[Best Practices](./BEST-PRACTICES.md)** - Understand development standards
+4. Reference **[Integration Guide](./integrations/GITHUB-SUPABASE-RAILWAY.md)** - For setup issues
+
+This ensures efficient context usage and keeps you on task!
 
 ---
 

@@ -58,7 +58,7 @@ InterpWhat is the all-in-one platform for pet parents that combines:
 **Backend:**
 - Node.js 22.13.0 + Express
 - tRPC (type-safe API)
-- Drizzle ORM + MySQL
+- Drizzle ORM + PostgreSQL
 
 **AI & Services:**
 - OpenAI GPT-4 Vision (behavior analysis)
@@ -73,7 +73,7 @@ InterpWhat is the all-in-one platform for pet parents that combines:
 ### Prerequisites
 - Node.js 22.13.0+
 - pnpm
-- MySQL database
+- PostgreSQL database
 
 ### Setup
 
@@ -92,19 +92,28 @@ pnpm install
 ```bash
 cp .env.example .env
 # Edit .env with your credentials
+# See .env.example for all required variables
+# See docs/integrations/GITHUB-SUPABASE-RAILWAY.md for setup help
 ```
 
-4. **Run database migrations**
+4. **Verify setup** (optional but recommended)
 ```bash
-pnpm drizzle-kit push
+bash scripts/setup-check.sh
 ```
 
-5. **Start development server**
+5. **Run database migrations**
+```bash
+pnpm db:push
+```
+
+6. **Start development server**
 ```bash
 pnpm dev
 ```
 
 The app will be available at `http://localhost:3000`
+
+**Note:** Make sure all environment variables are set. Run `bash scripts/setup-check.sh` to verify your setup.
 
 ---
 
@@ -154,7 +163,7 @@ interpwhat/
 
 ```env
 # Database
-DATABASE_URL=mysql://user:password@host:port/database
+DATABASE_URL=postgresql://user:password@host:port/database
 
 # OpenAI
 OPENAI_API_KEY=sk-...
@@ -178,12 +187,26 @@ OAUTH_CLIENT_SECRET=...
 
 ## 🚀 Deployment
 
+### Vercel Deployment (Primary)
+
+InterpWhat is configured for deployment on **Vercel**. See **[docs/VERCEL-DEPLOYMENT.md](./docs/VERCEL-DEPLOYMENT.md)** for complete deployment guide.
+
+**Quick Start:**
+1. Connect repository to Vercel
+2. Configure environment variables (see deployment guide)
+3. Deploy automatically from GitHub
+
+**Key Configuration:**
+- **Build Command:** `pnpm install && pnpm build`
+- **Output Directory:** `dist/public`
+- **API Function:** `api/index.ts` (60s timeout for AI analysis)
+
 ### Build for production
 ```bash
 pnpm build
 ```
 
-### Start production server
+### Start production server (for Railway/other platforms)
 ```bash
 pnpm start
 ```
@@ -214,6 +237,82 @@ Access the admin dashboard at `/admin/dashboard` to view:
 - Animal shelters & rescues
 - Pet influencers
 - Veterinary practices
+
+---
+
+---
+
+## 🤖 For AI Assistants / LLMs
+
+**Starting a new chat session?** Follow this checklist:
+
+1. ✅ Read **[CURSOR-STARTUP.md](./CURSOR-STARTUP.md)** - Complete new chat checklist
+2. ✅ Review **[docs/CURRENT-STATUS.md](./docs/CURRENT-STATUS.md)** - Understand current state
+3. ✅ Check **[.cursorrules](./.cursorrules)** - Project context and guidelines
+4. ✅ Verify integrations - Run `bash scripts/setup-check.sh`
+
+**🚨 CRITICAL: Context Management**
+- **MUST reset at 50% context usage** (hard limit)
+- See **[docs/CONTEXT-MANAGEMENT.md](./docs/CONTEXT-MANAGEMENT.md)** for complete guidelines
+- Use **[CONTEXT-RESET-PROMPT.md](./CONTEXT-RESET-PROMPT.md)** when hitting 50%
+
+This helps keep context usage low and ensures you stay on task!
+
+---
+
+## 📚 Documentation
+
+All documentation is in the `docs/` folder:
+
+- **[docs/README.md](./docs/README.md)** - Documentation index
+- **[docs/CURRENT-STATUS.md](./docs/CURRENT-STATUS.md)** - Current features and status (single source of truth)
+- **[docs/BEST-PRACTICES.md](./docs/BEST-PRACTICES.md)** - Development standards
+- **[docs/integrations/GITHUB-SUPABASE-RAILWAY.md](./docs/integrations/GITHUB-SUPABASE-RAILWAY.md)** - Integration setup guide
+
+---
+
+## 🎯 Quick Status Check
+
+**See latest changes and next tasks:**
+```bash
+pnpm status    # or pnpm next
+```
+
+**Check SSL certificate and DNS:**
+```bash
+pnpm check-ssl          # General SSL check (if you have a specific domain)
+pnpm check-railway <url> # Check Railway deployment SSL (recommended)
+```
+
+**To find your Railway URL:**
+1. Go to https://railway.app
+2. Select your InterpWhat project
+3. Go to Service → Settings → Domains
+4. Use that URL with `pnpm check-railway <url>`
+
+These commands show:
+- ✅ Modified, staged, and untracked files
+- 📋 TODO items in codebase
+- 📅 Next tasks from documentation
+- 📊 Quick project stats
+- 🔒 SSL certificate status
+- 🌐 DNS resolution
+
+Perfect for starting a new work session!
+
+---
+
+## 🔗 Integration Status
+
+- ✅ **GitHub**: Connected (`https://github.com/zganich/interpwhat.git`)
+- ✅ **Supabase**: Used for client-side authentication (verified in codebase)
+- ✅ **Deployment**: **Vercel** (configured - automatic SSL for www/non-www)
+- ✅ **Railway**: Also supported (alternative deployment platform)
+
+For detailed setup instructions, see:
+- **[docs/VERCEL-DEPLOYMENT.md](./docs/VERCEL-DEPLOYMENT.md)** - **PRIMARY** - Complete Vercel deployment guide
+- **[docs/integrations/GITHUB-SUPABASE-RAILWAY.md](./docs/integrations/GITHUB-SUPABASE-RAILWAY.md)** - Complete integration guide
+- **[docs/RAILWAY-DEPLOYMENT.md](./docs/RAILWAY-DEPLOYMENT.md)** - Railway deployment details
 
 ---
 
