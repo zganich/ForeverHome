@@ -1,105 +1,91 @@
-// Preconfigured storage helpers for Manus WebDev templates
-// Uses the Biz-provided storage proxy (Authorization: Bearer <token>)
+// Vercel Blob Storage - Modern, serverless file storage
+// No API keys needed - uses Vercel's built-in Blob storage
 
+import { put, head } from '@vercel/blob';
 import { ENV } from './_core/env';
-
-type StorageConfig = { baseUrl: string; apiKey: string };
-
-function getStorageConfig(): StorageConfig {
-  const baseUrl = ENV.forgeApiUrl;
-  const apiKey = ENV.forgeApiKey;
-
-  if (!baseUrl || !apiKey) {
-    throw new Error(
-      "Storage proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY"
-    );
-  }
-
-  return { baseUrl: baseUrl.replace(/\/+$/, ""), apiKey };
-}
-
-function buildUploadUrl(baseUrl: string, relKey: string): URL {
-  const url = new URL("v1/storage/upload", ensureTrailingSlash(baseUrl));
-  url.searchParams.set("path", normalizeKey(relKey));
-  return url;
-}
-
-async function buildDownloadUrl(
-  baseUrl: string,
-  relKey: string,
-  apiKey: string
-): Promise<string> {
-  const downloadApiUrl = new URL(
-    "v1/storage/downloadUrl",
-    ensureTrailingSlash(baseUrl)
-  );
-  downloadApiUrl.searchParams.set("path", normalizeKey(relKey));
-  const response = await fetch(downloadApiUrl, {
-    method: "GET",
-    headers: buildAuthHeaders(apiKey),
-  });
-  return (await response.json()).url;
-}
-
-function ensureTrailingSlash(value: string): string {
-  return value.endsWith("/") ? value : `${value}/`;
-}
 
 function normalizeKey(relKey: string): string {
   return relKey.replace(/^\/+/, "");
 }
 
-function toFormData(
-  data: Buffer | Uint8Array | string,
-  contentType: string,
-  fileName: string
-): FormData {
-  const blob =
-    typeof data === "string"
-      ? new Blob([data], { type: contentType })
-      : new Blob([data as any], { type: contentType });
-  const form = new FormData();
-  form.append("file", blob, fileName || "file");
-  return form;
-}
-
-function buildAuthHeaders(apiKey: string): HeadersInit {
-  return { Authorization: `Bearer ${apiKey}` };
-}
-
+/**
+ * Upload file to Vercel Blob Storage
+ * @param relKey - Relative path/key for the file (e.g., "uploads/image.jpg")
+ * @param data - File data as Buffer, Uint8Array, or string
+ * @param contentType - MIME type (default: "application/octet-stream")
+ * @returns Object with key and public URL
+ */
 export async function storagePut(
   relKey: string,
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream"
 ): Promise<{ key: string; url: string }> {
-  const { baseUrl, apiKey } = getStorageConfig();
   const key = normalizeKey(relKey);
-  const uploadUrl = buildUploadUrl(baseUrl, key);
-  const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
-  const response = await fetch(uploadUrl, {
-    method: "POST",
-    headers: buildAuthHeaders(apiKey),
-    body: formData,
-  });
+  
+  try {
+    // Convert data to format that @vercel/blob accepts
+    // The put() function can accept Buffer, Blob, File, or ReadableStream
+    let blobData: Blob | Buffer | Uint8Array;
+    
+    if (typeof data === 'string') {
+      blobData = new Blob([data], { type: contentType });
+    } else if (Buffer.isBuffer(data)) {
+      blobData = data; // Buffer works directly
+    } else {
+      // Uint8Array - convert to Buffer for Node.js compatibility
+      blobData = Buffer.from(data);
+    }
 
-  if (!response.ok) {
-    const message = await response.text().catch(() => response.statusText);
+    // Upload to Vercel Blob
+    // Note: BLOB_READ_WRITE_TOKEN is automatically available in Vercel environment
+    // For local dev, it will use VERCEL_BLOB_STORE_ID if set, or require manual token
+    const { url } = await put(key, blobData, {
+      contentType,
+      access: 'public', // Files are publicly accessible
+    });
+
+    return { key, url };
+  } catch (error) {
+    console.error('[Storage] Upload failed:', error);
     throw new Error(
-      `Storage upload failed (${response.status} ${response.statusText}): ${message}`
+      `Storage upload failed: ${error instanceof Error ? error.message : String(error)}`
     );
   }
-  const url = (await response.json()).url;
-  return { key, url };
 }
 
+/**
+ * Get file URL from Vercel Blob Storage
+ * Note: In production, you should store the URL returned from storagePut in your database.
+ * This function attempts to retrieve the blob, but for better performance, store URLs when uploading.
+ * @param relKey - Relative path/key for the file
+ * @param _expiresIn - Not used (Vercel Blob URLs are always accessible if public)
+ * @returns Object with key and public URL
+ */
 export async function storageGet(
   relKey: string,
   _expiresIn = 300
-): Promise<{ key: string; url: string; }> {
-  const { baseUrl, apiKey } = getStorageConfig();
+): Promise<{ key: string; url: string }> {
   const key = normalizeKey(relKey);
-  return {
-    key,
-    url: await buildDownloadUrl(baseUrl, key, apiKey),
-  };
+  
+  try {
+    // Try to get blob info using head() to verify it exists and get its URL
+    // Note: In Vercel production, BLOB_READ_WRITE_TOKEN is automatically set
+    const blob = await head(key);
+    
+    if (!blob.url) {
+      throw new Error(`Blob not found for key: ${key}`);
+    }
+    
+    return {
+      key,
+      url: blob.url,
+    };
+  } catch (error) {
+    // If head() fails (blob doesn't exist), return a helpful error
+    console.error('[Storage] Get failed:', error);
+    throw new Error(
+      `Storage get failed for key "${key}": ${error instanceof Error ? error.message : String(error)}. ` +
+      `Make sure the file was uploaded and the URL was stored in your database.`
+    );
+  }
 }
