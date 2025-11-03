@@ -101,25 +101,34 @@ bash scripts/setup-check.sh  # Verify setup
 
 ## 🚨 Important Reminders
 
-1. **Context Management** (CRITICAL)
+1. **Version Control** (CRITICAL)
+   - **ALWAYS commit and push to GitHub** after completing any task or feature
+   - Use descriptive commit messages (e.g., "feat: Add photo validation")
+   - Push to `main` branch (Vercel auto-deploys from GitHub)
+   - Never end a session with uncommitted work
+   - See `.cursorrules` for complete workflow guidelines
+
+2. **Context Management** (CRITICAL)
    - Monitor context usage (shown in Cursor UI)
    - **MUST reset at 50% context usage** (hard limit, not a suggestion)
    - At 40%: Prepare to wrap up current task
+   - At 50%: Complete work, commit, push to GitHub, then start new chat
    - See `docs/CONTEXT-MANAGEMENT.md` for complete guidelines
    - Reference files by path when possible instead of reading full contents
 
-2. **Documentation First**
+3. **Documentation First**
    - Check `docs/` folder before asking questions
    - Review existing implementations before coding
    - Update documentation after making changes
+   - **Commit documentation updates to GitHub**
 
-3. **Integration Status**
+4. **Integration Status**
    - GitHub: ✅ Connected
    - Supabase: Check environment variables
-   - Railway: See integration docs
+   - Vercel: Primary deployment platform (auto-deploys from GitHub)
    - Database: Uses `DATABASE_URL` env var
 
-4. **Code Patterns**
+5. **Code Patterns**
    - Use tRPC for all API calls
    - Authentication via `SupabaseAuthContext`
    - Database queries via Drizzle ORM in `server/db.ts`

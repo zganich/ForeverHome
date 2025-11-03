@@ -1,20 +1,369 @@
 # InterpWhat Development Best Practices
 
-**Last Updated:** November 2024
+**Last Updated:** January 2025
 
 This document outlines development standards, conventions, and best practices for working on InterpWhat.
+
+**"Bus Factor" Philosophy:** Write code as if you're teaching it to a new developer who will take over immediately. Always assume the next person has zero context.
 
 ---
 
 ## 📖 Table of Contents
 
-1. [Context Management](#context-management)
-2. [Documentation Standards](#documentation-standards)
-3. [Code Review Guidelines](#code-review-guidelines)
-4. [Testing Practices](#testing-practices)
-5. [Deployment Procedures](#deployment-procedures)
-6. [Git Workflow](#git-workflow)
-7. [When to Start New Chat Sessions](#when-to-start-new-chat-sessions)
+1. [Bus Factor: Knowledge Continuity](#bus-factor-knowledge-continuity) ⭐ **START HERE**
+2. [Context Management](#context-management)
+3. [Documentation Standards](#documentation-standards)
+4. [Code Review Guidelines](#code-review-guidelines)
+5. [Testing Practices](#testing-practices)
+6. [Deployment Procedures](#deployment-procedures)
+7. [Git Workflow](#git-workflow)
+8. [When to Start New Chat Sessions](#when-to-start-new-chat-sessions)
+
+---
+
+## 🚌 Bus Factor: Knowledge Continuity ⭐
+
+**The "Bus Factor" Problem:** If the primary developer is unavailable, can the project continue?
+
+**Our Goal:** Make the project maintainable by ANY developer, even with zero prior context.
+
+### Core Principles
+
+#### 1. **Self-Documenting Code First**
+Code should read like a story. If it needs comments, consider if the code itself can be clearer.
+
+**Bad:**
+```typescript
+// Check if user is premium
+if (x === 1) {
+  // Give them 5 more analyses
+  y += 5;
+}
+```
+
+**Good:**
+```typescript
+if (user.subscriptionTier === 'premium') {
+  user.remainingAnalyses += ANALYSES_BONUS_PREMIUM;
+}
+```
+
+#### 2. **Comments Explain WHY, Code Explains WHAT**
+Don't document obvious things. Document decisions, trade-offs, and context.
+
+**Good Comments:**
+```typescript
+// Using setTimeout instead of requestIdleCallback because Safari doesn't support it yet
+setTimeout(() => updateAnalytics(), 100);
+
+// This query is intentionally NOT using an index to optimize for write performance
+// Read operations are infrequent compared to writes (100:1 ratio)
+```
+
+**Bad Comments:**
+```typescript
+// Loop through users
+users.forEach(user => {
+  // Process user
+  process(user);
+});
+```
+
+#### 3. **Never Leave TODO/FIXME Without Context**
+TODOs are only acceptable if they explain WHAT needs to be done and WHY.
+
+**Bad:**
+```typescript
+// TODO: Fix this
+function handlePayment() { }
+```
+
+**Good:**
+```typescript
+// TODO: Add retry logic for Stripe webhook failures
+// Stripe recommends 3 retries with exponential backoff for failed webhooks
+// See: https://stripe.com/docs/webhooks#retries
+function handlePayment() { }
+```
+
+#### 4. **Meaningful Variable and Function Names**
+Names should tell a story. If you need to look up what a variable does, the name is wrong.
+
+**Bad:**
+```typescript
+const data = fetchData();
+const temp = processData(data);
+const result = calculate(temp);
+```
+
+**Good:**
+```typescript
+const petAnalyses = await fetchPetAnalyses();
+const validatedAnalyses = validateImageQuality(petAnalyses);
+const analysisResults = performBehaviorAnalysis(validatedAnalyses);
+```
+
+#### 5. **Type Safety Eliminates Ambiguity**
+Use TypeScript types to document expectations. If a function can fail, the type should show it.
+
+**Bad:**
+```typescript
+function analyzePet(photo) {
+  // What if photo is null? What does it return?
+  return openai.analyze(photo);
+}
+```
+
+**Good:**
+```typescript
+async function analyzePetBehavior(
+  photo: File
+): Promise<{ success: false; error: string } | { success: true; analysis: PetAnalysis }> {
+  try {
+    const analysis = await openai.analyze(photo);
+    return { success: true, analysis };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+```
+
+#### 6. **Error Messages Are Documentation**
+Error messages should explain what went wrong and how to fix it.
+
+**Bad:**
+```typescript
+throw new Error("Failed");
+```
+
+**Good:**
+```typescript
+throw new Error(
+  `Failed to process pet analysis: Image file size exceeds 10MB limit. ` +
+  `Current size: ${file.size} bytes. Please compress the image and try again.`
+);
+```
+
+### Continuity Checklist
+
+Before committing code, ask yourself:
+
+#### Code Quality
+- [ ] Can a new developer understand this code in 5 minutes without asking questions?
+- [ ] Are all functions under 50 lines? (Smaller functions = easier to understand)
+- [ ] Do all non-obvious things have comments explaining WHY?
+- [ ] Are all error cases handled with clear error messages?
+- [ ] Can this code be tested without mocking half the universe?
+
+#### Documentation
+- [ ] Are all public APIs documented (JSDoc for functions, README for features)?
+- [ ] Does the README explain how to run and deploy the project?
+- [ ] Are all environment variables documented in `.env.example`?
+- [ ] Is the database schema documented (schema diagrams or comments)?
+- [ ] Are all third-party integrations documented (API keys, setup steps)?
+
+#### Testing
+- [ ] Can a new developer run tests to verify everything works?
+- [ ] Do tests cover the critical paths (not just happy path)?
+- [ ] Are edge cases and error conditions tested?
+- [ ] Do failing tests clearly indicate what's broken?
+
+#### Operations
+- [ ] Can a new developer deploy this to production without tribal knowledge?
+- [ ] Are all deployment steps documented (or automated)?
+- [ ] Are environment variables documented with examples?
+- [ ] Are database migrations documented?
+- [ ] Are rollback procedures documented?
+
+#### Security & Secrets
+- [ ] Are all secrets in environment variables (never in code)?
+- [ ] Is the `.env.example` file up-to-date with all required variables?
+- [ ] Are API keys documented (where to get them, what permissions needed)?
+- [ ] Is the security model documented (auth flows, permissions)?
+
+### Knowledge Documentation Requirements
+
+#### Must Document (Critical)
+1. **Environment Setup**: How to go from zero to running app
+2. **Database Schema**: What tables exist, relationships, indexes
+3. **API Endpoints**: What each endpoint does, request/response formats
+4. **Authentication Flow**: How users log in, session management
+5. **Payment Processing**: Stripe integration, webhooks, subscription flows
+6. **File Upload Flow**: How images/videos are validated, stored, and processed
+7. **AI Analysis Pipeline**: How images are analyzed, error handling
+8. **Deployment Process**: How to deploy to Vercel, rollback procedure
+9. **Third-Party Integrations**: Supabase, Stripe, OpenAI setup and keys
+10. **Known Issues**: What's broken, workarounds, planned fixes
+
+#### Should Document (Important)
+1. **Architecture Decisions**: Why certain technologies were chosen
+2. **Performance Considerations**: Known bottlenecks, optimization strategies
+3. **Testing Strategy**: What's tested, what's not, how to add tests
+4. **Development Workflow**: Git flow, code review process, release process
+5. **Monitoring & Logging**: Where logs go, how to debug production issues
+
+### Emergency Handoff Document Template
+
+Create an `EMERGENCY-HANDOFF.md` in the project root that covers:
+
+```markdown
+# Emergency Handoff Document
+
+**Last Updated:** [Date]
+**Critical Knowledge:** [Bullet points of "if I die tomorrow, you need to know..."]
+
+## Quick Start
+- [How to get the app running in < 5 minutes]
+
+## Critical Systems
+1. **Database**: [Connection string, backup location, migration commands]
+2. **Payment Processing**: [Stripe webhook URLs, how to issue refunds]
+3. **File Storage**: [Where files are stored, how to access them]
+4. **Authentication**: [How to reset admin passwords, session management]
+
+## Common Issues & Solutions
+- [Known bugs and workarounds]
+- [Things that break periodically and how to fix them]
+
+## Contacts
+- **AWS/Infrastructure**: [Who manages hosting, how to contact]
+- **Payment Provider**: [Stripe support contact]
+- **Domain/Email**: [Namecheap, email service]
+
+## Secrets & Access
+- [Where secrets are stored (password manager, env vars)]
+- [What accounts have admin access]
+
+## Daily Operations
+- [Monitoring dashboards URLs]
+- [Log locations]
+- [Backup verification]
+```
+
+### Version Control Best Practices
+
+#### Commit Messages That Tell a Story
+Write commit messages as if explaining the change to someone six months later.
+
+**Bad:**
+```
+fix bug
+update code
+wip
+```
+
+**Good:**
+```
+fix: Resolve Stripe webhook timeout by increasing timeout to 60s
+
+Stripe webhooks for subscription cancellations were timing out because
+they require up to 45 seconds to process. Increased serverless function
+timeout from 30s to 60s to accommodate slow API responses.
+
+Tested with: curl -X POST [webhook-url] -d "test_event"
+Verified: Webhook completes in 52s for cancellation events
+```
+
+#### Atomic Commits
+Each commit should represent ONE logical change that can be understood and potentially reverted independently.
+
+**Bad:**
+```
+feat: Add new features and fix bugs
+```
+
+**Good:**
+```
+feat: Add photo quality validation before AI analysis
+
+- Validate image format (jpg, png, webp only)
+- Check image dimensions (min 256x256, max 8192x8192)
+- Verify file size (max 10MB)
+- Return descriptive errors for invalid images
+- Update API docs
+
+fix: Resolve memory leak in pet analysis cleanup
+
+refactor: Extract image validation logic to separate module
+```
+
+#### Use Conventional Commits
+Standardize commit message format:
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+
+**Example:**
+```
+feat(api): Add photo quality validation
+
+Validate images before processing to prevent wasted API credits
+on low-quality or invalid images.
+
+- Check format, dimensions, and file size
+- Return descriptive errors
+- Add tests for validation logic
+
+Closes #42
+```
+
+### Code Review for Bus Factor
+
+When reviewing code, ask:
+
+1. **Can a new developer understand this without asking questions?**
+2. **Are edge cases handled?**
+3. **Do error messages explain what went wrong and how to fix it?**
+4. **Is this code testable without heroic mocking efforts?**
+5. **Would I be able to debug this at 2 AM with no context?**
+
+If any answer is "no," request changes before approving.
+
+### Monitoring and Observability
+
+Make the system tell you when something's wrong:
+
+#### Required Logging
+- All errors (with stack traces and context)
+- API requests (method, URL, duration, status code)
+- Critical business events (payment processed, user subscribed, analysis completed)
+- Performance metrics (slow queries, timeouts)
+
+#### Log Formatting
+Structured logs are searchable:
+
+**Bad:**
+```
+Error occurred
+```
+
+**Good:**
+```
+{
+  "level": "error",
+  "message": "Failed to process Stripe webhook",
+  "error": "Timeout after 30s",
+  "webhook_event": "subscription.cancelled",
+  "subscription_id": "sub_1234567890",
+  "timestamp": "2025-01-15T10:30:00Z",
+  "request_id": "req_abc123"
+}
+```
+
+### Summary: The Bus Factor Test
+
+**Final Check:** Could I explain everything a new developer needs to know in a 30-minute handoff meeting?
+
+If not, document more.
+
+**Remember:** The best code is the code that doesn't need to be read. Make it obvious.
 
 ---
 
