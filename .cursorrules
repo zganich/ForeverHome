@@ -61,11 +61,18 @@ InterpWhat is an AI-powered pet behavior analysis platform that helps pet owners
    - Code comments and existing implementations
    - Type definitions in `shared/types.ts`
 
-3. **Context Management:**
+3. **Version Control (GitHub):**
+   - **CRITICAL**: After completing any task, feature, or significant change, commit and push to GitHub
+   - Commit messages should be descriptive (e.g., "feat: Add photo validation" or "docs: Update deployment guide")
+   - Push to `main` branch (Vercel auto-deploys from GitHub)
+   - Never leave uncommitted work at end of session
+   - This keeps the repository current and provides version history
+
+4. **Context Management:**
    - Monitor context usage (visible in Cursor)
    - **CRITICAL**: Start new chat when context reaches 50% (hard limit)
    - At 40% context: Prepare to wrap up current task
-   - At 50% context: Complete current work, commit, and start new chat
+   - At 50% context: Complete current work, commit, push to GitHub, and start new chat
    - Reference files by path rather than reading full contents when possible
    - See `docs/CONTEXT-MANAGEMENT.md` for detailed guidelines
 
