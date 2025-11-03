@@ -11,13 +11,14 @@ This document outlines development standards, conventions, and best practices fo
 ## 📖 Table of Contents
 
 1. [Bus Factor: Knowledge Continuity](#bus-factor-knowledge-continuity) ⭐ **START HERE**
-2. [Context Management](#context-management)
-3. [Documentation Standards](#documentation-standards)
-4. [Code Review Guidelines](#code-review-guidelines)
-5. [Testing Practices](#testing-practices)
-6. [Deployment Procedures](#deployment-procedures)
-7. [Git Workflow](#git-workflow)
-8. [When to Start New Chat Sessions](#when-to-start-new-chat-sessions)
+2. [Vibe Coding & AI-Assisted Development](#-vibe-coding--ai-assisted-development) 🚀 **READ NEXT**
+3. [Context Management](#context-management)
+4. [Documentation Standards](#documentation-standards)
+5. [Code Review Guidelines](#code-review-guidelines)
+6. [Testing Practices](#testing-practices)
+7. [Deployment Procedures](#deployment-procedures)
+8. [Git Workflow](#git-workflow)
+9. [When to Start New Chat Sessions](#when-to-start-new-chat-sessions)
 
 ---
 
@@ -364,6 +365,375 @@ Error occurred
 If not, document more.
 
 **Remember:** The best code is the code that doesn't need to be read. Make it obvious.
+
+---
+
+## 🤖 Vibe Coding & AI-Assisted Development
+
+**What is "Vibe Coding"?** An AI-assisted development approach that emphasizes flow state, creativity, and intuitive collaboration between developer and AI. When done right, it's faster and more enjoyable while maintaining code quality.
+
+### Core Principles
+
+#### 1. **AI is Your Pair Programming Partner, Not a Replacement**
+Treat AI (Cursor/Claude) as a senior developer who needs clear communication but can handle tedious tasks.
+
+**Good Collaboration:**
+```
+You: "Add photo validation before AI analysis. Check file type, 
+      dimensions (min 256x256), and size (max 10MB). Return 
+      descriptive errors."
+
+AI: Generates complete implementation with error handling
+You: Review, test edge cases, refine
+```
+
+**Bad Collaboration:**
+```
+You: "fix photo upload"
+AI: Makes assumptions, you debug for hours
+```
+
+#### 2. **Clear, Specific Prompts Are Everything**
+Vague prompts → wasted time debugging AI mistakes. Specific prompts → working code.
+
+**Bad Prompt:**
+```
+"Add authentication"
+```
+
+**Good Prompt:**
+```
+"Add email/password authentication using Supabase Auth:
+- Create login page at /login
+- Create signup page at /signup
+- Protect /dashboard route (redirect to /login if not authenticated)
+- Store user session in SupabaseAuthContext
+- Show user email in nav bar
+- Add logout button"
+```
+
+**Great Prompt:**
+```
+"Add email/password authentication using Supabase Auth:
+- Create login page at /login using existing Button and Input components
+- Create signup page at /signup with password confirmation
+- Protect /dashboard route (redirect to /login if not authenticated)
+- Store user session in SupabaseAuthContext (already set up in lib/supabase.ts)
+- Show user email in nav bar (use existing Nav component)
+- Add logout button (clear session on click)
+- Handle errors: display toast notifications on auth failures
+- Add loading states during auth requests
+- Follow existing code patterns in client/src/pages/Login.tsx"
+```
+
+#### 3. **Always Verify AI-Generated Code**
+Trust but verify. AI makes mistakes, especially with edge cases and project-specific requirements.
+
+**Verification Checklist:**
+- [ ] Read through the generated code (don't blindly accept)
+- [ ] Test happy path (does the main flow work?)
+- [ ] Test error cases (invalid input, network failures, etc.)
+- [ ] Check it follows project patterns (consistent with existing code)
+- [ ] Verify security (no hardcoded secrets, proper auth checks)
+- [ ] Check performance (no obvious N+1 queries, memory leaks)
+
+#### 4. **Iterate and Refine**
+Vibe coding is iterative. Get AI to generate initial version, then refine based on results.
+
+**Iterative Workflow:**
+1. **Initial Generation**: Get AI to create working prototype
+2. **Test & Identify Issues**: Find edge cases, bugs, improvements
+3. **Refine with Feedback**: Give AI specific feedback
+4. **Repeat**: Until code is production-ready
+
+**Example Iteration:**
+```
+Round 1: "Generate pet analysis API endpoint"
+Result: Basic endpoint, no error handling
+
+Round 2: "Add error handling for invalid file types and OpenAI failures"
+Result: Better errors, but no logging
+
+Round 3: "Add structured logging for all errors and successful analyses"
+Result: Production-ready code
+
+You: Deploy! 🚀
+```
+
+#### 5. **Document AI Prompts and Decisions**
+Keep track of what prompts you used and why certain decisions were made.
+
+**Create a `AI-PROMPTS.md` file:**
+```markdown
+## Feature: Photo Validation
+
+**Prompt Used:**
+"Add photo validation before AI analysis. Check: file type (jpg, png, webp), 
+dimensions (min 256x256), size (max 10MB). Return descriptive errors."
+
+**Why:** Prevents wasted API credits on invalid images
+
+**Iterations:**
+- v1: Basic validation ✅
+- v2: Added dimension checks based on OpenAI requirements
+- v3: Added specific error messages for each validation failure
+
+**Key Decision:** Using file-type detection library instead of file extension
+**Reason:** More secure, prevents spoofing with renamed files
+```
+
+#### 6. **Use AI for Boring, Repetitive Tasks**
+Focus AI on tedious work, use your brain for architecture and creative problem-solving.
+
+**Great AI Tasks:**
+- Boilerplate code generation
+- Writing tests for existing code
+- Refactoring repetitive patterns
+- Generating API documentation
+- Creating mock data
+- Adding error handling
+- Converting data formats
+
+**Better Human Tasks:**
+- Architectural decisions
+- Complex algorithms
+- Security-critical logic
+- User experience design
+- Performance optimization
+- Debugging unusual issues
+
+#### 7. **Maintain Code Quality Standards**
+Vibe coding doesn't mean sloppy code. All AI-generated code must meet the Bus Factor standards.
+
+**Quality Gate for AI Code:**
+- [ ] Readable by new developer in 5 minutes?
+- [ ] Properly typed (TypeScript strict mode)?
+- [ ] Error handling for all failure cases?
+- [ ] Follows existing code patterns?
+- [ ] Tested (at least manually)?
+- [ ] Documented if non-obvious?
+
+#### 8. **Balance Speed with Safety**
+Vibe coding is fast, but rushing critical features causes problems.
+
+**Safe to Vibe Code:**
+- ✅ UI components (low risk)
+- ✅ CRUD operations (well-understood)
+- ✅ Data transformations (easy to test)
+- ✅ Documentation generation
+- ✅ Test writing
+
+**Slow Down and Think:**
+- ⚠️ Payment processing (security-critical)
+- ⚠️ Authentication flows (security-critical)
+- ⚠️ Database migrations (can't easily revert)
+- ⚠️ User data deletion (compliance issues)
+- ⚠️ Complex algorithmic changes (hard to verify)
+- ⚠️ Production deployments (affects users)
+
+### Prompt Engineering Best Practices
+
+#### Structure Effective Prompts
+
+**Template:**
+```
+CONTEXT:
+[What you're working on, relevant background]
+
+GOAL:
+[Specific outcome you want]
+
+REQUIREMENTS:
+- [Requirement 1]
+- [Requirement 2]
+- [Requirement 3]
+
+CONSTRAINTS:
+- [Constraint 1 - e.g., "must use existing Button component"]
+- [Constraint 2 - e.g., "follow TypeScript strict mode"]
+
+EXAMPLES:
+[Reference similar code in your codebase]
+```
+
+**Real Example:**
+```
+CONTEXT: Creating new pet profile page. Users can upload photos 
+and add pet details.
+
+GOAL: Build /pet/:id page displaying pet info and timeline of analyses
+
+REQUIREMENTS:
+- Show pet name, breed, age
+- Display photo gallery (use existing ImageGallery component)
+- Show timeline of past analyses (use existing Timeline component)
+- Add "Analyze New Photo" button linking to /analyze/:id
+- Fetch data using tRPC getPet(id) endpoint
+
+CONSTRAINTS:
+- Must match existing page design (see /dashboard)
+- Use existing Layout component
+- Handle loading and error states
+- Mobile-responsive
+
+EXAMPLES:
+See client/src/pages/Dashboard.tsx for layout patterns
+See client/src/components/Timeline.tsx for timeline usage
+```
+
+#### Common Prompt Patterns
+
+**Pattern 1: Generate New Code**
+```
+Create a [component/function/feature] that [does X]
+- Follow the pattern in [existing file]
+- Use [specific library/pattern]
+- Handle [specific cases]
+```
+
+**Pattern 2: Fix Bug**
+```
+[Description of bug]
+- Current behavior: [what happens]
+- Expected behavior: [what should happen]
+- Error: [error message if any]
+- Relevant code: [file path or snippet]
+```
+
+**Pattern 3: Refactor**
+```
+Refactor [file/function] to [goal]
+- Keep same functionality
+- Improve: [readability/performance/maintainability]
+- Follow pattern in [reference file]
+```
+
+**Pattern 4: Add Feature to Existing Code**
+```
+Add [feature] to [existing file]
+- [Existing file context]
+- [New feature requirements]
+- Integrate with [existing patterns]
+```
+
+### Testing AI-Generated Code
+
+#### Required Tests Before Merging
+
+**1. Manual Testing**
+- Test happy path (normal user flow)
+- Test edge cases (empty input, large files, network failures)
+- Test error cases (invalid input, auth failures)
+
+**2. Code Review**
+- Read through generated code line by line
+- Check for security issues (SQL injection, XSS, auth bypass)
+- Verify it follows project patterns
+- Ensure it handles errors gracefully
+
+**3. Integration Testing**
+- Test with real data (not just mocks)
+- Verify database changes work as expected
+- Check API integrations (Stripe, OpenAI, etc.)
+
+#### Red Flags in AI Code
+
+**🚩 Immediate Reject If:**
+- Hardcoded secrets or credentials
+- No error handling
+- Security vulnerabilities (SQL injection, auth bypass)
+- Performance issues (N+1 queries, memory leaks)
+- Inconsistent with existing code patterns
+- Magic numbers or unclear logic
+- No input validation
+
+**⚠️ Review Carefully If:**
+- Complex nested conditionals
+- Recursive algorithms
+- Performance-critical sections
+- Third-party library integrations
+- Database migrations
+- Authentication logic
+
+### Collaboration Between Human and AI
+
+#### Effective AI Usage Patterns
+
+**Pattern A: Exploratory Development**
+```
+You: "Research how to [do X] using [technology]"
+AI: Provides options and trade-offs
+You: Choose approach based on project needs
+AI: Implement chosen approach
+```
+
+**Pattern B: Incremental Building**
+```
+You: "Build basic version"
+AI: Generates simple implementation
+You: "Now add [feature 1]"
+AI: Extends implementation
+You: "Now add [feature 2]"
+AI: Further extends
+```
+
+**Pattern C: Debugging**
+```
+You: "Debug [issue], error is [error message]"
+AI: Suggests causes
+You: Test suggestions
+AI: Refines based on results
+```
+
+#### Know When to Stop Using AI
+
+**Switch to Manual Coding When:**
+- AI keeps making the same mistakes
+- You spend more time debugging AI than coding would take
+- You need to deeply understand the implementation
+- Working on security-critical features
+- AI doesn't understand project-specific context
+- You're reinventing the wheel better done manually
+
+### Monitoring AI-Generated Code in Production
+
+**Track These Metrics:**
+- Error rates (AI code tends to have more subtle bugs)
+- Performance degradation (AI may not optimize well)
+- User complaints about AI-added features
+- Time to fix AI-introduced bugs vs. manually-written bugs
+
+**Red Flags:**
+- New features have higher error rates than existing code
+- Performance regressions after AI changes
+- More bugs requiring hotfixes
+
+**Response:**
+- Add more thorough testing for AI-generated code
+- Increase code review scrutiny
+- Consider manual rewrite if issues persist
+
+### Summary: Vibe Coding Best Practices
+
+**✅ DO:**
+- Use clear, specific prompts
+- Always verify and test AI output
+- Iterate and refine based on results
+- Document prompts and decisions
+- Maintain quality standards
+- Use AI for boring tasks
+- Balance speed with safety
+
+**❌ DON'T:**
+- Blindly accept AI suggestions
+- Use vague prompts
+- Skip testing AI code
+- Deploy unverified code
+- Vibe code security-critical features
+- Forget to document
+- Sacrifice code quality for speed
+
+**Remember:** Vibe coding is about working WITH AI, not deferring to it. You're still the senior developer making architectural decisions.
 
 ---
 
