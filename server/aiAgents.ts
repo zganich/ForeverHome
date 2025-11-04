@@ -1,5 +1,6 @@
 import { invokeLLM } from "./_core/llm";
 import type { Pet } from "../drizzle/schema";
+import type { PersonalityType } from "./textToSpeech";
 
 /**
  * AI Agent Swarm for Pet Behavior Analysis
@@ -272,6 +273,17 @@ Return JSON with: actions (array of strings), safetyWarnings (array, optional), 
 }
 
 /**
+ * Progress data types for streaming updates
+ */
+export type ProgressData =
+  | { status: "analyzing" }
+  | VisionAnalysis
+  | ContextEnrichment
+  | BehaviorSynthesis
+  | Recommendations
+  | { personalityVoice: string; personality: string };
+
+/**
  * Orchestrator: Runs the full agent swarm pipeline
  * PHASE 1 OPTIMIZED: True parallel execution for 30-40% faster analysis
  */
@@ -282,7 +294,7 @@ export async function analyzeBehavior(
   options?: {
     streaming?: boolean; // For streaming support (callbacks)
     quickMode?: boolean; // Skip Context/Recommendation for faster results
-    onProgress?: (stage: string, data?: any) => void; // Progress callback for streaming
+    onProgress?: (stage: string, data?: ProgressData) => void; // Progress callback for streaming
   }
 ): Promise<{
   vision: VisionAnalysis;
@@ -321,13 +333,13 @@ export async function analyzeBehavior(
   }
 
   // STEP 5: Generate personality-based voice interpretation
-  options?.onProgress?.("voice", { status: "generating" });
-  const personality = pet.personality || "goofy";
+  options?.onProgress?.("voice", { status: "analyzing" });
+  const personality: PersonalityType = (pet.personality || "goofy") as PersonalityType;
   const { generatePersonalityVoice } = await import("./textToSpeech");
   
   // Create a conversational interpretation from the synthesis
   const baseInterpretation = `${synthesis.primaryBehavior}. ${synthesis.reasoning}`;
-  const personalityVoice = generatePersonalityVoice(baseInterpretation, personality as any);
+  const personalityVoice = generatePersonalityVoice(baseInterpretation, personality);
   options?.onProgress?.("complete", { personalityVoice, personality });
 
   return {
