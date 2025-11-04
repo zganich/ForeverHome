@@ -117,8 +117,9 @@
 - **Backend:** Express 4, tRPC 11, Node.js 22
 - **Database:** PostgreSQL (Drizzle ORM)
 - **Storage:** S3 (Manus built-in)
-- **AI:** GPT-4 Vision (Manus LLM)
+- **AI:** Gemini 2.5 Flash (optimized for Phase 1 - 42% cost reduction)
 - **Auth:** Manus OAuth
+- **Testing:** Vitest (40 tests passing), Playwright (E2E ready)
 
 ### Application Structure
 ```
