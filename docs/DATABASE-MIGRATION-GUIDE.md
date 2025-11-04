@@ -7,34 +7,40 @@
 
 ## 🎯 Quick Start
 
-### Production (Railway/Vercel)
+### Production (Vercel + Supabase)
 
-**Option 1: Railway CLI (Recommended)**
+**Option 1: Vercel CLI (Recommended)**
 ```bash
-# Install Railway CLI if needed
-npm i -g @railway/cli
+# Install Vercel CLI if needed
+npm i -g vercel
 
-# Login to Railway
-railway login
+# Login to Vercel
+vercel login
 
 # Link to your project
-railway link
+vercel link
 
-# Run migration
-railway run pnpm db:push
+# Pull environment variables (includes DATABASE_URL)
+vercel env pull .env.local
+
+# Run migration locally with production DATABASE_URL
+pnpm db:push
 ```
 
-**Option 2: Railway Dashboard**
-1. Go to [railway.app](https://railway.app) → Your Project
-2. Open **Deployments** tab
-3. Click **"..."** → **"Open Shell"**
-4. Run: `pnpm db:push`
-
-**Option 3: Vercel**
+**Option 2: Vercel Dashboard + Local Terminal**
 1. Go to [vercel.com](https://vercel.com) → Your Project
-2. Open **Deployments** → Select latest deployment
-3. Click **"..."** → **"Run Command"**
-4. Run: `pnpm db:push`
+2. Go to **Settings** → **Environment Variables**
+3. Copy `DATABASE_URL` value
+4. In local terminal, set environment variable:
+   ```bash
+   export DATABASE_URL="postgresql://user:password@host:port/database"
+   pnpm db:push
+   ```
+
+**Option 3: Supabase Dashboard (If using Supabase Postgres)**
+1. Go to [supabase.com](https://supabase.com) → Your Project
+2. Go to **SQL Editor**
+3. Run the manual SQL migration (see below)
 
 ---
 
@@ -46,22 +52,30 @@ railway run pnpm db:push
 
 ### Step 1: Set DATABASE_URL
 
-**Option A: Environment Variable (Terminal)**
+**Option A: From Vercel (Get Production DATABASE_URL)**
 ```bash
-export DATABASE_URL="postgresql://user:password@localhost:5432/interpwhat"
+# Pull all environment variables from Vercel
+vercel env pull .env.local
+
+# DATABASE_URL will be in .env.local
+# Then run migration
+pnpm db:push
 ```
 
-**Option B: Environment Variable (.env file)**
+**Option B: From Supabase (If using Supabase Postgres)**
+1. Supabase Dashboard → Your Project → **Settings** → **Database**
+2. Find **Connection string** → **URI**
+3. Copy the connection string
+4. Set in terminal or `.env` file:
+   ```bash
+   export DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres"
+   ```
+
+**Option C: Environment Variable (.env file)**
 Create or update `.env` in project root:
 ```env
-DATABASE_URL=postgresql://user:password@localhost:5432/interpwhat
+DATABASE_URL=postgresql://user:password@host:port/database
 ```
-
-**Option C: Railway Database (Copy Connection String)**
-1. Railway Dashboard → Your Project → PostgreSQL Service
-2. Click **"Variables"** tab
-3. Copy `DATABASE_URL` value
-4. Use it in your local `.env` file
 
 ### Step 2: Run Migration
 
@@ -148,20 +162,20 @@ echo "DATABASE_URL=postgresql://user:password@host:port/database" >> .env
 
 **Solutions:**
 1. **Check database is running:**
-   ```bash
-   # Local PostgreSQL
-   pg_isready
-   
-   # Or check Railway/Vercel database status in dashboard
-   ```
+   - **Vercel Postgres:** Check Vercel dashboard → Storage → Postgres
+   - **Supabase Postgres:** Check Supabase dashboard → Database status
+   - **Local PostgreSQL:** `pg_isready`
 
 2. **Verify connection string format:**
    ```
    postgresql://username:password@host:port/database
    ```
+   - For Supabase: `postgresql://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres`
+   - Make sure password is URL-encoded if it contains special characters
 
 3. **Check firewall/network:**
-   - Railway/Vercel databases allow connections from anywhere
+   - Vercel Postgres: Allows connections from anywhere
+   - Supabase Postgres: Check connection pooling settings in Supabase dashboard
    - Local databases may need `localhost` or `127.0.0.1`
 
 ### Error: "Table already exists"
@@ -259,7 +273,7 @@ SELECT id, email, isBetaTester, credits FROM users WHERE "isBetaTester" = true;
 - [Beta Code System](BETA-CODE-SYSTEM.md) - How beta codes work
 - [Beta Code Migration](BETA-CODE-MIGRATION.md) - Migration details
 - [Launch Readiness](LAUNCH-READINESS.md) - Complete launch checklist
-- [Railway Deployment](RAILWAY-DEPLOYMENT.md) - Railway-specific setup
+- [Vercel Deployment](VERCEL-DEPLOYMENT.md) - Vercel-specific setup
 
 ---
 
