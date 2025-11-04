@@ -58,6 +58,10 @@ export async function createApp(): Promise<express.Express> {
   const { registerAdminRoutes } = await import("../routes/admin");
   registerAdminRoutes(app);
   
+  // Streaming routes (SSE for analysis progress)
+  const { registerStreamingRoutes } = await import("../routes/streaming");
+  registerStreamingRoutes(app);
+  
   // tRPC API
   app.use(
     "/api/trpc",

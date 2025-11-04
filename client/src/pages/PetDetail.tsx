@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
+import { Toggle } from "@/components/ui/toggle";
 import { trpc } from "@/lib/trpc";
-import { PawPrint, ArrowLeft, Upload, Sparkles, Clock, X } from "lucide-react";
+import { PawPrint, ArrowLeft, Upload, Sparkles, Clock, X, Zap } from "lucide-react";
 import { PetTimeline } from "@/components/PetTimeline";
 import Reminders from "@/components/Reminders";
 import { useState, useRef, useEffect } from "react";
@@ -14,16 +15,17 @@ import { Link, useLocation, useParams } from "wouter";
 import { APP_TITLE } from "@/const";
 import { toast } from "sonner";
 
-// Analysis status messages that progress over time
-const ANALYSIS_STATUS_MESSAGES = [
-  { time: 0, message: "Uploading your photo...", progress: 10 },
-  { time: 2, message: "Checking photo quality...", progress: 20 },
-  { time: 5, message: "Analyzing pet's expression...", progress: 35 },
-  { time: 8, message: "Understanding body language...", progress: 50 },
-  { time: 12, message: "Processing behavioral patterns...", progress: 65 },
-  { time: 16, message: "Generating insights...", progress: 80 },
-  { time: 20, message: "Almost done...", progress: 95 },
-];
+// Stage-based status messages for real-time progress
+const STAGE_STATUS_MESSAGES: Record<string, string> = {
+  start: "Initializing analysis...",
+  vision: "Analyzing pet's expression and body language...",
+  context: "Understanding breed and context...",
+  synthesis: "Generating behavioral insights...",
+  recommendations: "Preparing recommendations...",
+  voice: "Creating personality-based interpretation...",
+  complete: "Analysis complete!",
+  error: "Analysis failed",
+};
 
 export default function PetDetail() {
   const { id } = useParams<{ id: string }>();
@@ -34,13 +36,13 @@ export default function PetDetail() {
   const [uploading, setUploading] = useState(false);
   const [photoDate, setPhotoDate] = useState<string>("");
   const [petAgeAtPhoto, setPetAgeAtPhoto] = useState<string>("");
+  const [quickMode, setQuickMode] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisStatus, setAnalysisStatus] = useState("");
-  const [analysisStartTime, setAnalysisStartTime] = useState<number | null>(null);
-  const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState<number | null>(null);
+  const [currentStage, setCurrentStage] = useState<string>("");
+  const eventSourceRef = useRef<EventSource | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
   const { data: pet, isLoading: petLoading } = trpc.pets.list.useQuery(undefined, {
@@ -55,103 +57,17 @@ export default function PetDetail() {
     }
   );
 
-  // Cleanup progress interval on unmount
+  // Cleanup EventSource on unmount
   useEffect(() => {
     return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
       }
     };
   }, []);
 
-  // Update progress and status messages during analysis
-  useEffect(() => {
-    if (!uploading || !analysisStartTime) return;
-
-    const startProgressTracking = () => {
-      const startTime = Date.now();
-      
-      progressIntervalRef.current = setInterval(() => {
-        const elapsed = (Date.now() - startTime) / 1000; // seconds
-        
-        // Find the appropriate status message based on elapsed time
-        let currentStatus = ANALYSIS_STATUS_MESSAGES[0];
-        for (let i = ANALYSIS_STATUS_MESSAGES.length - 1; i >= 0; i--) {
-          if (elapsed >= ANALYSIS_STATUS_MESSAGES[i].time) {
-            currentStatus = ANALYSIS_STATUS_MESSAGES[i];
-            break;
-          }
-        }
-
-        setAnalysisStatus(currentStatus.message);
-        setAnalysisProgress(currentStatus.progress);
-
-        // Estimate remaining time (analysis takes 15-25 seconds, average 20 seconds)
-        const avgAnalysisTime = 20;
-        const remaining = Math.max(0, avgAnalysisTime - elapsed);
-        setEstimatedTimeRemaining(Math.ceil(remaining));
-
-        // Cap progress at 95% until actually complete
-        if (currentStatus.progress >= 95) {
-          setAnalysisProgress(95);
-        }
-      }, 500); // Update every 500ms for smooth progress
-    };
-
-    startProgressTracking();
-
-    return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-    };
-  }, [uploading, analysisStartTime]);
-
-  const createAnalysis = trpc.analysis.create.useMutation({
-    onSuccess: (data) => {
-      // Clear progress tracking
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-      setAnalysisProgress(100);
-      setAnalysisStatus("Analysis complete!");
-      setUploading(false);
-      setAnalysisStartTime(null);
-      setEstimatedTimeRemaining(null);
-      
-      toast.success("Analysis complete!");
-      
-      // Small delay to show 100% completion, then navigate
-      setTimeout(() => {
-        setLocation(`/analysis/${data.analysis.id}`);
-      }, 500);
-    },
-    onError: (error) => {
-      // Clear progress tracking
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-      setUploading(false);
-      setAnalysisStartTime(null);
-      setEstimatedTimeRemaining(null);
-      setAnalysisProgress(0);
-      setAnalysisStatus("");
-      
-      // User-friendly error messages
-      let errorMessage = "Analysis failed";
-      if (error.message.includes("Pet not found") || error.message.includes("access denied")) {
-        errorMessage = "Unable to analyze this pet. Please try again or contact support.";
-      } else if (error.message.includes("credits") || error.message.includes("balance")) {
-        errorMessage = "Insufficient credits. Please purchase more credits to continue.";
-      } else if (error.message.includes("network") || error.message.includes("timeout")) {
-        errorMessage = "Network error. Please check your connection and try again.";
-      } else {
-        errorMessage = `Analysis failed: ${error.message}`;
-      }
-      
-      toast.error(errorMessage);
-    },
-  });
+  const validatePhoto = trpc.analysis.validatePhoto.useMutation();
 
   const validateAndSetFile = (selectedFile: File) => {
     // Validate file type
@@ -210,16 +126,33 @@ export default function PetDetail() {
     }
   };
 
-  const validatePhoto = trpc.analysis.validatePhoto.useMutation();
+  // Function to get status message based on stage
+  const getStatusMessage = (stage: string, data?: any): string => {
+    if (stage === "vision" && data?.status === "analyzing") {
+      return "Analyzing pet's expression and body language...";
+    }
+    if (stage === "context" && data?.status === "analyzing") {
+      return "Understanding breed characteristics and context...";
+    }
+    if (stage === "synthesis" && data?.status === "analyzing") {
+      return "Generating behavioral insights...";
+    }
+    if (stage === "recommendations" && data?.status === "analyzing") {
+      return "Preparing recommendations...";
+    }
+    if (stage === "voice" && data?.status === "analyzing") {
+      return "Creating personality-based interpretation...";
+    }
+    return STAGE_STATUS_MESSAGES[stage] || "Processing...";
+  };
 
   const handleUpload = async () => {
     if (!file || !pet) return;
 
     setUploading(true);
-    setAnalysisStartTime(Date.now());
     setAnalysisProgress(0);
-    setAnalysisStatus(ANALYSIS_STATUS_MESSAGES[0].message);
-    setEstimatedTimeRemaining(20); // Initial estimate
+    setAnalysisStatus("Uploading file...");
+    setCurrentStage("start");
 
     try {
       // Upload file to server
@@ -243,20 +176,15 @@ export default function PetDetail() {
       // Validate photo quality for images (skip for videos)
       if (mediaType === "image") {
         setAnalysisStatus("Checking photo quality...");
-        setAnalysisProgress(15);
+        setAnalysisProgress(10);
         
         const qualityCheck = await validatePhoto.mutateAsync({ imageUrl: url });
 
         if (!qualityCheck.canProceed) {
-          // Clear progress tracking
-          if (progressIntervalRef.current) {
-            clearInterval(progressIntervalRef.current);
-          }
           setUploading(false);
-          setAnalysisStartTime(null);
-          setEstimatedTimeRemaining(null);
           setAnalysisProgress(0);
           setAnalysisStatus("");
+          setCurrentStage("");
           
           toast.error("Photo quality issue detected", {
             description: qualityCheck.issues.join(", "),
@@ -281,28 +209,102 @@ export default function PetDetail() {
         }
       }
 
-      // Create analysis (this will take 15-25 seconds)
-      setAnalysisStatus("Starting analysis...");
-      createAnalysis.mutate({
+      // Start SSE streaming for analysis progress
+      setAnalysisStatus("Connecting to analysis server...");
+      setAnalysisProgress(15);
+
+      // Build query parameters for SSE endpoint
+      const params = new URLSearchParams({
         petId: pet.id,
         mediaUrl: url,
         mediaType,
-        userContext: userContext.trim() || undefined,
-        photoDate: photoDate ? new Date(photoDate) : undefined,
-        petAgeAtPhoto: petAgeAtPhoto.trim() || undefined,
+        ...(userContext.trim() && { userContext: userContext.trim() }),
+        ...(photoDate && { photoDate }),
+        ...(petAgeAtPhoto && { petAgeAtPhoto }),
+        ...(quickMode && { quickMode: "true" }),
       });
+
+      // Create EventSource for SSE streaming
+      const eventSource = new EventSource(`/api/analysis/stream?${params.toString()}`);
+      eventSourceRef.current = eventSource;
+
+      eventSource.onmessage = (event) => {
+        try {
+          const eventData = JSON.parse(event.data);
+          const { stage, data, progress } = eventData;
+
+          setCurrentStage(stage);
+          setAnalysisProgress(progress || 0);
+          setAnalysisStatus(getStatusMessage(stage, data));
+
+          if (stage === "complete") {
+            // Analysis complete - navigate to results page
+            eventSource.close();
+            eventSourceRef.current = null;
+            
+            setAnalysisProgress(100);
+            setAnalysisStatus("Analysis complete!");
+            setUploading(false);
+            
+            toast.success("Analysis complete!");
+            
+            // Navigate to results page
+            setTimeout(() => {
+              if (eventData.analysisId) {
+                setLocation(`/analysis/${eventData.analysisId}`);
+              }
+            }, 500);
+          } else if (stage === "error") {
+            // Error occurred
+            eventSource.close();
+            eventSourceRef.current = null;
+            
+            setUploading(false);
+            setAnalysisProgress(0);
+            setAnalysisStatus("");
+            setCurrentStage("");
+            
+            const errorMessage = eventData.error || "Analysis failed. Please try again.";
+            
+            // User-friendly error messages
+            let friendlyMessage = errorMessage;
+            if (errorMessage.includes("credits") || errorMessage.includes("balance")) {
+              friendlyMessage = "Insufficient credits. Please purchase more credits to continue.";
+            } else if (errorMessage.includes("Pet not found") || errorMessage.includes("Access denied")) {
+              friendlyMessage = "Unable to analyze this pet. Please try again or contact support.";
+            }
+            
+            toast.error(friendlyMessage);
+          }
+        } catch (error) {
+          console.error("Error parsing SSE event:", error);
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error("SSE connection error:", error);
+        eventSource.close();
+        eventSourceRef.current = null;
+        
+        setUploading(false);
+        setAnalysisProgress(0);
+        setAnalysisStatus("");
+        setCurrentStage("");
+        
+        toast.error("Connection error. Please check your internet and try again.");
+      };
     } catch (error) {
       console.error("Upload error:", error);
       
-      // Clear progress tracking
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
       }
+      
       setUploading(false);
-      setAnalysisStartTime(null);
-      setEstimatedTimeRemaining(null);
       setAnalysisProgress(0);
       setAnalysisStatus("");
+      setCurrentStage("");
       
       const errorMessage = error instanceof Error 
         ? error.message 
@@ -312,16 +314,17 @@ export default function PetDetail() {
   };
 
   const handleCancelAnalysis = () => {
-    // Note: We can't actually cancel the backend operation, but we can stop showing progress
-    // The analysis will complete in the background, and we'll show a notification when done
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
+    // Close SSE connection
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
     }
+    
+    // Note: Analysis continues in background, but we stop showing progress
     setUploading(false);
-    setAnalysisStartTime(null);
-    setEstimatedTimeRemaining(null);
     setAnalysisProgress(0);
     setAnalysisStatus("");
+    setCurrentStage("");
     
     toast.info("Analysis continues in the background. You'll be notified when it's complete.");
   };
@@ -405,10 +408,33 @@ export default function PetDetail() {
                 Upload a photo or video to understand {pet.name}'s behavior
               </CardDescription>
               <p className="text-sm text-muted-foreground mt-2">
-                <strong>How it works:</strong> Upload a photo of {pet.name}. Our AI will tell you what they're thinking or feeling in about 20 seconds.
+                <strong>How it works:</strong> Upload a photo of {pet.name}. Our AI will tell you what they're thinking or feeling in about {quickMode ? "8" : "20"} seconds.
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Quick Mode Toggle */}
+              <div className="flex items-center justify-between p-4 bg-accent/10 rounded-lg border border-accent/20">
+                <div className="flex items-center gap-3">
+                  <Zap className="w-5 h-5 text-accent" />
+                  <div>
+                    <Label htmlFor="quickMode" className="text-sm font-semibold cursor-pointer">
+                      Quick Mode
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Faster analysis (5-8s) with basic insights, skip detailed recommendations
+                    </p>
+                  </div>
+                </div>
+                <Toggle
+                  id="quickMode"
+                  pressed={quickMode}
+                  onPressedChange={setQuickMode}
+                  aria-label="Toggle Quick Mode"
+                >
+                  {quickMode ? "On" : "Off"}
+                </Toggle>
+              </div>
+
               {/* File Upload */}
               <div className="space-y-4">
                 <Label>Media Upload</Label>
@@ -540,32 +566,35 @@ export default function PetDetail() {
                 {uploading ? (
                   <>
                     <Sparkles className="w-6 h-6 mr-2 animate-spin" />
-                    Analyzing... Please wait
+                    {analysisStatus || "Analyzing... Please wait"}
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-6 h-6 mr-2" />
-                    Click to Analyze {pet.name}'s Behavior
+                    Click to Analyze {pet.name}'s Behavior {quickMode && "(Quick Mode)"}
                   </>
                 )}
               </Button>
 
               {/* Analysis Progress Bar */}
-              {uploading && analysisStartTime && (
+              {uploading && (
                 <div className="mt-6 space-y-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-semibold">Analysis in Progress</h3>
-                    {estimatedTimeRemaining !== null && (
-                      <span className="text-xs text-muted-foreground">
-                        ~{estimatedTimeRemaining}s remaining
-                      </span>
-                    )}
+                    <span className="text-xs text-muted-foreground">
+                      {analysisProgress}%
+                    </span>
                   </div>
                   <Progress value={analysisProgress} className="h-2" />
                   <p className="text-sm text-muted-foreground flex items-center gap-2">
                     <Sparkles className="w-4 h-4 animate-spin text-primary" />
-                    {analysisStatus}
+                    {analysisStatus || "Processing..."}
                   </p>
+                  {currentStage && (
+                    <div className="text-xs text-muted-foreground">
+                      <span className="font-medium">Stage:</span> {currentStage}
+                    </div>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
