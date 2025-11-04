@@ -27,6 +27,13 @@ This directory contains all current InterpWhat documentation, organized by categ
 - **[Development Best Practices](./BEST-PRACTICES.md)** - Standards, conventions, and guidelines for development
 - **[Context Management Guide](./CONTEXT-MANAGEMENT.md)** - **IMPORTANT**: Context usage guidelines and reset procedures
 
+### Testing & Quality Assurance
+- **[Testing Strategy](./TESTING-STRATEGY.md)** - Comprehensive testing plan for all phases
+- **[Phase 3 Implementation Guide](./PHASE-3-IMPLEMENTATION.md)** - Phase 3 Soft Launch Beta setup and execution
+- **[Phase 3 Tracking Template](./PHASE-3-TRACKING-TEMPLATE.md)** - Metrics and issue tracking for Phase 3
+- **[Beta Tester Onboarding](./BETA-TESTER-ONBOARDING.md)** - Guide for beta testers
+- **[Phase 3 Summary](./PHASE-3-SUMMARY.md)** - Phase 3 implementation overview
+
 ### Marketing Materials
 Located in `/home/ubuntu/InterpWhat-Marketing/`:
 - **[Launch Package Summary](../InterpWhat-Marketing/LAUNCH-PACKAGE-SUMMARY.md)** - Complete launch plan and materials
