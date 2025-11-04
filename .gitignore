@@ -107,3 +107,4 @@ supabase/.temp/
 *.sqlite
 *.sqlite3
 .vercel
+.env*.local

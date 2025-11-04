@@ -8,6 +8,13 @@
       "when": 1761694744551,
       "tag": "0000_fearless_layla_miller",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1762236730185,
+      "tag": "0001_solid_night_thrasher",
+      "breakpoints": true
     }
   ]
 }
