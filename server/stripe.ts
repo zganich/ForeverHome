@@ -58,6 +58,7 @@ export const SUBSCRIPTION_PLANS = {
       "Pet timeline",
     ],
     analysisLimit: 15,
+    shelterDonationPercent: 10, // 10% to shelters
   },
   premium: {
     id: "premium",
@@ -75,6 +76,45 @@ export const SUBSCRIPTION_PLANS = {
     ],
     analysisLimit: -1, // unlimited
     badge: "POPULAR",
+    shelterDonationPercent: 10, // 10% to shelters
+  },
+  realtime: {
+    id: "realtime",
+    name: "Real-Time Premium",
+    price: 3999, // $39.99/month in cents
+    priceDisplay: "$39.99",
+    interval: "month" as const,
+    features: [
+      "5 hours real-time monitoring/month",
+      "Unlimited standard analyses",
+      "Live behavior insights (< 5 seconds)",
+      "All Premium features",
+      "Priority support",
+      "Advanced analytics",
+    ],
+    analysisLimit: -1, // unlimited standard analyses
+    realtimeHours: 5, // 5 hours per month
+    badge: "NEW",
+    shelterDonationPercent: 10, // 10% to shelters = $4.00/month
+  },
+  ultimate: {
+    id: "ultimate",
+    name: "Ultimate Real-Time",
+    price: 7999, // $79.99/month in cents
+    priceDisplay: "$79.99",
+    interval: "month" as const,
+    features: [
+      "15 hours real-time monitoring/month",
+      "Unlimited standard analyses",
+      "Live behavior insights (< 5 seconds)",
+      "All Premium features",
+      "Advanced analytics dashboard",
+      "Priority support",
+    ],
+    analysisLimit: -1,
+    realtimeHours: 15, // 15 hours per month
+    badge: "PREMIUM",
+    shelterDonationPercent: 10, // 10% to shelters = $8.00/month
   },
   shelter: {
     id: "shelter",
@@ -90,7 +130,7 @@ export const SUBSCRIPTION_PLANS = {
       "Perfect for new adopters",
     ],
     analysisLimit: -1,
-    shelterDonation: 1000, // $10 in cents
+    shelterDonation: 1000, // $10 in cents (fixed amount)
   },
 } as const;
 

@@ -25,7 +25,7 @@ export async function storagePut(
   try {
     // Convert data to format that @vercel/blob accepts
     // The put() function can accept Buffer, Blob, File, or ReadableStream
-    let blobData: Blob | Buffer | Uint8Array;
+    let blobData: Blob | Buffer;
     
     if (typeof data === 'string') {
       blobData = new Blob([data], { type: contentType });

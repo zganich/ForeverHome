@@ -110,12 +110,15 @@ export type InsertReminder = typeof reminders.$inferInsert;
 /**
  * Purchases
  */
+export const purchaseStatusEnum = pgEnum("purchase_status", ["pending", "completed", "failed"]);
+
 export const purchases = pgTable("purchases", {
   id: varchar("id", { length: 64 }).primaryKey(),
   userId: varchar("userId", { length: 64 }).notNull().references(() => users.id),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   credits: integer("credits").notNull(),
   stripePaymentId: varchar("stripePaymentId", { length: 255 }),
+  status: purchaseStatusEnum("status").default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow(),
 });
 

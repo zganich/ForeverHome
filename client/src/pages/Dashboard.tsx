@@ -94,7 +94,7 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             )}
-            <span className="text-sm text-muted-foreground hidden md:block">Hi, {user?.name || "there"}!</span>
+            <span className="text-sm text-muted-foreground hidden md:block">Hi, {user?.user_metadata?.name || user?.email?.split('@')[0] || "there"}!</span>
             <Button variant="outline" onClick={() => signOut()}>
               Sign Out
             </Button>

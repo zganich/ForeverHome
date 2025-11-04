@@ -69,7 +69,7 @@ export function registerAdminRoutes(app: Express) {
       const adopterSignupsResult = await db
         .select({ count: sql<number>`count(*)` })
         .from(adoptionVerifications)
-        .where(eq(adoptionVerifications.status, 'verified'));
+        .where(eq(adoptionVerifications.status, 'approved'));
       const totalAdopterSignups = Number(adopterSignupsResult[0]?.count || 0);
 
       // Calculate shelter revenue share (10% of rescue adopter revenue)

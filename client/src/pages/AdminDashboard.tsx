@@ -3,8 +3,48 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BarChart3, Users, DollarSign, TrendingUp, Download, RefreshCw } from "lucide-react";
 
+interface AdminStats {
+  totalUsers: number;
+  totalRevenue: number;
+  activeSubscriptions: number;
+  rescueAdopters: number;
+  shelterPartners: number;
+  monthlyGrowth: number;
+  churnRate: number;
+  avgLifetimeValue: number;
+  premiumRevenue: number;
+  essentialRevenue: number;
+  rescueRevenue: number;
+  shelterOrgRevenue: number;
+  totalAdopterSignups: number;
+  shelterRevenueShare: number;
+  avgSignupRate: number;
+  topShelter: string;
+  recentActivity: Array<{ type: string; user: string; value: string; timestamp: string }>;
+}
+
+const defaultStats: AdminStats = {
+  totalUsers: 0,
+  totalRevenue: 0,
+  activeSubscriptions: 0,
+  rescueAdopters: 0,
+  shelterPartners: 0,
+  monthlyGrowth: 0,
+  churnRate: 0,
+  avgLifetimeValue: 0,
+  premiumRevenue: 0,
+  essentialRevenue: 0,
+  rescueRevenue: 0,
+  shelterOrgRevenue: 0,
+  totalAdopterSignups: 0,
+  shelterRevenueShare: 0,
+  avgSignupRate: 0,
+  topShelter: "N/A",
+  recentActivity: []
+};
+
 export default function AdminDashboard() {
-  const { data: analytics, isLoading, refetch } = useQuery({
+  const { data: analytics, isLoading, refetch } = useQuery<AdminStats>({
     queryKey: ["/api/admin/analytics"],
   });
 
@@ -16,16 +56,7 @@ export default function AdminDashboard() {
     );
   }
 
-  const stats = analytics || {
-    totalUsers: 0,
-    totalRevenue: 0,
-    activeSubscriptions: 0,
-    rescueAdopters: 0,
-    shelterPartners: 0,
-    monthlyGrowth: 0,
-    churnRate: 0,
-    avgLifetimeValue: 0
-  };
+  const stats: AdminStats = analytics || defaultStats;
 
   return (
     <div className="container mx-auto px-6 py-8">

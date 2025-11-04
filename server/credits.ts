@@ -94,7 +94,7 @@ export async function createPurchase(data: {
     id: purchaseId,
     userId: data.userId,
     stripePaymentId: data.stripePaymentId,
-    amount: data.amount,
+    amount: data.amount.toString(), // Convert number to string for decimal type
     credits: data.credits,
     status: data.status || "pending",
   };
