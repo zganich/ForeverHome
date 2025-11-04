@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import MainNavigation from "@/components/MainNavigation";
 import { APP_TITLE } from "@/const";
 import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
 import { PawPrint, Sparkles, Heart, TrendingUp, Shield, Users, Volume2, Mic, Bell, GitCompareArrows, Dog } from "lucide-react";
@@ -11,30 +12,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/10">
-      {/* Header */}
-      <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <PawPrint className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              {APP_TITLE}
-            </h1>
-          </div>
-          <div className="flex items-center gap-4">
-            {isAuthenticated ? (
-              <Button asChild>
-                <Link href="/dashboard">Dashboard</Link>
-              </Button>
-            ) : (
-              <Button asChild>
-                <Link href="/login">Sign In</Link>
-              </Button>
-            )}
-          </div>
-        </div>
-      </header>
+      <MainNavigation />
 
       {/* Hero Section */}
       <section className="container mx-auto px-6 py-20">

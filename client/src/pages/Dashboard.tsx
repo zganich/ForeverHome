@@ -17,6 +17,7 @@ import { trpc } from "@/lib/trpc";
 import { PawPrint, Plus, Sparkles, Upload, ShoppingCart, Gift, Coins, GitCompare } from "lucide-react";
 import { PhotoTips } from "@/components/PhotoTips";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
+import OnboardingModal from "@/components/OnboardingModal";
 import { Link } from "wouter";
 import { APP_TITLE } from "@/const";
 import { toast } from "sonner";
@@ -77,6 +78,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/10">
+      <OnboardingModal />
       {/* Header */}
       <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
