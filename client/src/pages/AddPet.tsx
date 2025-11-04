@@ -225,9 +225,12 @@ export default function AddPet() {
             </Link>
           </Button>
 
-          <div className="text-center space-y-2">
+          <div className="text-center space-y-3">
             <h2 className="text-4xl font-bold">Add Your Pet</h2>
-            <p className="text-muted-foreground">Tell us about your furry friend</p>
+            <p className="text-base text-muted-foreground">Tell us about your furry friend</p>
+            <p className="text-sm text-muted-foreground max-w-xl mx-auto">
+              <strong>Step by step:</strong> Enter your pet's name, choose if they're a dog or cat, and optionally add a photo. Everything else is optional!
+            </p>
           </div>
 
           <Card>
@@ -238,8 +241,9 @@ export default function AddPet() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name">
+                  <Label htmlFor="name" className="text-base font-semibold">
                     Pet Name <span className="text-destructive">*</span>
+                    <span className="text-xs text-muted-foreground font-normal ml-2">(Required)</span>
                   </Label>
                   <Input
                     id="name"
@@ -250,11 +254,12 @@ export default function AddPet() {
                       if (errors.name) setErrors({ ...errors, name: "" });
                     }}
                     required
-                    className={errors.name ? "border-destructive" : ""}
+                    className={`text-base min-h-[48px] ${errors.name ? "border-destructive" : ""}`}
                   />
                   {errors.name && (
-                    <p className="text-sm text-destructive">{errors.name}</p>
+                    <p className="text-base text-destructive font-medium">{errors.name}</p>
                   )}
+                  <p className="text-sm text-muted-foreground">Just type your pet's name here</p>
                 </div>
 
                 <div className="space-y-2">
@@ -419,10 +424,10 @@ export default function AddPet() {
                 </div>
 
                 <div className="flex gap-4 pt-4">
-                  <Button type="submit" className="flex-1" disabled={createPet.isPending}>
+                  <Button type="submit" size="lg" className="flex-1 text-base min-h-[48px]" disabled={createPet.isPending}>
                     {createPet.isPending ? "Adding..." : "Add Pet"}
                   </Button>
-                  <Button type="button" variant="outline" asChild>
+                  <Button type="button" variant="outline" size="lg" className="text-base min-h-[48px]" asChild>
                     <Link href="/dashboard">Cancel</Link>
                   </Button>
                 </div>

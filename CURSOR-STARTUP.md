@@ -99,22 +99,25 @@ bash scripts/setup-check.sh  # Verify setup
 
 ---
 
-## 🚨 Important Reminders
+## 🚨 Critical Reminders - READ FIRST
 
-1. **Version Control** (CRITICAL)
+1. **Context Management - PREVENTS HALLUCINATIONS** (MOST CRITICAL)
+   - **⚠️ 50% CONTEXT USAGE = MANDATORY STOP AND NEW CHAT**
+   - **Why**: Exceeding 50% causes hallucinations, incorrect code, and false memories
+   - **Check context usage regularly** (shown in Cursor UI - usually top-right)
+   - **At 40%**: ⚠️ Warning - Prepare to wrap up, DO NOT start new features
+   - **At 50%**: 🚨 STOP IMMEDIATELY - Complete current work, commit, push, start new chat
+   - **NEVER continue past 50%** - This WILL cause hallucinations and errors
+   - Reference files by path when possible instead of reading full contents
+   - See `docs/CONTEXT-MANAGEMENT.md` for complete reset checklist
+   - **If you see context > 50%, immediately stop and start a new chat**
+
+2. **Version Control** (CRITICAL)
    - **ALWAYS commit and push to GitHub** after completing any task or feature
    - Use descriptive commit messages (e.g., "feat: Add photo validation")
    - Push to `main` branch (Vercel auto-deploys from GitHub)
    - Never end a session with uncommitted work
    - See `.cursorrules` for complete workflow guidelines
-
-2. **Context Management** (CRITICAL)
-   - Monitor context usage (shown in Cursor UI)
-   - **MUST reset at 50% context usage** (hard limit, not a suggestion)
-   - At 40%: Prepare to wrap up current task
-   - At 50%: Complete work, commit, push to GitHub, then start new chat
-   - See `docs/CONTEXT-MANAGEMENT.md` for complete guidelines
-   - Reference files by path when possible instead of reading full contents
 
 3. **Documentation First**
    - Check `docs/` folder before asking questions

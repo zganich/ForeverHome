@@ -400,8 +400,13 @@ export default function PetDetail() {
           {/* Upload Section */}
           <Card className="border-2 border-primary/20">
             <CardHeader>
-              <CardTitle>Analyze Behavior</CardTitle>
-              <CardDescription>Upload a photo or video to understand {pet.name}'s behavior</CardDescription>
+              <CardTitle className="text-2xl">Analyze Behavior</CardTitle>
+              <CardDescription className="text-base">
+                Upload a photo or video to understand {pet.name}'s behavior
+              </CardDescription>
+              <p className="text-sm text-muted-foreground mt-2">
+                <strong>How it works:</strong> Upload a photo of {pet.name}. Our AI will tell you what they're thinking or feeling in about 20 seconds.
+              </p>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* File Upload */}
@@ -527,20 +532,20 @@ export default function PetDetail() {
 
               {/* Submit Button */}
               <Button
-                className="w-full"
+                className="w-full text-base min-h-[56px] text-lg"
                 size="lg"
                 onClick={handleUpload}
                 disabled={!file || uploading}
               >
                 {uploading ? (
                   <>
-                    <Sparkles className="w-5 h-5 mr-2 animate-spin" />
-                    Analyzing...
+                    <Sparkles className="w-6 h-6 mr-2 animate-spin" />
+                    Analyzing... Please wait
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-5 h-5 mr-2" />
-                    Analyze Behavior
+                    <Sparkles className="w-6 h-6 mr-2" />
+                    Click to Analyze {pet.name}'s Behavior
                   </>
                 )}
               </Button>

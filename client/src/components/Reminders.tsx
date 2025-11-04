@@ -114,20 +114,23 @@ export default function Reminders({ petId }: RemindersProps) {
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Reminder
+              <Button size="lg" className="text-base min-h-[48px]">
+                <Plus className="w-5 h-5 mr-2" />
+                Add Reminder (For Vet Visits, Medications, etc.)
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Add Reminder</DialogTitle>
-                <DialogDescription>Set a reminder for your pet's care needs</DialogDescription>
+                <DialogTitle className="text-2xl">Add Reminder</DialogTitle>
+                <DialogDescription className="text-base">
+                  Set a reminder for your pet's care needs. This will help you remember vet visits, medications, and other important dates.
+                </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">
-                    Title <span className="text-destructive">*</span>
+                  <Label htmlFor="title" className="text-base font-semibold">
+                    What do you need to remember? <span className="text-destructive">*</span>
+                    <span className="text-xs text-muted-foreground font-normal ml-2">(Required)</span>
                   </Label>
                   <Input
                     id="title"
@@ -135,7 +138,9 @@ export default function Reminders({ petId }: RemindersProps) {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     required
+                    className="text-base min-h-[48px]"
                   />
+                  <p className="text-sm text-muted-foreground">Type what you need to remember</p>
                 </div>
 
                 <div className="space-y-2">
@@ -197,12 +202,14 @@ export default function Reminders({ petId }: RemindersProps) {
                 </div>
 
                 <div className="flex gap-2 pt-4">
-                  <Button type="submit" className="flex-1" disabled={createReminder.isPending}>
+                  <Button type="submit" size="lg" className="flex-1 text-base min-h-[48px]" disabled={createReminder.isPending}>
                     {createReminder.isPending ? "Creating..." : "Create Reminder"}
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
+                    size="lg"
+                    className="text-base min-h-[48px]"
                     onClick={() => setIsAddDialogOpen(false)}
                   >
                     Cancel
@@ -217,9 +224,14 @@ export default function Reminders({ petId }: RemindersProps) {
         {isLoading ? (
           <p className="text-muted-foreground text-center py-8">Loading reminders...</p>
         ) : !reminders || reminders.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">
-            No reminders yet. Add one to get started!
-          </p>
+          <div className="text-center py-8 space-y-2">
+            <p className="text-base text-muted-foreground">
+              No reminders yet.
+            </p>
+            <p className="text-base text-muted-foreground">
+              Click "Add Reminder" above to set reminders for vet visits, medications, and other important dates.
+            </p>
+          </div>
         ) : (
           <div className="space-y-3">
             {reminders.map((reminder) => (

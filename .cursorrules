@@ -68,13 +68,15 @@ InterpWhat is an AI-powered pet behavior analysis platform that helps pet owners
    - Never leave uncommitted work at end of session
    - This keeps the repository current and provides version history
 
-4. **Context Management:**
-   - Monitor context usage (visible in Cursor)
-   - **CRITICAL**: Start new chat when context reaches 50% (hard limit)
-   - At 40% context: Prepare to wrap up current task
-   - At 50% context: Complete current work, commit, push to GitHub, and start new chat
+4. **Context Management (CRITICAL - Prevents Hallucinations):**
+   - **⚠️ 50% CONTEXT USAGE = HARD STOP - MANDATORY NEW CHAT**
+   - **Why this matters**: Exceeding 50% context causes hallucinations, incorrect code, and memory issues
+   - **At 40% context**: Prepare to wrap up current task - do NOT start new features
+   - **At 50% context**: STOP IMMEDIATELY - Complete current work, commit, push to GitHub, then start new chat
+   - Monitor context usage (visible in Cursor UI - check regularly)
    - Reference files by path rather than reading full contents when possible
-   - See `docs/CONTEXT-MANAGEMENT.md` for detailed guidelines
+   - **NEVER continue past 50%** - This will cause hallucinations and incorrect implementations
+   - See `docs/CONTEXT-MANAGEMENT.md` for complete guidelines and reset checklist
 
 ## Code Style Preferences
 - TypeScript strict mode enabled

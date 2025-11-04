@@ -108,8 +108,11 @@ export default function Dashboard() {
           {/* Welcome Section */}
           <div className="text-center space-y-4">
             <h2 className="text-4xl font-bold">Welcome to Your Pet Dashboard</h2>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-xl text-base text-muted-foreground">
               Add your pets and start understanding their behavior better.
+            </p>
+            <p className="text-base text-muted-foreground max-w-2xl mx-auto">
+              <strong>What you can do:</strong> Upload photos of your pet to see what they're thinking, set reminders for vet visits and medications, and track your pet's behavior over time.
             </p>
           </div>
 
@@ -200,9 +203,9 @@ export default function Dashboard() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-2xl font-semibold">Your Pets</h3>
-              <Button asChild>
+                                  <Button asChild size="lg" className="text-base min-h-[48px]">
                 <Link href="/pets/new">
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-5 h-5 mr-2" />
                   Add Pet
                 </Link>
               </Button>
