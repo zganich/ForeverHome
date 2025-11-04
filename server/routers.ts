@@ -129,11 +129,13 @@ export const appRouter = router({
           userContext: z.string().optional(),
           photoDate: z.date().optional(),
           petAgeAtPhoto: z.string().optional(),
+          quickMode: z.boolean().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
         const { getPet, createAnalysis } = await import("./db");
         const { analyzeBehavior } = await import("./aiAgents");
+        const { deductCredits } = await import("./credits");
 
         // Verify pet belongs to user
         const pet = await getPet(input.petId);
@@ -144,8 +146,21 @@ export const appRouter = router({
           throw new Error("You don't have permission to analyze this pet. Please contact support if you believe this is an error.");
         }
 
-        // Run AI agent swarm analysis
-        const result = await analyzeBehavior(input.mediaUrl, pet, input.userContext);
+        // Deduct credits before analysis
+        const creditsDeducted = await deductCredits(ctx.user.id, 1);
+        if (!creditsDeducted) {
+          throw new Error("Insufficient credits. Please purchase more credits or upgrade your plan.");
+        }
+
+        // Run AI agent swarm analysis with Phase 1 optimizations
+        const result = await analyzeBehavior(
+          input.mediaUrl, 
+          pet, 
+          input.userContext,
+          {
+            quickMode: input.quickMode,
+          }
+        );
 
         // Store analysis in database
         const analysis = await createAnalysis({

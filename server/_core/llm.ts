@@ -265,7 +265,7 @@ const normalizeResponseFormat = ({
   };
 };
 
-export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
+export async function invokeLLM(params: InvokeParams & { model?: string }): Promise<InvokeResult> {
   assertApiKey();
 
   const {
@@ -277,10 +277,15 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     output_schema,
     responseFormat,
     response_format,
+    model,
   } = params;
 
+  // Phase 1 Optimization: Use faster/cheaper models for non-critical agents
+  // Default to gemini-2.5-flash (fast and cost-effective), but allow override
+  const selectedModel = model || "gemini-2.5-flash";
+
   const payload: Record<string, unknown> = {
-    model: "gemini-2.5-flash",
+    model: selectedModel,
     messages: messages.map(normalizeMessage),
   };
 

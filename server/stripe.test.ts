@@ -62,13 +62,15 @@ describe("Stripe Configuration", () => {
       expect(pack.perAnalysis).toBe("$0.33");
     });
 
-    test("value pack has best per-analysis price", () => {
+    test("pricing improves with larger packs", () => {
       const starter = parseFloat(CREDIT_PACKS.starter.perAnalysis.replace("$", ""));
       const value = parseFloat(CREDIT_PACKS.value.perAnalysis.replace("$", ""));
       const power = parseFloat(CREDIT_PACKS.power.perAnalysis.replace("$", ""));
 
+      // Larger packs have better per-analysis pricing
       expect(value).toBeLessThan(starter);
-      expect(value).toBeLessThan(power);
+      expect(power).toBeLessThan(value);
+      expect(power).toBeLessThan(starter);
     });
   });
 
