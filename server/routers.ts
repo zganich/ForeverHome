@@ -137,8 +137,11 @@ export const appRouter = router({
 
         // Verify pet belongs to user
         const pet = await getPet(input.petId);
-        if (!pet || pet.userId !== ctx.user.id) {
-          throw new Error("Pet not found or access denied");
+        if (!pet) {
+          throw new Error("Pet not found. Please check that the pet exists and try again.");
+        }
+        if (pet.userId !== ctx.user.id) {
+          throw new Error("You don't have permission to analyze this pet. Please contact support if you believe this is an error.");
         }
 
         // Run AI agent swarm analysis
@@ -170,9 +173,12 @@ export const appRouter = router({
 
       // Verify pet belongs to user
       const pet = await getPet(input.petId);
-      if (!pet || pet.userId !== ctx.user.id) {
-        throw new Error("Pet not found or access denied");
-      }
+              if (!pet) {
+          throw new Error("Pet not found. Please check that the pet exists and try again.");
+        }
+        if (pet.userId !== ctx.user.id) {
+          throw new Error("You don't have permission to access this pet. Please contact support if you believe this is an error.");
+        }
 
       return getPetAnalyses(input.petId);
     }),
@@ -244,7 +250,7 @@ export const appRouter = router({
         );
 
         if (!checkoutUrl) {
-          throw new Error("Failed to create subscription checkout session");
+          throw new Error("Unable to create checkout session. Please try again or contact support if the problem persists.");
         }
 
         return { url: checkoutUrl };
@@ -267,7 +273,7 @@ export const appRouter = router({
         );
 
         if (!checkoutUrl) {
-          throw new Error("Failed to create checkout session");
+          throw new Error("Unable to process payment. Please check your payment information and try again.");
         }
 
         return { url: checkoutUrl };
@@ -289,7 +295,7 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const success = await activateBetaTester(ctx.user.id, input.code);
         if (!success) {
-          throw new Error("Invalid beta code");
+          throw new Error("Invalid or expired beta code. Please check your code and try again, or contact support if you believe this is an error.");
         }
         return { success: true };
       }),

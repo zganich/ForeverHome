@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { PawPrint, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { PawPrint, ArrowLeft, Upload } from "lucide-react";
+import { useState, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { APP_TITLE } from "@/const";
 import { toast } from "sonner";
@@ -22,6 +22,10 @@ export default function AddPet() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [identifyingBreed, setIdentifyingBreed] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
 
   const identifyBreedMutation = trpc.pets.identifyBreed.useMutation({
     onSuccess: (result) => {
@@ -36,15 +40,69 @@ export default function AddPet() {
     },
   });
 
+  const validateAndSetPhoto = (file: File) => {
+    // Validate file type
+    const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!validTypes.includes(file.type)) {
+      setErrors({ ...errors, photo: "Please upload an image (JPG, PNG, GIF, or WebP)" });
+      toast.error("Invalid file type. Please upload an image file.");
+      return false;
+    }
+    
+    // Validate file size (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      setErrors({ ...errors, photo: "File size must be less than 50MB" });
+      toast.error("File too large. Please compress your image or choose a smaller file.");
+      return false;
+    }
+    
+    setPhotoFile(file);
+    setErrors({ ...errors, photo: "" });
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    return true;
+  };
+
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setPhotoFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      validateAndSetPhoto(file);
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget as Node)) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFiles = e.dataTransfer.files;
+    if (droppedFiles && droppedFiles.length > 0) {
+      const droppedFile = droppedFiles[0];
+      if (validateAndSetPhoto(droppedFile)) {
+        toast.success("Photo selected!");
+      }
     }
   };
 
@@ -81,16 +139,50 @@ export default function AddPet() {
       setLocation(`/pets/${pet.id}`);
     },
     onError: (error) => {
-      toast.error(`Failed to add pet: ${error.message}`);
+      setErrors({});
+      
+      // Parse and display user-friendly error messages
+      let errorMessage = "Failed to add pet";
+      
+      if (error.message.includes("name") || error.message.includes("required")) {
+        setErrors({ name: "Pet name is required" });
+        errorMessage = "Please enter a name for your pet";
+      } else if (error.message.includes("species") || error.message.includes("invalid")) {
+        setErrors({ species: "Please select a valid species" });
+        errorMessage = "Please select a valid species";
+      } else if (error.message.includes("network") || error.message.includes("timeout")) {
+        errorMessage = "Network error. Please check your connection and try again.";
+      } else if (error.message.includes("unauthorized") || error.message.includes("auth")) {
+        errorMessage = "Please sign in to add a pet";
+      } else {
+        errorMessage = `Failed to add pet: ${error.message}`;
+      }
+      
+      toast.error(errorMessage);
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
+    
+    // Validate form fields
+    const newErrors: Record<string, string> = {};
+    
     if (!name.trim()) {
-      toast.error("Please enter your pet's name");
+      newErrors.name = "Please enter your pet's name";
+    } else if (name.trim().length < 2) {
+      newErrors.name = "Pet name must be at least 2 characters";
+    } else if (name.trim().length > 50) {
+      newErrors.name = "Pet name must be less than 50 characters";
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error("Please fix the errors below");
       return;
     }
+    
     createPet.mutate({
       name: name.trim(),
       species,
@@ -153,9 +245,16 @@ export default function AddPet() {
                     id="name"
                     placeholder="e.g., Buddy, Luna, Max"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      if (errors.name) setErrors({ ...errors, name: "" });
+                    }}
                     required
+                    className={errors.name ? "border-destructive" : ""}
                   />
+                  {errors.name && (
+                    <p className="text-sm text-destructive">{errors.name}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -177,19 +276,86 @@ export default function AddPet() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>Pet Photo (optional)</Label>
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoChange}
-                    />
-                    {photoPreview && (
-                      <div className="mt-2">
-                        <img
-                          src={photoPreview}
-                          alt="Pet preview"
-                          className="w-32 h-32 object-cover rounded-lg"
+                    {!photoPreview ? (
+                      <div
+                        ref={dropZoneRef}
+                        className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all ${
+                          isDragging
+                            ? "border-primary bg-primary/10 scale-105"
+                            : errors.photo
+                            ? "border-destructive bg-destructive/5"
+                            : "border-muted-foreground/25 hover:border-primary/50 hover:bg-primary/5"
+                        }`}
+                        onClick={() => fileInputRef.current?.click()}
+                        onDragEnter={handleDragEnter}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                      >
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            handlePhotoChange(e);
+                            if (errors.photo) setErrors({ ...errors, photo: "" });
+                          }}
+                          capture="environment"
+                          className="hidden"
+                        />
+                        <Upload className={`w-10 h-10 mx-auto mb-3 transition-transform ${isDragging ? "text-primary scale-110" : "text-muted-foreground"}`} />
+                        <p className="font-medium text-sm mb-1">
+                          {isDragging ? "Drop photo here" : "Click to upload or drag and drop"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          JPG, PNG, GIF, WebP • Max 50MB
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="relative inline-block">
+                          <img
+                            src={photoPreview}
+                            alt="Pet preview"
+                            className="w-32 h-32 object-cover rounded-lg border-2 border-primary/20"
+                          />
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                            onClick={() => {
+                              setPhotoPreview(null);
+                              setPhotoFile(null);
+                              if (fileInputRef.current) {
+                                fileInputRef.current.value = '';
+                              }
+                            }}
+                          >
+                            ×
+                          </Button>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          Change Photo
+                        </Button>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            handlePhotoChange(e);
+                            if (errors.photo) setErrors({ ...errors, photo: "" });
+                          }}
+                          capture="environment"
+                          className="hidden"
                         />
                       </div>
+                    )}
+                    {errors.photo && (
+                      <p className="text-sm text-destructive">{errors.photo}</p>
                     )}
                   </div>
 

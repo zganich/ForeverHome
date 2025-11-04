@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { APP_TITLE } from "@/const";
-import { Check, ArrowLeft, Sparkles } from "lucide-react";
+import { Check, ArrowLeft, Sparkles, Shield, Lock, CreditCard, Users } from "lucide-react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -111,10 +111,29 @@ export default function Subscribe() {
             <h2 className="text-4xl font-bold mb-4">
               Understand Your Pet Better
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-6">
               Choose the plan that works best for you and your furry companions.
               Every subscription helps support Chantell's family and no-kill animal shelters.
             </p>
+            {/* Trust Signals */}
+            <div className="flex flex-wrap justify-center items-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-green-600" />
+                <span>Secure Payments</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-green-600" />
+                <span>Cancel Anytime</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-green-600" />
+                <span>No Hidden Fees</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-green-600" />
+                <span>Trusted by Pet Owners</span>
+              </div>
+            </div>
           </div>
 
           {/* Free Tier */}
@@ -154,6 +173,100 @@ export default function Subscribe() {
                 </Button>
               </Link>
             </CardFooter>
+          </Card>
+
+          {/* Feature Comparison Table */}
+          <Card className="mb-8 overflow-hidden">
+            <CardHeader>
+              <CardTitle className="text-2xl text-center">Compare Plans</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left p-4 font-semibold">Features</th>
+                      <th className="text-center p-4 font-semibold">Free</th>
+                      <th className="text-center p-4 font-semibold">Essential</th>
+                      <th className="text-center p-4 font-semibold bg-purple-50">Premium</th>
+                      <th className="text-center p-4 font-semibold">Shelter Partner</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b">
+                      <td className="p-4 font-medium">Monthly Analyses</td>
+                      <td className="text-center p-4">3</td>
+                      <td className="text-center p-4">15</td>
+                      <td className="text-center p-4 bg-purple-50"><strong>Unlimited</strong></td>
+                      <td className="text-center p-4"><strong>Unlimited</strong></td>
+                    </tr>
+                    <tr className="border-b bg-muted/20">
+                      <td className="p-4 font-medium">Breed Identification</td>
+                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4 bg-purple-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="p-4 font-medium">Pet Timeline</td>
+                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4 bg-purple-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                    </tr>
+                    <tr className="border-b bg-muted/20">
+                      <td className="p-4 font-medium">Reminders & Notifications</td>
+                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4 bg-purple-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="p-4 font-medium">Photo Quality Check</td>
+                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4 bg-purple-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                    </tr>
+                    <tr className="border-b bg-muted/20">
+                      <td className="p-4 font-medium">Multi-Pet Comparison</td>
+                      <td className="text-center p-4">—</td>
+                      <td className="text-center p-4">—</td>
+                      <td className="text-center p-4 bg-purple-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="p-4 font-medium">Advanced Insights</td>
+                      <td className="text-center p-4">—</td>
+                      <td className="text-center p-4">—</td>
+                      <td className="text-center p-4 bg-purple-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                    </tr>
+                    <tr className="border-b bg-muted/20">
+                      <td className="p-4 font-medium">Medical Records Storage</td>
+                      <td className="text-center p-4">—</td>
+                      <td className="text-center p-4">—</td>
+                      <td className="text-center p-4 bg-purple-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="p-4 font-medium">Support</td>
+                      <td className="text-center p-4">Community</td>
+                      <td className="text-center p-4">Email</td>
+                      <td className="text-center p-4 bg-purple-50"><strong>Priority</strong></td>
+                      <td className="text-center p-4"><strong>Priority</strong></td>
+                    </tr>
+                    <tr className="bg-muted/20">
+                      <td className="p-4 font-medium">Shelter Donation</td>
+                      <td className="text-center p-4">—</td>
+                      <td className="text-center p-4">—</td>
+                      <td className="text-center p-4 bg-purple-50">—</td>
+                      <td className="text-center p-4">$10 (tax-deductible)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
           </Card>
 
           {/* Paid Plans */}
@@ -213,8 +326,21 @@ export default function Subscribe() {
             ))}
           </div>
 
+          {/* Money-Back Guarantee */}
+          <Card className="mt-8 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+            <CardContent className="pt-6 text-center">
+              <h3 className="text-xl font-bold mb-2 flex items-center justify-center gap-2">
+                <Shield className="w-6 h-6 text-green-600" />
+                30-Day Money-Back Guarantee
+              </h3>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Not satisfied? Get a full refund within 30 days, no questions asked. We're confident you'll love InterpWhat!
+              </p>
+            </CardContent>
+          </Card>
+
           {/* Social Impact Message */}
-          <div className="mt-12 text-center">
+          <div className="mt-8 text-center">
             <Card className="bg-gradient-to-r from-purple-50 to-peach-50 border-purple-200">
               <CardContent className="pt-6">
                 <h3 className="text-xl font-bold mb-2">Your Subscription Makes a Difference</h3>

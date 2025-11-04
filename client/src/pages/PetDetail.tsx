@@ -4,14 +4,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import { trpc } from "@/lib/trpc";
-import { PawPrint, ArrowLeft, Upload, Sparkles, Clock } from "lucide-react";
+import { PawPrint, ArrowLeft, Upload, Sparkles, Clock, X } from "lucide-react";
 import { PetTimeline } from "@/components/PetTimeline";
 import Reminders from "@/components/Reminders";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { APP_TITLE } from "@/const";
 import { toast } from "sonner";
+
+// Analysis status messages that progress over time
+const ANALYSIS_STATUS_MESSAGES = [
+  { time: 0, message: "Uploading your photo...", progress: 10 },
+  { time: 2, message: "Checking photo quality...", progress: 20 },
+  { time: 5, message: "Analyzing pet's expression...", progress: 35 },
+  { time: 8, message: "Understanding body language...", progress: 50 },
+  { time: 12, message: "Processing behavioral patterns...", progress: 65 },
+  { time: 16, message: "Generating insights...", progress: 80 },
+  { time: 20, message: "Almost done...", progress: 95 },
+];
 
 export default function PetDetail() {
   const { id } = useParams<{ id: string }>();
@@ -22,7 +34,14 @@ export default function PetDetail() {
   const [uploading, setUploading] = useState(false);
   const [photoDate, setPhotoDate] = useState<string>("");
   const [petAgeAtPhoto, setPetAgeAtPhoto] = useState<string>("");
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [analysisStatus, setAnalysisStatus] = useState("");
+  const [analysisStartTime, setAnalysisStartTime] = useState<number | null>(null);
+  const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
 
   const { data: pet, isLoading: petLoading } = trpc.pets.list.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -36,32 +55,158 @@ export default function PetDetail() {
     }
   );
 
+  // Cleanup progress interval on unmount
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, []);
+
+  // Update progress and status messages during analysis
+  useEffect(() => {
+    if (!uploading || !analysisStartTime) return;
+
+    const startProgressTracking = () => {
+      const startTime = Date.now();
+      
+      progressIntervalRef.current = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000; // seconds
+        
+        // Find the appropriate status message based on elapsed time
+        let currentStatus = ANALYSIS_STATUS_MESSAGES[0];
+        for (let i = ANALYSIS_STATUS_MESSAGES.length - 1; i >= 0; i--) {
+          if (elapsed >= ANALYSIS_STATUS_MESSAGES[i].time) {
+            currentStatus = ANALYSIS_STATUS_MESSAGES[i];
+            break;
+          }
+        }
+
+        setAnalysisStatus(currentStatus.message);
+        setAnalysisProgress(currentStatus.progress);
+
+        // Estimate remaining time (analysis takes 15-25 seconds, average 20 seconds)
+        const avgAnalysisTime = 20;
+        const remaining = Math.max(0, avgAnalysisTime - elapsed);
+        setEstimatedTimeRemaining(Math.ceil(remaining));
+
+        // Cap progress at 95% until actually complete
+        if (currentStatus.progress >= 95) {
+          setAnalysisProgress(95);
+        }
+      }, 500); // Update every 500ms for smooth progress
+    };
+
+    startProgressTracking();
+
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, [uploading, analysisStartTime]);
+
   const createAnalysis = trpc.analysis.create.useMutation({
     onSuccess: (data) => {
+      // Clear progress tracking
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      setAnalysisProgress(100);
+      setAnalysisStatus("Analysis complete!");
+      setUploading(false);
+      setAnalysisStartTime(null);
+      setEstimatedTimeRemaining(null);
+      
       toast.success("Analysis complete!");
-      setLocation(`/analysis/${data.analysis.id}`);
+      
+      // Small delay to show 100% completion, then navigate
+      setTimeout(() => {
+        setLocation(`/analysis/${data.analysis.id}`);
+      }, 500);
     },
     onError: (error) => {
-      toast.error(`Analysis failed: ${error.message}`);
+      // Clear progress tracking
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
       setUploading(false);
+      setAnalysisStartTime(null);
+      setEstimatedTimeRemaining(null);
+      setAnalysisProgress(0);
+      setAnalysisStatus("");
+      
+      // User-friendly error messages
+      let errorMessage = "Analysis failed";
+      if (error.message.includes("Pet not found") || error.message.includes("access denied")) {
+        errorMessage = "Unable to analyze this pet. Please try again or contact support.";
+      } else if (error.message.includes("credits") || error.message.includes("balance")) {
+        errorMessage = "Insufficient credits. Please purchase more credits to continue.";
+      } else if (error.message.includes("network") || error.message.includes("timeout")) {
+        errorMessage = "Network error. Please check your connection and try again.";
+      } else {
+        errorMessage = `Analysis failed: ${error.message}`;
+      }
+      
+      toast.error(errorMessage);
     },
   });
+
+  const validateAndSetFile = (selectedFile: File) => {
+    // Validate file type
+    const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "video/mp4", "video/quicktime"];
+    if (!validTypes.includes(selectedFile.type)) {
+      toast.error("Please upload an image (JPG, PNG, GIF, WebP) or video (MP4, MOV)");
+      return false;
+    }
+    // Validate file size (max 50MB)
+    if (selectedFile.size > 50 * 1024 * 1024) {
+      toast.error("File size must be less than 50MB. Please compress your file or choose a smaller one.");
+      return false;
+    }
+    setFile(selectedFile);
+    return true;
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      // Validate file type
-      const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "video/mp4", "video/quicktime"];
-      if (!validTypes.includes(selectedFile.type)) {
-        toast.error("Please upload an image (JPG, PNG, GIF, WebP) or video (MP4, MOV)");
-        return;
+      validateAndSetFile(selectedFile);
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set dragging to false if we're leaving the drop zone itself
+    if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget as Node)) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFiles = e.dataTransfer.files;
+    if (droppedFiles && droppedFiles.length > 0) {
+      const droppedFile = droppedFiles[0];
+      if (validateAndSetFile(droppedFile)) {
+        toast.success("File selected!");
       }
-      // Validate file size (max 50MB)
-      if (selectedFile.size > 50 * 1024 * 1024) {
-        toast.error("File size must be less than 50MB");
-        return;
-      }
-      setFile(selectedFile);
     }
   };
 
@@ -71,7 +216,10 @@ export default function PetDetail() {
     if (!file || !pet) return;
 
     setUploading(true);
-    toast.info("Uploading...");
+    setAnalysisStartTime(Date.now());
+    setAnalysisProgress(0);
+    setAnalysisStatus(ANALYSIS_STATUS_MESSAGES[0].message);
+    setEstimatedTimeRemaining(20); // Initial estimate
 
     try {
       // Upload file to server
@@ -84,7 +232,7 @@ export default function PetDetail() {
       });
 
       if (!uploadResponse.ok) {
-        throw new Error("Upload failed");
+        throw new Error("Upload failed. Please check your internet connection and try again.");
       }
 
       const { url } = await uploadResponse.json();
@@ -94,11 +242,22 @@ export default function PetDetail() {
 
       // Validate photo quality for images (skip for videos)
       if (mediaType === "image") {
-        toast.info("Checking photo quality...");
+        setAnalysisStatus("Checking photo quality...");
+        setAnalysisProgress(15);
+        
         const qualityCheck = await validatePhoto.mutateAsync({ imageUrl: url });
 
         if (!qualityCheck.canProceed) {
+          // Clear progress tracking
+          if (progressIntervalRef.current) {
+            clearInterval(progressIntervalRef.current);
+          }
           setUploading(false);
+          setAnalysisStartTime(null);
+          setEstimatedTimeRemaining(null);
+          setAnalysisProgress(0);
+          setAnalysisStatus("");
+          
           toast.error("Photo quality issue detected", {
             description: qualityCheck.issues.join(", "),
           });
@@ -122,9 +281,8 @@ export default function PetDetail() {
         }
       }
 
-      toast.info("Analyzing behavior...");
-
-      // Create analysis
+      // Create analysis (this will take 15-25 seconds)
+      setAnalysisStatus("Starting analysis...");
       createAnalysis.mutate({
         petId: pet.id,
         mediaUrl: url,
@@ -135,9 +293,37 @@ export default function PetDetail() {
       });
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("Failed to upload file");
+      
+      // Clear progress tracking
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
       setUploading(false);
+      setAnalysisStartTime(null);
+      setEstimatedTimeRemaining(null);
+      setAnalysisProgress(0);
+      setAnalysisStatus("");
+      
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Failed to upload file. Please check your internet connection and try again.";
+      toast.error(errorMessage);
     }
+  };
+
+  const handleCancelAnalysis = () => {
+    // Note: We can't actually cancel the backend operation, but we can stop showing progress
+    // The analysis will complete in the background, and we'll show a notification when done
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
+    setUploading(false);
+    setAnalysisStartTime(null);
+    setEstimatedTimeRemaining(null);
+    setAnalysisProgress(0);
+    setAnalysisStatus("");
+    
+    toast.info("Analysis continues in the background. You'll be notified when it's complete.");
   };
 
   if (!isAuthenticated) {
@@ -222,36 +408,65 @@ export default function PetDetail() {
               <div className="space-y-4">
                 <Label>Media Upload</Label>
                 <div
-                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                    file ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"
+                  ref={dropZoneRef}
+                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${
+                    isDragging
+                      ? "border-primary bg-primary/10 scale-105"
+                      : file
+                      ? "border-primary bg-primary/5"
+                      : "border-muted-foreground/25 hover:border-primary/50 hover:bg-primary/5"
                   }`}
                   onClick={() => fileInputRef.current?.click()}
+                  onDragEnter={handleDragEnter}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
                 >
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept="image/*,video/*"
                     onChange={handleFileSelect}
+                    capture="environment"
                     className="hidden"
                   />
                   {file ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Upload className="w-12 h-12 text-primary mx-auto" />
-                      <p className="font-medium">{file.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {(file.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setFile(null); }}>
+                      <div>
+                        <p className="font-medium text-base">{file.name}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {(file.size / 1024 / 1024).toFixed(2)} MB • {file.type.split('/')[0].toUpperCase()}
+                        </p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setFile(null);
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = '';
+                          }
+                        }}
+                      >
                         Change File
                       </Button>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      <Upload className="w-12 h-12 text-muted-foreground mx-auto" />
-                      <p className="font-medium">Click to upload or drag and drop</p>
-                      <p className="text-sm text-muted-foreground">
-                        Images (JPG, PNG, GIF, WebP) or Videos (MP4, MOV) up to 50MB
-                      </p>
+                    <div className="space-y-3">
+                      <Upload className={`w-12 h-12 mx-auto transition-transform ${isDragging ? "text-primary scale-110" : "text-muted-foreground"}`} />
+                      <div>
+                        <p className="font-medium text-base">
+                          {isDragging ? "Drop file here" : "Click to upload or drag and drop"}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Images (JPG, PNG, GIF, WebP) or Videos (MP4, MOV)
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Maximum file size: 50MB
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -329,6 +544,37 @@ export default function PetDetail() {
                   </>
                 )}
               </Button>
+
+              {/* Analysis Progress Bar */}
+              {uploading && analysisStartTime && (
+                <div className="mt-6 space-y-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold">Analysis in Progress</h3>
+                    {estimatedTimeRemaining !== null && (
+                      <span className="text-xs text-muted-foreground">
+                        ~{estimatedTimeRemaining}s remaining
+                      </span>
+                    )}
+                  </div>
+                  <Progress value={analysisProgress} className="h-2" />
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 animate-spin text-primary" />
+                    {analysisStatus}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancelAnalysis}
+                    className="w-full"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel (continues in background)
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    💡 You can navigate away. We'll notify you when the analysis is complete.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

@@ -243,20 +243,38 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : (
-              <Card className="border-2 border-dashed">
-                <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-                  <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
-                    <PawPrint className="w-10 h-10 text-muted-foreground" />
+              <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5">
+                <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-6">
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center animate-pulse">
+                    <PawPrint className="w-12 h-12 text-primary" />
                   </div>
-                  <div>
-                    <h4 className="text-xl font-semibold mb-2">No pets yet</h4>
-                    <p className="text-muted-foreground mb-6">Add your first pet to start analyzing their behavior.</p>
-                    <Button asChild>
+                  <div className="space-y-3 max-w-md">
+                    <h4 className="text-2xl font-bold">Welcome to InterpWhat! 🐾</h4>
+                    <p className="text-muted-foreground text-lg">
+                      Ready to understand your pet better? Add your first furry friend to get started with AI-powered behavior analysis.
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                    <Button asChild size="lg" className="text-base px-8">
                       <Link href="/pets/new">
-                        <Plus className="w-4 h-4 mr-2" />
+                        <Plus className="w-5 h-5 mr-2" />
                         Add Your First Pet
                       </Link>
                     </Button>
+                    <Button asChild variant="outline" size="lg" className="text-base px-8">
+                      <a href="#how-it-works">
+                        Learn How It Works
+                      </a>
+                    </Button>
+                  </div>
+                  <div className="pt-4 space-y-2 text-sm text-muted-foreground max-w-md">
+                    <p className="font-semibold">What you can do:</p>
+                    <ul className="space-y-1 text-left list-disc list-inside">
+                      <li>Analyze your pet's behavior from photos</li>
+                      <li>Identify breeds with AI</li>
+                      <li>Track behavior patterns over time</li>
+                      <li>Get personalized care recommendations</li>
+                    </ul>
                   </div>
                 </CardContent>
               </Card>
