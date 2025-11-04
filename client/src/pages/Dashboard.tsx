@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
 import { PawPrint, Plus, Sparkles, Upload, ShoppingCart, Gift, Coins, GitCompare } from "lucide-react";
 import { PhotoTips } from "@/components/PhotoTips";
+import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { Link } from "wouter";
 import { APP_TITLE } from "@/const";
 import { toast } from "sonner";
@@ -95,6 +96,7 @@ export default function Dashboard() {
               </Card>
             )}
             <span className="text-sm text-muted-foreground hidden md:block">Hi, {user?.user_metadata?.name || user?.email?.split('@')[0] || "there"}!</span>
+            <FeedbackWidget />
             <Button variant="outline" onClick={() => signOut()}>
               Sign Out
             </Button>

@@ -162,3 +162,27 @@ export async function updateAnalysisFeedback(
 
   await db.update(analyses).set({ userFeedback: feedback }).where(eq(analyses.id, analysisId));
 }
+
+// ===== FEEDBACK QUERIES =====
+
+import { feedback, InsertFeedback, Feedback } from "../drizzle/schema";
+
+export async function createFeedback(data: Omit<InsertFeedback, "id">): Promise<Feedback> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const feedbackEntry: InsertFeedback = {
+    id: nanoid(),
+    ...data,
+  };
+
+  await db.insert(feedback).values(feedbackEntry);
+  return feedbackEntry as Feedback;
+}
+
+export async function getUserFeedback(userId: string): Promise<Feedback[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(feedback).where(eq(feedback.userId, userId)).orderBy(desc(feedback.createdAt));
+}

@@ -13,6 +13,7 @@ export const booleanEnum = pgEnum("boolean_enum", ["no", "yes"]);
 export const partnerStatusEnum = pgEnum("partner_status", ["pending", "active", "inactive"]);
 export const verificationStatusEnum = pgEnum("verification_status", ["pending", "approved", "rejected"]);
 export const campaignStatusEnum = pgEnum("campaign_status", ["draft", "scheduled", "sent", "failed"]);
+export const feedbackCategoryEnum = pgEnum("feedback_category", ["bug", "feature_request", "ux_improvement", "performance", "content", "other"]);
 
 /**
  * Core user table backing auth flow.
@@ -224,3 +225,20 @@ export const analyticsEvents = pgTable("analytics_events", {
 
 export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
 export type InsertAnalyticsEvent = typeof analyticsEvents.$inferInsert;
+
+/**
+ * General user feedback (for Phase 3 beta testing and beyond)
+ */
+export const feedback = pgTable("feedback", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  userId: varchar("userId", { length: 64 }).notNull().references(() => users.id),
+  category: feedbackCategoryEnum("category").notNull(),
+  rating: integer("rating"), // 1-5 satisfaction rating
+  message: text("message").notNull(),
+  pageUrl: varchar("pageUrl", { length: 500 }),
+  userAgent: text("userAgent"),
+  createdAt: timestamp("createdAt").defaultNow(),
+});
+
+export type Feedback = typeof feedback.$inferSelect;
+export type InsertFeedback = typeof feedback.$inferInsert;

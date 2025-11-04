@@ -315,6 +315,37 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  feedback: router({
+    submit: protectedProcedure
+      .input(
+        z.object({
+          category: z.enum(["bug", "feature_request", "ux_improvement", "performance", "content", "other"]),
+          rating: z.number().min(1).max(5).optional(),
+          message: z.string().min(1),
+          pageUrl: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const { createFeedback } = await import("./db");
+        const userAgent = ctx.req.headers["user-agent"] || undefined;
+
+        await createFeedback({
+          userId: ctx.user.id,
+          category: input.category,
+          rating: input.rating ?? null,
+          message: input.message,
+          pageUrl: input.pageUrl ?? null,
+          userAgent: userAgent ?? null,
+        });
+
+        return { success: true };
+      }),
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { getUserFeedback } = await import("./db");
+      return getUserFeedback(ctx.user.id);
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
