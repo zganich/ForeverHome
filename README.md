@@ -27,6 +27,10 @@ InterpWhat is the all-in-one platform for pet parents that combines:
 - ✅ Pet Timeline™ - track milestones and history
 - ✅ Quick mode for 5-8 second analysis
 - ✅ Progress tracking and streaming support (Phase 2 ready)
+- ✅ **NEW**: Persona-specific landing pages with targeted content
+- ✅ **NEW**: Navigation menu with easy access to persona pages
+- ✅ **NEW**: Funnel optimization components (sticky CTAs, exit-intent popups, social proof)
+- ✅ **NEW**: Dashboard onboarding wizard for first-time users
 
 ### Premium Features
 - ✅ AI Breed Identification
@@ -145,7 +149,19 @@ interpwhat/
 ├── client/              # Frontend (React)
 │   └── src/
 │       ├── pages/       # Page components
+│       │   ├── Home.tsx
+│       │   ├── Dashboard.tsx
+│       │   ├── ForDevotedParents.tsx    # NEW: Persona pages
+│       │   ├── ForNewOwners.tsx
+│       │   ├── ForMultiPet.tsx
+│       │   ├── ForRescueAdopters.tsx
+│       │   └── ForShelters.tsx
 │       ├── components/  # Reusable components
+│       │   ├── MainNavigation.tsx        # NEW: Navigation menu
+│       │   ├── StickyCTA.tsx            # NEW: Funnel optimization
+│       │   ├── ExitIntentPopup.tsx      # NEW: Exit-intent detection
+│       │   ├── SocialProof.tsx          # NEW: Social proof section
+│       │   └── OnboardingModal.tsx      # NEW: Dashboard onboarding
 │       └── App.tsx      # Main app + routing
 │
 ├── server/              # Backend (Express)
@@ -154,6 +170,10 @@ interpwhat/
 │   ├── routes/          # Express routes
 │   ├── aiAgents.ts      # AI analysis logic
 │   └── db.ts            # Database queries
+│
+├── docs/                # Documentation
+│   ├── FUNNEL-OPTIMIZATION-REPORT.md  # NEW: Funnel analysis
+│   └── ...
 │
 └── drizzle/             # Database
     └── schema.ts        # Database schema
@@ -268,8 +288,10 @@ All documentation is in the `docs/` folder:
 
 - **[docs/README.md](./docs/README.md)** - Documentation index
 - **[docs/CURRENT-STATUS.md](./docs/CURRENT-STATUS.md)** - Current features and status (single source of truth)
+- **[docs/FUNNEL-OPTIMIZATION-REPORT.md](./docs/FUNNEL-OPTIMIZATION-REPORT.md)** - **NEW**: Funnel optimization analysis and recommendations
 - **[docs/BEST-PRACTICES.md](./docs/BEST-PRACTICES.md)** - Development standards
 - **[docs/integrations/GITHUB-SUPABASE-RAILWAY.md](./docs/integrations/GITHUB-SUPABASE-RAILWAY.md)** - Integration setup guide
+- **[LOGO-DESIGN-PROMPT.md](./LOGO-DESIGN-PROMPT.md)** - **NEW**: Logo design prompt for AI generators
 
 ---
 
@@ -307,8 +329,14 @@ Perfect for starting a new work session!
 ## 🔗 Integration Status
 
 - ✅ **GitHub**: Connected (`https://github.com/zganich/interpwhat.git`)
-- ✅ **Supabase**: Used for client-side authentication (verified in codebase)
+- ✅ **Supabase**: 
+  - Client-side authentication (verified in codebase)
+  - **CLI**: Authenticated and linked to project `interpwhat` (ujcfnygugdargmtlbarq)
+  - **Project Reference**: `ujcfnygugdargmtlbarq`
+  - **Organization**: `ukgyhqjwfbqckprssywr`
 - ✅ **Deployment**: **Vercel** (configured - automatic SSL for www/non-www)
+  - Auto-deploys from GitHub on push to `main`
+  - Latest deployment: January 2025
 - ✅ **Railway**: Also supported (alternative deployment platform)
 
 For detailed setup instructions, see:

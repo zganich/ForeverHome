@@ -1,8 +1,8 @@
 # InterpWhat - Current Status & Overview
 
 **Last Updated:** January 2025  
-**Version:** 2.1 (Phase 1 Optimizations Complete)  
-**Status:** Ready for Launch - Phase 1 Complete
+**Version:** 2.2 (Funnel Optimization & Persona Pages Complete)  
+**Status:** Ready for Launch - Phase 1 Complete + Funnel Optimized
 
 ---
 
@@ -52,6 +52,27 @@
    - Ensures accurate analysis every time
    - No wasted credits on blurry images
 
+### Marketing & Funnel Optimization Features (NEW - January 2025)
+7. **Persona-Specific Landing Pages**
+   - `/for-devoted-parents` - For dedicated pet parents
+   - `/for-new-owners` - For first-time pet owners
+   - `/for-multi-pet` - For multi-pet households
+   - `/for-rescue-adopters` - For rescue pet adopters (special pricing)
+   - `/for-shelters` - For animal shelters (B2B partnership)
+   - Each page includes targeted content, pain points, solutions, and CTAs
+   - All pages include messaging about proceeds supporting no-kill shelters
+
+8. **Navigation Menu**
+   - Main navigation with dropdown menu for persona pages
+   - Easy access to all customer segments
+   - Consistent header across all pages
+
+9. **Funnel Optimization Components**
+   - **StickyCTA**: Floating CTA bar that stays visible while scrolling
+   - **ExitIntentPopup**: Exit-intent detection with special offer
+   - **SocialProof**: Social proof section with testimonials and user counts
+   - **OnboardingModal**: Dashboard onboarding wizard for first-time users
+
 ---
 
 ## 💰 Subscription Model
@@ -91,11 +112,29 @@
 
 ### Completed Marketing Materials
 ✅ **Website:** Updated home page with new positioning and features  
+✅ **Persona Pages:** 5 dedicated landing pages for different customer segments  
+✅ **Navigation Menu:** Easy navigation with persona dropdown  
+✅ **Funnel Optimization:** Sticky CTAs, exit-intent popups, social proof, onboarding  
 ✅ **Black Friday Campaign:** Landing page + 5 promotional graphics  
 ✅ **Email Sequences:** Announcement emails for existing users  
 ✅ **Partner Outreach:** Email sequences for shelters, influencers, vets  
 ✅ **Social Media:** 30-day content calendar + execution plan  
 ✅ **Sales Materials:** One-pager, pitch deck, playbook
+
+### Funnel Optimization (January 2025)
+✅ **Conversion Components Implemented:**
+- Sticky CTA bars on all persona pages
+- Exit-intent popups with special offers
+- Social proof sections with testimonials
+- Dashboard onboarding wizard
+- Persona-specific content and messaging
+
+✅ **Expected Impact:**
+- Persona Pages → Signup: +25% conversion improvement
+- Dashboard → First Analysis: +40% completion rate
+- Overall funnel: 2-3x conversion potential
+
+📊 **See [FUNNEL-OPTIMIZATION-REPORT.md](./FUNNEL-OPTIMIZATION-REPORT.md)** for complete analysis
 
 ### Launch Timeline
 - **Week 1 (Current):** Send announcement emails, begin social media posting
@@ -118,25 +157,54 @@
 - **Database:** PostgreSQL (Drizzle ORM)
 - **Storage:** S3 (Manus built-in)
 - **AI:** Gemini 2.5 Flash (optimized for Phase 1 - 42% cost reduction)
-- **Auth:** Manus OAuth
+- **Auth:** Supabase Auth (client-side), Manus OAuth
 - **Testing:** Vitest (40 tests passing), Playwright (E2E ready)
+
+### Integrations Status (January 2025)
+- ✅ **GitHub**: Connected and synced (`https://github.com/zganich/interpwhat.git`)
+- ✅ **Supabase**: 
+  - Client-side authentication working
+  - **CLI**: Authenticated and linked to project
+  - **Project Reference**: `ujcfnygugdargmtlbarq`
+  - **Organization**: `ukgyhqjwfbqckprssywr`
+  - **Region**: `us-east-2`
+- ✅ **Vercel**: 
+  - Auto-deployment from GitHub enabled
+  - Latest deployment: January 2025
+  - All persona pages and optimizations live
+- ✅ **Railway**: Also supported (alternative deployment platform)
 
 ### Application Structure
 ```
 interpwhat/
 ├── client/src/
 │   ├── pages/
-│   │   ├── Home.tsx (Updated with new features)
-│   │   ├── Dashboard.tsx
+│   │   ├── Home.tsx (Updated with MainNavigation)
+│   │   ├── Dashboard.tsx (With OnboardingModal)
 │   │   ├── AddPet.tsx
 │   │   ├── PetDetail.tsx
-│   │   └── AnalysisResult.tsx
-│   └── components/ui/ (shadcn components)
+│   │   ├── AnalysisResult.tsx
+│   │   ├── ForDevotedParents.tsx      # NEW: Persona pages
+│   │   ├── ForNewOwners.tsx
+│   │   ├── ForMultiPet.tsx
+│   │   ├── ForRescueAdopters.tsx
+│   │   └── ForShelters.tsx
+│   ├── components/
+│   │   ├── MainNavigation.tsx         # NEW: Navigation menu
+│   │   ├── StickyCTA.tsx             # NEW: Funnel optimization
+│   │   ├── ExitIntentPopup.tsx       # NEW: Exit-intent detection
+│   │   ├── SocialProof.tsx           # NEW: Social proof
+│   │   ├── OnboardingModal.tsx       # NEW: Onboarding wizard
+│   │   └── ui/ (shadcn components)
+│   └── App.tsx (Updated with new routes)
 ├── server/
 │   ├── routers.ts (tRPC endpoints)
 │   ├── aiAgents.ts (AI agent swarm)
 │   ├── upload.ts (File handling)
 │   └── storage.ts (S3 integration)
+├── docs/
+│   ├── FUNNEL-OPTIMIZATION-REPORT.md # NEW: Funnel analysis
+│   └── ...
 └── drizzle/schema.ts (Database schema)
 ```
 

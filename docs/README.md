@@ -1,6 +1,6 @@
 # InterpWhat Documentation Index
 
-**Last Updated:** November 2024
+**Last Updated:** January 2025
 
 This directory contains all current InterpWhat documentation, organized by category.
 
@@ -26,6 +26,9 @@ This directory contains all current InterpWhat documentation, organized by categ
 - **[Railway Deployment Guide](./RAILWAY-DEPLOYMENT.md)** - Railway deployment details, SSL, and troubleshooting
 - **[Development Best Practices](./BEST-PRACTICES.md)** - Standards, conventions, and guidelines for development
 - **[Context Management Guide](./CONTEXT-MANAGEMENT.md)** - **IMPORTANT**: Context usage guidelines and reset procedures
+
+### Conversion & Optimization
+- **[Funnel Optimization Report](./FUNNEL-OPTIMIZATION-REPORT.md)** - **NEW**: Comprehensive funnel analysis, conversion blockers, and optimization recommendations
 
 ### Testing & Quality Assurance
 - **[Testing Strategy](./TESTING-STRATEGY.md)** - Comprehensive testing plan for all phases
