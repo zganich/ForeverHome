@@ -20,7 +20,7 @@ import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { Link } from "wouter";
 import { APP_TITLE } from "@/const";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Dashboard() {
   const { user, loading, signOut } = useSupabaseAuth();
@@ -41,11 +41,23 @@ export default function Dashboard() {
       setIsRedeemOpen(false);
       setBetaCode("");
       utils.credits.getBalance.invalidate();
+      // Clear pending code from localStorage
+      localStorage.removeItem('pendingBetaCode');
     },
     onError: (error) => {
       toast.error(`Failed to redeem code: ${error.message}`);
     },
   });
+
+  // Check for pending beta code from signup
+  useEffect(() => {
+    if (isAuthenticated && !balance?.isBetaTester) {
+      const pendingCode = localStorage.getItem('pendingBetaCode');
+      if (pendingCode) {
+        redeemCode.mutate({ code: pendingCode });
+      }
+    }
+  }, [isAuthenticated, balance?.isBetaTester, redeemCode]);
 
   if (loading) {
     return (

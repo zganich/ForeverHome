@@ -242,3 +242,24 @@ export const feedback = pgTable("feedback", {
 
 export type Feedback = typeof feedback.$inferSelect;
 export type InsertFeedback = typeof feedback.$inferInsert;
+
+/**
+ * Beta invite codes for Phase 1 beta testing program
+ */
+export const betaCodeStatusEnum = pgEnum("beta_code_status", ["active", "used", "expired", "revoked"]);
+
+export const betaCodes = pgTable("beta_codes", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  code: varchar("code", { length: 64 }).notNull().unique(),
+  createdBy: varchar("createdBy", { length: 64 }), // Admin user ID who created it
+  maxUses: integer("maxUses").default(1), // How many times this code can be used (1 = single use)
+  uses: integer("uses").default(0).notNull(), // Current number of uses
+  status: betaCodeStatusEnum("status").default("active").notNull(),
+  expiresAt: timestamp("expiresAt"), // Optional expiration date
+  notes: text("notes"), // Optional notes about this code
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow(),
+});
+
+export type BetaCode = typeof betaCodes.$inferSelect;
+export type InsertBetaCode = typeof betaCodes.$inferInsert;

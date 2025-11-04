@@ -15,6 +15,8 @@ import PetDetail from "./pages/PetDetail";
 import AnalysisResult from "./pages/AnalysisResult";
 import PurchaseCredits from "./pages/PurchaseCredits";
 import AdminDashboard from "./pages/AdminDashboard";
+import AuthCallback from "./pages/AuthCallback";
+import ResetPassword from "./pages/ResetPassword";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -22,6 +24,8 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/login"} component={Login} />
+      <Route path={"/auth/callback"} component={AuthCallback} />
+      <Route path={"/auth/reset-password"} component={ResetPassword} />
       <Route path={"/compare"} component={ComparePets} />
       <Route path={"/subscribe"} component={Subscribe} />
       <Route path={"/dashboard"} component={Dashboard} />

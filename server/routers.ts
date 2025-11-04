@@ -4,13 +4,33 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { createCheckoutSession, createSubscriptionCheckout, CREDIT_PACKS, SUBSCRIPTION_PLANS, type CreditPackId, type SubscriptionPlanId } from "./stripe";
-import { getUserCredits, activateBetaTester, isBetaTester } from "./credits";
+import { getUserCredits, activateBetaTester, isBetaTester, validateBetaCode } from "./credits";
 
 export const appRouter = router({
   system: systemRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    syncSupabaseUser: publicProcedure
+      .input(
+        z.object({
+          id: z.string(),
+          email: z.string().email().optional(),
+          name: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        // Sync Supabase user to our database
+        const { upsertUser } = await import("./db");
+        await upsertUser({
+          id: input.id,
+          email: input.email ?? null,
+          name: input.name ?? null,
+          loginMethod: "supabase",
+          lastSignedIn: new Date(),
+        });
+        return { success: true };
+      }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -301,6 +321,16 @@ export const appRouter = router({
       const betaTester = await isBetaTester(ctx.user.id);
       return { credits, isBetaTester: betaTester };
     }),
+    validateBetaCode: publicProcedure
+      .input(
+        z.object({
+          code: z.string(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const result = await validateBetaCode(input.code);
+        return { valid: result.valid };
+      }),
     redeemBetaCode: protectedProcedure
       .input(
         z.object({

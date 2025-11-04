@@ -174,7 +174,56 @@ describe("Credit Management", () => {
   describe("activateBetaTester", () => {
     test("activates beta tester with valid invite code", async () => {
       const mockDb = createMockDb();
+      const testCode = "BETA-XXXXX-XXXX";
 
+      // Mock beta code lookup - code exists and is active
+      const mockBetaCode = {
+        id: "code-123",
+        code: testCode,
+        status: "active",
+        maxUses: 1,
+        uses: 0,
+        expiresAt: null,
+      };
+
+      // Mock user lookup - user is not a beta tester
+      const mockUser = { isBetaTester: false };
+
+      // Setup select mocks for different queries
+      let selectCallCount = 0;
+      vi.mocked(mockDb.select).mockImplementation(() => {
+        selectCallCount++;
+        if (selectCallCount === 1) {
+          // First call: beta code lookup
+          return {
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue([mockBetaCode]),
+              }),
+            }),
+          } as any;
+        } else if (selectCallCount === 2) {
+          // Second call: user lookup
+          return {
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue([mockUser]),
+              }),
+            }),
+          } as any;
+        } else {
+          // Third call: beta code uses lookup (for increment)
+          return {
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue([{ uses: 0 }]),
+              }),
+            }),
+          } as any;
+        }
+      });
+
+      // Mock update for user and beta code
       vi.mocked(mockDb.update).mockReturnValue({
         set: vi.fn().mockReturnValue({
           where: vi.fn().mockResolvedValue(undefined),
@@ -183,7 +232,7 @@ describe("Credit Management", () => {
 
       vi.mocked(dbModule.getDb).mockResolvedValue(mockDb as any);
 
-      const result = await activateBetaTester("test-user-123", "BETA-XXXXX-XXXX");
+      const result = await activateBetaTester("test-user-123", testCode);
       expect(result).toBe(true);
     });
 

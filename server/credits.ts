@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, and, gt, lte } from "drizzle-orm";
 import { getDb } from "./db";
-import { users, purchases, InsertPurchase } from "../drizzle/schema";
+import { users, purchases, betaCodes, InsertPurchase, InsertBetaCode } from "../drizzle/schema";
 import { nanoid } from "nanoid";
 
 /**
@@ -183,27 +183,205 @@ export async function refreshFreeCredits(userId: string): Promise<void> {
 }
 
 /**
+ * Validate and get beta code from database
+ */
+export async function validateBetaCode(code: string): Promise<{ valid: boolean; betaCode?: typeof betaCodes.$inferSelect }> {
+  const db = await getDb();
+  if (!db) return { valid: false };
+
+  // Normalize code (uppercase, trim)
+  const normalizedCode = code.trim().toUpperCase();
+
+  // Find code in database
+  const result = await db
+    .select()
+    .from(betaCodes)
+    .where(eq(betaCodes.code, normalizedCode))
+    .limit(1);
+
+  if (result.length === 0) {
+    return { valid: false };
+  }
+
+  const betaCode = result[0];
+
+  // Check if code is active
+  if (betaCode.status !== "active") {
+    return { valid: false };
+  }
+
+  // Check if code has expired
+  if (betaCode.expiresAt && new Date(betaCode.expiresAt) < new Date()) {
+    // Auto-mark as expired
+    await db
+      .update(betaCodes)
+      .set({ status: "expired", updatedAt: new Date() })
+      .where(eq(betaCodes.id, betaCode.id));
+    return { valid: false };
+  }
+
+  // Check if code has reached max uses
+  if (betaCode.maxUses && betaCode.uses >= betaCode.maxUses) {
+    return { valid: false };
+  }
+
+  return { valid: true, betaCode };
+}
+
+/**
  * Activate beta tester status with invite code
  */
 export async function activateBetaTester(userId: string, inviteCode: string): Promise<boolean> {
   const db = await getDb();
   if (!db) return false;
 
-  // Verify invite code is valid (you'll need to implement invite code generation)
-  // For now, we'll just check if it starts with "BETA-"
-  if (!inviteCode.startsWith("BETA-")) {
+  // Validate code
+  const { valid, betaCode } = await validateBetaCode(inviteCode);
+  if (!valid || !betaCode) {
     return false;
   }
 
+  // Check if user already has beta status
+  const userResult = await db
+    .select({ isBetaTester: users.isBetaTester })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (userResult.length > 0 && userResult[0].isBetaTester) {
+    // User already has beta status, but still mark code as used
+    await incrementBetaCodeUsage(betaCode.id);
+    return true;
+  }
+
+  // Activate beta tester status
   await db
     .update(users)
     .set({
       isBetaTester: true,
-      betaInviteCode: inviteCode,
+      betaInviteCode: inviteCode.trim().toUpperCase(),
       credits: 999999, // Effectively unlimited
     })
     .where(eq(users.id, userId));
 
+  // Increment code usage
+  await incrementBetaCodeUsage(betaCode.id);
+
+  // If code is single-use and now used, mark as used
+  if (betaCode.maxUses === 1 || (betaCode.maxUses && betaCode.uses + 1 >= betaCode.maxUses)) {
+    await db
+      .update(betaCodes)
+      .set({ status: "used", updatedAt: new Date() })
+      .where(eq(betaCodes.id, betaCode.id));
+  }
+
   return true;
+}
+
+/**
+ * Increment usage count for a beta code
+ */
+async function incrementBetaCodeUsage(codeId: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  // Get current usage count
+  const result = await db
+    .select({ uses: betaCodes.uses })
+    .from(betaCodes)
+    .where(eq(betaCodes.id, codeId))
+    .limit(1);
+
+  if (result.length === 0) return;
+
+  const currentUses = result[0].uses || 0;
+
+  // Increment usage
+  await db
+    .update(betaCodes)
+    .set({
+      uses: currentUses + 1,
+      updatedAt: new Date(),
+    })
+    .where(eq(betaCodes.id, codeId));
+}
+
+/**
+ * Generate a new beta code
+ */
+export async function generateBetaCode(data: {
+  createdBy?: string;
+  maxUses?: number;
+  expiresAt?: Date;
+  notes?: string;
+}): Promise<string> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Generate unique code: BETA-XXXXX-XXXX
+  let code: string;
+  let isUnique = false;
+  let attempts = 0;
+
+  while (!isUnique && attempts < 10) {
+    const randomPart1 = Math.random().toString(36).substring(2, 7).toUpperCase();
+    const randomPart2 = Math.random().toString(36).substring(2, 6).toUpperCase();
+    code = `BETA-${randomPart1}-${randomPart2}`;
+
+    // Check if code already exists
+    const existing = await db
+      .select()
+      .from(betaCodes)
+      .where(eq(betaCodes.code, code))
+      .limit(1);
+
+    if (existing.length === 0) {
+      isUnique = true;
+    }
+    attempts++;
+  }
+
+  if (!isUnique) {
+    throw new Error("Failed to generate unique beta code after 10 attempts");
+  }
+
+  const codeId = nanoid();
+  const betaCode: InsertBetaCode = {
+    id: codeId,
+    code: code!,
+    createdBy: data.createdBy,
+    maxUses: data.maxUses || 1,
+    uses: 0,
+    status: "active",
+    expiresAt: data.expiresAt,
+    notes: data.notes,
+  };
+
+  await db.insert(betaCodes).values(betaCode);
+
+  return code!;
+}
+
+/**
+ * Get all beta codes (admin function)
+ */
+export async function getAllBetaCodes(): Promise<Array<typeof betaCodes.$inferSelect>> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(betaCodes).orderBy(betaCodes.createdAt);
+}
+
+/**
+ * Revoke a beta code
+ */
+export async function revokeBetaCode(codeId: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db
+    .update(betaCodes)
+    .set({ status: "revoked", updatedAt: new Date() })
+    .where(eq(betaCodes.id, codeId));
 }
 
