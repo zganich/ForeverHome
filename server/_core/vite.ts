@@ -71,19 +71,19 @@ export function serveStatic(app: Express) {
     if (fs.existsSync(altPath)) {
       distPath = altPath;
       console.log(`Using alternative path: ${distPath}`);
+    } else {
+      // If still not found, try one more alternative path
+      const vercelAltPath = path.resolve(process.cwd(), ".vercel", "output", "static");
+      if (fs.existsSync(vercelAltPath)) {
+        distPath = vercelAltPath;
+        console.log(`Using Vercel static output path: ${distPath}`);
       } else {
-        // If still not found, try one more alternative path
-        const vercelAltPath = path.resolve(process.cwd(), ".vercel", "output", "static");
-        if (fs.existsSync(vercelAltPath)) {
-          distPath = vercelAltPath;
-          console.log(`Using Vercel static output path: ${distPath}`);
-        } else {
-          console.warn(`Warning: Static files directory not found. Tried: ${distPath}, ${altPath}, ${vercelAltPath}`);
-          console.warn('Static file serving disabled. API routes will still work.');
-          // Don't crash - just skip static serving
-          return;
-        }
+        console.warn(`Warning: Static files directory not found. Tried: ${distPath}, ${altPath}, ${vercelAltPath}`);
+        console.warn('Static file serving disabled. API routes will still work.');
+        // Don't crash - just skip static serving
+        return;
       }
+    }
   }
 
   try {
