@@ -56,22 +56,25 @@ export default function MainNavigation() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center">
-          {/* Logo - Fixed width, left-aligned */}
-          <Link 
-            href="/" 
-            className="flex items-center gap-2 sm:gap-3 group transition-opacity hover:opacity-80 shrink-0 mr-4"
-          >
-            <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent shadow-sm transition-transform group-hover:scale-105">
-              <PawPrint className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
-            </div>
-            <span className="hidden sm:block text-lg sm:text-xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
-              {APP_TITLE}
-            </span>
-          </Link>
+        {/* Desktop: Use CSS Grid for perfect visual balance */}
+        <div className="hidden lg:grid grid-cols-[1fr_auto_1fr] h-16 items-center gap-4">
+          {/* Left: Logo */}
+          <div className="flex items-center justify-start">
+            <Link 
+              href="/" 
+              className="flex items-center gap-2 sm:gap-3 group transition-opacity hover:opacity-80"
+            >
+              <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent shadow-sm transition-transform group-hover:scale-105">
+                <PawPrint className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
+              </div>
+              <span className="hidden sm:block text-lg sm:text-xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
+                {APP_TITLE}
+              </span>
+            </Link>
+          </div>
 
-          {/* Desktop Navigation - Centered with perfect balance */}
-          <nav className="hidden lg:flex flex-1 items-center justify-center">
+          {/* Center: Navigation - Perfectly centered */}
+          <nav className="flex items-center">
             <NavigationMenu>
               <NavigationMenuList className="gap-2">
                 <NavigationMenuItem>
@@ -133,8 +136,37 @@ export default function MainNavigation() {
             </NavigationMenu>
           </nav>
 
-          {/* Right Side Actions - Fixed width, right-aligned */}
-          <div className="flex items-center gap-3 shrink-0 ml-auto">
+          {/* Right: Actions - Perfectly aligned */}
+          <div className="flex items-center justify-end gap-3">
+            {isAuthenticated ? (
+              <Button asChild size="sm" className="hidden sm:inline-flex">
+                <Link href="/dashboard">Dashboard</Link>
+              </Button>
+            ) : (
+              <Button asChild size="sm" className="hidden sm:inline-flex">
+                <Link href="/login">Sign In</Link>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile/Tablet: Use flexbox with hamburger */}
+        <div className="flex lg:hidden h-16 items-center justify-between">
+          {/* Logo */}
+          <Link 
+            href="/" 
+            className="flex items-center gap-2 sm:gap-3 group transition-opacity hover:opacity-80"
+          >
+            <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent shadow-sm transition-transform group-hover:scale-105">
+              <PawPrint className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
+            </div>
+            <span className="hidden sm:block text-lg sm:text-xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
+              {APP_TITLE}
+            </span>
+          </Link>
+
+          {/* Right Side Actions */}
+          <div className="flex items-center gap-3">
             {isAuthenticated ? (
               <Button asChild size="sm" className="hidden sm:inline-flex">
                 <Link href="/dashboard">Dashboard</Link>
@@ -145,13 +177,12 @@ export default function MainNavigation() {
               </Button>
             )}
 
-            {/* Mobile/Tablet Menu - Shows on md and below */}
+            {/* Mobile Menu */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="lg:hidden"
                   aria-label="Toggle menu"
                 >
                   <Menu className="h-5 w-5" />
