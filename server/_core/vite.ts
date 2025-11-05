@@ -71,18 +71,36 @@ export function serveStatic(app: Express) {
     if (fs.existsSync(altPath)) {
       distPath = altPath;
       console.log(`Using alternative path: ${distPath}`);
-    }
+      } else {
+        // If still not found, try one more alternative path
+        const vercelAltPath = path.resolve(process.cwd(), ".vercel", "output", "static");
+        if (fs.existsSync(vercelAltPath)) {
+          distPath = vercelAltPath;
+          console.log(`Using Vercel static output path: ${distPath}`);
+        } else {
+          console.warn(`Warning: Static files directory not found. Tried: ${distPath}, ${altPath}, ${vercelAltPath}`);
+          console.warn('Static file serving disabled. API routes will still work.');
+          // Don't crash - just skip static serving
+          return;
+        }
+      }
   }
 
-  app.use(express.static(distPath, { index: false }));
+  try {
+    app.use(express.static(distPath, { index: false }));
 
-  // fall through to index.html if the file doesn't exist (SPA routing)
-  app.use("*", (_req, res) => {
-    const indexPath = path.resolve(distPath, "index.html");
-    if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
-    } else {
-      res.status(404).send("Not found");
-    }
-  });
+    // fall through to index.html if the file doesn't exist (SPA routing)
+    app.use("*", (_req, res) => {
+      const indexPath = path.resolve(distPath, "index.html");
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        // If index.html doesn't exist, return a basic response instead of crashing
+        res.status(404).json({ error: "Static files not found. Please ensure the build completed successfully." });
+      }
+    });
+  } catch (error) {
+    console.error('Error setting up static file serving:', error);
+    // Don't throw - allow API routes to still work
+  }
 }
