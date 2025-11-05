@@ -7,125 +7,234 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { APP_TITLE } from "@/const";
 import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
-import { PawPrint, Heart, Users, Baby, Dog, Building2 } from "lucide-react";
+import { PawPrint, Heart, Users, Baby, Dog, Building2, Menu, X } from "lucide-react";
 import { Link } from "wouter";
+import { useState } from "react";
 
 export default function MainNavigation() {
   const { user } = useSupabaseAuth();
   const isAuthenticated = !!user;
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const personaLinks = [
+    {
+      href: "/for-devoted-parents",
+      icon: Heart,
+      title: "Devoted Pet Parents",
+      description: "For pet parents who treat their pets like family",
+    },
+    {
+      href: "/for-new-owners",
+      icon: Baby,
+      title: "New Pet Owners",
+      description: "First-time owners seeking expert guidance",
+    },
+    {
+      href: "/for-multi-pet",
+      icon: Users,
+      title: "Multi-Pet Households",
+      description: "Managing multiple pets efficiently",
+    },
+    {
+      href: "/for-rescue-adopters",
+      icon: Dog,
+      title: "Rescue Pet Adopters",
+      description: "Special pricing for rescue pet parents",
+    },
+  ];
 
   return (
-    <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <PawPrint className="w-6 h-6 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            {APP_TITLE}
-          </h1>
-        </Link>
-
-        <nav className="hidden md:flex items-center gap-6">
-          <NavigationMenu>
-            <NavigationMenuList>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger>For Pet Parents</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <div className="grid w-[500px] gap-3 p-4 md:grid-cols-2">
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/for-devoted-parents"
-                        className="flex flex-col gap-2 rounded-lg p-4 hover:bg-accent transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Heart className="w-5 h-5 text-primary" />
-                          <span className="font-semibold">Devoted Pet Parents</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          For pet parents who treat their pets like family
-                        </p>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/for-new-owners"
-                        className="flex flex-col gap-2 rounded-lg p-4 hover:bg-accent transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Baby className="w-5 h-5 text-primary" />
-                          <span className="font-semibold">New Pet Owners</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          First-time owners seeking expert guidance
-                        </p>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/for-multi-pet"
-                        className="flex flex-col gap-2 rounded-lg p-4 hover:bg-accent transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Users className="w-5 h-5 text-primary" />
-                          <span className="font-semibold">Multi-Pet Households</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Managing multiple pets efficiently
-                        </p>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/for-rescue-adopters"
-                        className="flex flex-col gap-2 rounded-lg p-4 hover:bg-accent transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Dog className="w-5 h-5 text-primary" />
-                          <span className="font-semibold">Rescue Pet Adopters</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Special pricing for rescue pet parents
-                        </p>
-                      </Link>
-                    </NavigationMenuLink>
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href="/for-shelters"
-                    className="group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
-                  >
-                    <Building2 className="w-4 h-4 mr-2" />
-                    For Shelters
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
-
-          <Link href="/#features">
-            <Button variant="ghost">Features</Button>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          {/* Logo */}
+          <Link 
+            href="/" 
+            className="flex items-center gap-3 group transition-opacity hover:opacity-80"
+          >
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent shadow-sm transition-transform group-hover:scale-105">
+              <PawPrint className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <span className="hidden sm:block text-xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
+              {APP_TITLE}
+            </span>
           </Link>
-        </nav>
 
-        <div className="flex items-center gap-4">
-          {isAuthenticated ? (
-            <Button asChild>
-              <Link href="/dashboard">Dashboard</Link>
-            </Button>
-          ) : (
-            <Button asChild>
-              <Link href="/login">Sign In</Link>
-            </Button>
-          )}
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center gap-1">
+            <NavigationMenu>
+              <NavigationMenuList className="gap-1">
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger className="h-9 px-4 text-sm font-medium data-[state=open]:bg-accent data-[state=open]:text-accent-foreground">
+                    For Pet Parents
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <div className="grid w-[520px] gap-1 p-2 md:grid-cols-2">
+                      {personaLinks.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <NavigationMenuLink key={item.href} asChild>
+                            <Link
+                              href={item.href}
+                              className="group flex flex-col gap-2 rounded-lg p-4 transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+                                  <Icon className="h-4 w-4" />
+                                </div>
+                                <span className="text-sm font-semibold leading-none">
+                                  {item.title}
+                                </span>
+                              </div>
+                              <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">
+                                {item.description}
+                              </p>
+                            </Link>
+                          </NavigationMenuLink>
+                        );
+                      })}
+                    </div>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+                
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      href="/for-shelters"
+                      className="group inline-flex h-9 w-max items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
+                    >
+                      <Building2 className="h-4 w-4" />
+                      <span>For Shelters</span>
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      href="/#features"
+                      className="inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
+                    >
+                      Features
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
+          </nav>
+
+          {/* Right Side Actions */}
+          <div className="flex items-center gap-2">
+            {isAuthenticated ? (
+              <Button asChild size="sm" className="hidden sm:inline-flex">
+                <Link href="/dashboard">Dashboard</Link>
+              </Button>
+            ) : (
+              <Button asChild size="sm" className="hidden sm:inline-flex">
+                <Link href="/login">Sign In</Link>
+              </Button>
+            )}
+
+            {/* Mobile Menu */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="lg:hidden"
+                  aria-label="Toggle menu"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <PawPrint className="h-5 w-5 text-primary" />
+                    {APP_TITLE}
+                  </SheetTitle>
+                  <SheetDescription>
+                    Navigate to different sections
+                  </SheetDescription>
+                </SheetHeader>
+                <nav className="mt-8 flex flex-col gap-4">
+                  <div className="space-y-1">
+                    <h3 className="px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      For Pet Parents
+                    </h3>
+                    {personaLinks.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                        >
+                          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-semibold">{item.title}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {item.description}
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <Link
+                      href="/for-shelters"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+                        <Building2 className="h-4 w-4" />
+                      </div>
+                      <span className="font-semibold">For Shelters</span>
+                    </Link>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <Link
+                      href="/#features"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <span className="font-semibold">Features</span>
+                    </Link>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    {isAuthenticated ? (
+                      <Button asChild className="w-full" onClick={() => setMobileMenuOpen(false)}>
+                        <Link href="/dashboard">Dashboard</Link>
+                      </Button>
+                    ) : (
+                      <Button asChild className="w-full" onClick={() => setMobileMenuOpen(false)}>
+                        <Link href="/login">Sign In</Link>
+                      </Button>
+                    )}
+                  </div>
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
     </header>
   );
 }
-
