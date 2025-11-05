@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sheet";
 import { APP_TITLE } from "@/const";
 import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
-import { PawPrint, Heart, Users, Baby, Dog, Building2, Menu, X } from "lucide-react";
+import { PawPrint, Heart, Users, Baby, Dog, Building2, Menu } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
 
@@ -56,26 +56,26 @@ export default function MainNavigation() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
+        <div className="flex h-16 items-center">
+          {/* Logo - Fixed width, left-aligned */}
           <Link 
             href="/" 
-            className="flex items-center gap-3 group transition-opacity hover:opacity-80"
+            className="flex items-center gap-2 sm:gap-3 group transition-opacity hover:opacity-80 shrink-0 mr-4"
           >
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent shadow-sm transition-transform group-hover:scale-105">
-              <PawPrint className="h-5 w-5 text-primary-foreground" />
+            <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent shadow-sm transition-transform group-hover:scale-105">
+              <PawPrint className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
             </div>
-            <span className="hidden sm:block text-xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
+            <span className="hidden sm:block text-lg sm:text-xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
               {APP_TITLE}
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1">
+          {/* Desktop Navigation - Centered with perfect balance */}
+          <nav className="hidden lg:flex flex-1 items-center justify-center">
             <NavigationMenu>
-              <NavigationMenuList className="gap-1">
+              <NavigationMenuList className="gap-2">
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger className="h-9 px-4 text-sm font-medium data-[state=open]:bg-accent data-[state=open]:text-accent-foreground">
+                  <NavigationMenuTrigger className="h-9 px-4 text-sm font-medium data-[state=open]:bg-accent data-[state=open]:text-accent-foreground hover:bg-accent/50 transition-colors">
                     For Pet Parents
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
@@ -89,14 +89,14 @@ export default function MainNavigation() {
                               className="group flex flex-col gap-2 rounded-lg p-4 transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                             >
                               <div className="flex items-center gap-3">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary transition-colors group-hover:bg-primary/20 shrink-0">
                                   <Icon className="h-4 w-4" />
                                 </div>
                                 <span className="text-sm font-semibold leading-none">
                                   {item.title}
                                 </span>
                               </div>
-                              <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">
+                              <p className="line-clamp-2 text-xs leading-snug text-muted-foreground pl-12">
                                 {item.description}
                               </p>
                             </Link>
@@ -111,7 +111,7 @@ export default function MainNavigation() {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/for-shelters"
-                      className="group inline-flex h-9 w-max items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
+                      className="group inline-flex h-9 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
                     >
                       <Building2 className="h-4 w-4" />
                       <span>For Shelters</span>
@@ -123,7 +123,7 @@ export default function MainNavigation() {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/#features"
-                      className="inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
+                      className="inline-flex h-9 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
                     >
                       Features
                     </Link>
@@ -133,8 +133,8 @@ export default function MainNavigation() {
             </NavigationMenu>
           </nav>
 
-          {/* Right Side Actions */}
-          <div className="flex items-center gap-2">
+          {/* Right Side Actions - Fixed width, right-aligned */}
+          <div className="flex items-center gap-3 shrink-0 ml-auto">
             {isAuthenticated ? (
               <Button asChild size="sm" className="hidden sm:inline-flex">
                 <Link href="/dashboard">Dashboard</Link>
@@ -145,7 +145,7 @@ export default function MainNavigation() {
               </Button>
             )}
 
-            {/* Mobile Menu */}
+            {/* Mobile/Tablet Menu - Shows on md and below */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button
@@ -181,12 +181,12 @@ export default function MainNavigation() {
                           onClick={() => setMobileMenuOpen(false)}
                           className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                         >
-                          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
                             <Icon className="h-4 w-4" />
                           </div>
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <div className="font-semibold">{item.title}</div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-xs text-muted-foreground line-clamp-1">
                               {item.description}
                             </div>
                           </div>
@@ -201,7 +201,7 @@ export default function MainNavigation() {
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
                         <Building2 className="h-4 w-4" />
                       </div>
                       <span className="font-semibold">For Shelters</span>
