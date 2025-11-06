@@ -56,10 +56,10 @@ export default function MainNavigation() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Desktop: Use CSS Grid for perfect visual balance */}
-        <div className="hidden lg:grid grid-cols-[1fr_auto_1fr] h-16 items-center gap-4">
-          {/* Left: Logo */}
-          <div className="flex items-center justify-start">
+        {/* Desktop: Use flexbox with absolute positioning for perfect centering */}
+        <div className="hidden lg:flex h-16 items-center justify-between relative">
+          {/* Left: Logo - Protected space to prevent overlap */}
+          <div className="flex items-center justify-start flex-shrink-0 min-w-[200px]">
             <Link 
               href="/" 
               className="flex items-center gap-2 sm:gap-3 group transition-opacity hover:opacity-80"
@@ -81,9 +81,9 @@ export default function MainNavigation() {
             </Link>
           </div>
 
-          {/* Center: Navigation - Perfectly centered */}
-          <nav className="flex items-center justify-center">
-            <NavigationMenu>
+          {/* Center: Navigation - Absolutely centered for perfect alignment */}
+          <nav className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-auto">
+            <NavigationMenu className="flex-none">
               <NavigationMenuList className="gap-2">
                 <NavigationMenuItem>
                   <NavigationMenuTrigger className="h-9 px-4 text-sm font-medium data-[state=open]:bg-accent data-[state=open]:text-accent-foreground hover:bg-accent/50 transition-colors">
@@ -144,8 +144,8 @@ export default function MainNavigation() {
             </NavigationMenu>
           </nav>
 
-          {/* Right: Actions - Perfectly aligned */}
-          <div className="flex items-center justify-end gap-3">
+          {/* Right: Actions - Perfectly aligned, protected space */}
+          <div className="flex items-center justify-end gap-3 flex-shrink-0 min-w-[120px]">
             {isAuthenticated ? (
               <Button asChild size="sm" className="hidden sm:inline-flex">
                 <Link href="/dashboard">Dashboard</Link>
