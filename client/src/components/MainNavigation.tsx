@@ -15,7 +15,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { APP_TITLE } from "@/const";
+import { APP_TITLE, APP_LOGO } from "@/const";
 import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
 import { PawPrint, Heart, Users, Baby, Dog, Building2, Menu } from "lucide-react";
 import { Link } from "wouter";
@@ -64,9 +64,17 @@ export default function MainNavigation() {
               href="/" 
               className="flex items-center gap-2 sm:gap-3 group transition-opacity hover:opacity-80"
             >
-              <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent shadow-sm transition-transform group-hover:scale-105">
-                <PawPrint className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
-              </div>
+              {APP_LOGO && !APP_LOGO.includes('placehold') && APP_LOGO !== "https://placehold.co/128x128/E1E7EF/1F2937?text=App" ? (
+                <img 
+                  src={APP_LOGO} 
+                  alt={APP_TITLE}
+                  className="h-9 w-9 sm:h-10 sm:w-10 rounded-full object-cover shadow-sm transition-transform group-hover:scale-105"
+                />
+              ) : (
+                <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent shadow-sm transition-transform group-hover:scale-105">
+                  <PawPrint className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
+                </div>
+              )}
               <span className="hidden sm:block text-lg sm:text-xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
                 {APP_TITLE}
               </span>
@@ -157,9 +165,17 @@ export default function MainNavigation() {
             href="/" 
             className="flex items-center gap-2 sm:gap-3 group transition-opacity hover:opacity-80"
           >
-            <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent shadow-sm transition-transform group-hover:scale-105">
-              <PawPrint className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
-            </div>
+            {APP_LOGO && !APP_LOGO.includes('placehold') && APP_LOGO !== "https://placehold.co/128x128/E1E7EF/1F2937?text=App" ? (
+              <img 
+                src={APP_LOGO} 
+                alt={APP_TITLE}
+                className="h-9 w-9 sm:h-10 sm:w-10 rounded-full object-cover shadow-sm transition-transform group-hover:scale-105"
+              />
+            ) : (
+              <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent shadow-sm transition-transform group-hover:scale-105">
+                <PawPrint className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
+              </div>
+            )}
             <span className="hidden sm:block text-lg sm:text-xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
               {APP_TITLE}
             </span>
