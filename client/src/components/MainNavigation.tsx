@@ -82,7 +82,7 @@ export default function MainNavigation() {
           </div>
 
           {/* Center: Navigation - Perfectly centered */}
-          <nav className="flex items-center">
+          <nav className="flex items-center justify-center">
             <NavigationMenu>
               <NavigationMenuList className="gap-2">
                 <NavigationMenuItem>
