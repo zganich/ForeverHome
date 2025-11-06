@@ -28,7 +28,12 @@ This directory contains all current InterpWhat documentation, organized by categ
 - **[Context Management Guide](./CONTEXT-MANAGEMENT.md)** - **IMPORTANT**: Context usage guidelines and reset procedures
 
 ### Conversion & Optimization
-- **[Funnel Optimization Report](./FUNNEL-OPTIMIZATION-REPORT.md)** - **NEW**: Comprehensive funnel analysis, conversion blockers, and optimization recommendations
+- **[Funnel Optimization Report](./FUNNEL-OPTIMIZATION-REPORT.md)** - Comprehensive funnel analysis, conversion blockers, and optimization recommendations
+
+### UI/UX & Navigation
+- **[Navigation Changes Log](./NAVIGATION-CHANGES-LOG.md)** - **NEW**: Complete documentation of navigation menu fixes and improvements
+- **[Navigation Changelog (Quick Reference)](./CHANGELOG-NAVIGATION-2025.md)** - Quick reference for navigation changes
+- **[Logo Setup Guide](./LOGO-SETUP.md)** - How to add and configure the InterpWhat logo
 
 ### Testing & Quality Assurance
 - **[Testing Strategy](./TESTING-STRATEGY.md)** - Comprehensive testing plan for all phases
