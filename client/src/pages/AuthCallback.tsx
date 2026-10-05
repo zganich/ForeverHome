@@ -62,53 +62,20 @@ export default function AuthCallback() {
           return;
         }
 
-        // Session established - user is confirmed and logged in
-        // Sync user to our database
-        try {
-          // Get user info from Supabase
-          const user = session.user;
-          
-          // Sync Supabase user to our database
+        // A confirmed Supabase session must also establish a usable app account.
+        await syncUser.mutateAsync();
+        const pendingCode = localStorage.getItem('pendingBetaCode');
+        if (pendingCode) {
           try {
-            await syncUser.mutateAsync({
-              id: user.id,
-              email: user.email ?? undefined,
-              name: user.user_metadata?.name ?? user.user_metadata?.full_name ?? undefined,
-            });
-          } catch (syncError) {
-            console.error('Error syncing user to database:', syncError);
-            // Continue anyway - user is authenticated
+            await redeemCode.mutateAsync({ code: pendingCode });
+            localStorage.removeItem('pendingBetaCode');
+          } catch {
+            // Preserve the code so the adopter can retry from the dashboard.
           }
-          
-          // Check for pending beta code
-          const pendingCode = localStorage.getItem('pendingBetaCode');
-          if (pendingCode) {
-            try {
-              await redeemCode.mutateAsync({ code: pendingCode });
-              localStorage.removeItem('pendingBetaCode');
-            } catch (error) {
-              // Beta code activation failed, but continue anyway
-              console.error('Failed to activate beta code:', error);
-              localStorage.removeItem('pendingBetaCode');
-            }
-          }
-
-          setStatus('success');
-          setMessage('Email confirmed! Redirecting to dashboard...');
-          
-          // Redirect to dashboard after short delay
-          setTimeout(() => {
-            setLocation('/dashboard');
-          }, 1500);
-        } catch (error) {
-          console.error('Error in auth callback:', error);
-          // Still redirect to dashboard - user is authenticated
-          setStatus('success');
-          setMessage('Email confirmed! Redirecting to dashboard...');
-          setTimeout(() => {
-            setLocation('/dashboard');
-          }, 1500);
         }
+        setStatus('success');
+        setMessage('Email confirmed! Redirecting to dashboard...');
+        setTimeout(() => setLocation('/dashboard'), 1500);
       } catch (error) {
         console.error('Auth callback error:', error);
         setStatus('error');

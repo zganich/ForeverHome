@@ -1,3 +1,4 @@
+import { authFetch } from "@/lib/api";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,9 +50,9 @@ export default function AddPet() {
       return false;
     }
     
-    // Validate file size (max 50MB)
-    if (file.size > 50 * 1024 * 1024) {
-      setErrors({ ...errors, photo: "File size must be less than 50MB" });
+    // Validate file size (max 4 MB)
+    if (file.size > 4 * 1024 * 1024) {
+      setErrors({ ...errors, photo: "File size must be less than 4 MB" });
       toast.error("File too large. Please compress your image or choose a smaller file.");
       return false;
     }
@@ -118,7 +119,7 @@ export default function AddPet() {
       if (photoFile) {
         formData.append("file", photoFile);
       }
-      const response = await fetch("/api/upload", {
+      const response = await authFetch("/api/upload", {
         method: "POST",
         body: formData,
       });
@@ -313,7 +314,7 @@ export default function AddPet() {
                           {isDragging ? "Drop photo here" : "Click to upload or drag and drop"}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          JPG, PNG, GIF, WebP • Max 50MB
+                          JPG, PNG, GIF, WebP • Max 4 MB
                         </p>
                       </div>
                     ) : (

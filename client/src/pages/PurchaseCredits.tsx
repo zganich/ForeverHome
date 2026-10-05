@@ -68,7 +68,7 @@ export default function PurchaseCredits() {
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">Your Current Balance</p>
                     <p className="text-4xl font-bold text-primary">
-                      {balance.isBetaTester ? "∞" : balance.credits}
+                      {(balance.isBetaTester || balance.unlimited) ? "∞" : balance.credits}
                       <span className="text-lg text-muted-foreground ml-2">
                         {balance.isBetaTester ? "Unlimited" : "credits"}
                       </span>

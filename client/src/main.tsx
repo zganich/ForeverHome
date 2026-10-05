@@ -5,6 +5,26 @@ import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
+import { APP_TITLE, APP_LOGO } from "./const";
+
+document.title = APP_TITLE;
+if (APP_LOGO) {
+  const icon = document.createElement("link");
+  icon.rel = "icon";
+  icon.href = APP_LOGO;
+  document.head.appendChild(icon);
+}
+const analyticsEndpoint = import.meta.env.VITE_ANALYTICS_ENDPOINT;
+const analyticsId = import.meta.env.VITE_ANALYTICS_WEBSITE_ID;
+if (analyticsEndpoint && analyticsId) {
+  const script = document.createElement("script");
+  script.defer = true;
+  script.src = `${analyticsEndpoint.replace(/\/$/, "")}/umami`;
+  script.dataset.websiteId = analyticsId;
+  document.head.appendChild(script);
+}
+
+import { authHeaders } from "./lib/api";
 
 import "./index.css";
 
@@ -42,6 +62,7 @@ const trpcClient = trpc.createClient({
     httpBatchLink({
       url: "/api/trpc",
       transformer: superjson,
+      headers: authHeaders,
       fetch(input, init) {
         return globalThis.fetch(input, {
           ...(init ?? {}),

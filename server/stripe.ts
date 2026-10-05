@@ -203,25 +203,11 @@ export async function createSubscriptionCheckout(
   const plan = SUBSCRIPTION_PLANS[planId];
 
   try {
-    // Create or retrieve customer
-    const customers = await stripe.customers.list({ limit: 1, email: userId });
-    let customerId: string;
-
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-    } else {
-      const customer = await stripe.customers.create({
-        metadata: { userId },
-      });
-      customerId = customer.id;
-    }
-
     // Determine billing interval
     const interval = plan.interval === "quarter" ? "month" : plan.interval;
     const intervalCount = plan.interval === "quarter" ? 3 : 1;
 
     const session = await stripe.checkout.sessions.create({
-      customer: customerId,
       payment_method_types: ["card"],
       line_items: [
         {
@@ -241,6 +227,7 @@ export async function createSubscriptionCheckout(
         },
       ],
       mode: "subscription",
+      subscription_data: { metadata: { userId, planId } },
       success_url: successUrl,
       cancel_url: cancelUrl,
       client_reference_id: userId,
@@ -267,4 +254,3 @@ export function constructWebhookEvent(payload: string | Buffer, signature: strin
 
   return stripe.webhooks.constructEvent(payload, signature, process.env.STRIPE_WEBHOOK_SECRET);
 }
-

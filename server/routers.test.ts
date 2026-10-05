@@ -17,7 +17,10 @@ vi.mock("./db", () => ({
 vi.mock("./credits", () => ({
   getUserCredits: vi.fn(),
   deductCredits: vi.fn(),
+  reserveAnalysisCredit: vi.fn(),
+  refundAnalysisCredit: vi.fn(),
   isBetaTester: vi.fn(),
+  hasUnlimitedCredits: vi.fn().mockReturnValue(false),
 }));
 
 vi.mock("./aiAgents", () => ({
@@ -71,6 +74,7 @@ describe("tRPC Routers - Integration Tests", () => {
     // Setup default mocks
     vi.mocked(creditsModule.getUserCredits).mockResolvedValue(10);
     vi.mocked(creditsModule.deductCredits).mockResolvedValue(true);
+    vi.mocked(creditsModule.reserveAnalysisCredit).mockResolvedValue({ allowed: true, charged: true });
     vi.mocked(creditsModule.isBetaTester).mockResolvedValue(false);
   });
 

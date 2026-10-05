@@ -31,12 +31,19 @@ export const users = pgTable("users", {
   lastSignedIn: timestamp("lastSignedIn").defaultNow(),
   lastCreditRefresh: timestamp("lastCreditRefresh").defaultNow(),
   subscriptionPlan: varchar("subscriptionPlan", { length: 64 }),
+  stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 255 }),
   subscriptionStatus: subscriptionStatusEnum("subscriptionStatus"),
   subscriptionEndDate: timestamp("subscriptionEndDate"),
 });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+// Stored in the same transaction as fulfillment so webhook retries are safe.
+export const billingReceipts = pgTable("billing_receipts", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
 
 /**
  * Pet profiles

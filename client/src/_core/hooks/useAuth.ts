@@ -1,5 +1,7 @@
 
 import { trpc } from "@/lib/trpc";
+import { supabase } from "@/lib/supabase";
+import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
 import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo } from "react";
 
@@ -12,10 +14,12 @@ export function useAuth(options?: UseAuthOptions) {
   const { redirectOnUnauthenticated = false, redirectPath = "/login" } =
     options ?? {};
   const utils = trpc.useUtils();
+  const auth = useSupabaseAuth();
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
+    enabled: !auth.loading && !!auth.session,
   });
 
   const logoutMutation = trpc.auth.logout.useMutation({
@@ -26,6 +30,7 @@ export function useAuth(options?: UseAuthOptions) {
 
   const logout = useCallback(async () => {
     try {
+      await supabase.auth.signOut();
       await logoutMutation.mutateAsync();
     } catch (error: unknown) {
       if (
@@ -36,23 +41,21 @@ export function useAuth(options?: UseAuthOptions) {
       }
       throw error;
     } finally {
+      utils.invalidate();
       utils.auth.me.setData(undefined, null);
-      await utils.auth.me.invalidate();
     }
   }, [logoutMutation, utils]);
 
   const state = useMemo(() => {
-    localStorage.setItem(
-      "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
-    );
     return {
-      user: meQuery.data ?? null,
-      loading: meQuery.isLoading || logoutMutation.isPending,
+      user: auth.session ? meQuery.data ?? null : null,
+      loading: auth.loading || (!!auth.session && meQuery.isLoading) || logoutMutation.isPending,
       error: meQuery.error ?? logoutMutation.error ?? null,
-      isAuthenticated: Boolean(meQuery.data),
+      isAuthenticated: Boolean(auth.session && meQuery.data),
     };
   }, [
+    auth.loading,
+    auth.session,
     meQuery.data,
     meQuery.error,
     meQuery.isLoading,

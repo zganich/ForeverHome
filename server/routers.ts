@@ -1,36 +1,18 @@
+import { analysisInput, runAnalysis } from "./analysis";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { createCheckoutSession, createSubscriptionCheckout, CREDIT_PACKS, SUBSCRIPTION_PLANS, type CreditPackId, type SubscriptionPlanId } from "./stripe";
-import { getUserCredits, activateBetaTester, isBetaTester, validateBetaCode } from "./credits";
+import { getUserCredits, activateBetaTester, isBetaTester, validateBetaCode, hasUnlimitedCredits } from "./credits";
 
 export const appRouter = router({
   system: systemRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
-    syncSupabaseUser: publicProcedure
-      .input(
-        z.object({
-          id: z.string(),
-          email: z.string().email().optional(),
-          name: z.string().optional(),
-        })
-      )
-      .mutation(async ({ input }) => {
-        // Sync Supabase user to our database
-        const { upsertUser } = await import("./db");
-        await upsertUser({
-          id: input.id,
-          email: input.email ?? null,
-          name: input.name ?? null,
-          loginMethod: "supabase",
-          lastSignedIn: new Date(),
-        });
-        return { success: true };
-      }),
+    syncSupabaseUser: protectedProcedure.mutation(({ ctx }) => ({ success: true, user: ctx.user })),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -52,7 +34,10 @@ export const appRouter = router({
     }),
     forPet: protectedProcedure
       .input(z.object({ petId: z.string() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        const { getPet } = await import("./db");
+        const pet = await getPet(input.petId);
+        if (!pet || pet.userId !== ctx.user.id) throw new Error("Access denied");
         const { getPetReminders } = await import("./reminders");
         return getPetReminders(input.petId);
       }),
@@ -68,6 +53,9 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
+        const { getPet } = await import("./db");
+        const pet = await getPet(input.petId);
+        if (!pet || pet.userId !== ctx.user.id) throw new Error("Access denied");
         const { createReminder } = await import("./reminders");
         return createReminder({
           userId: ctx.user.id,
@@ -83,15 +71,15 @@ export const appRouter = router({
       }),
     complete: protectedProcedure
       .input(z.object({ reminderId: z.string() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         const { completeReminder } = await import("./reminders");
-        return completeReminder(input.reminderId);
+        return completeReminder(input.reminderId, ctx.user.id);
       }),
     delete: protectedProcedure
       .input(z.object({ reminderId: z.string() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         const { deleteReminder } = await import("./reminders");
-        return deleteReminder(input.reminderId);
+        return deleteReminder(input.reminderId, ctx.user.id);
       }),
   }),
 
@@ -141,68 +129,8 @@ export const appRouter = router({
         return { ...result, tips };
       }),
     create: protectedProcedure
-      .input(
-        z.object({
-          petId: z.string(),
-          mediaUrl: z.string(),
-          mediaType: z.enum(["image", "video"]),
-          userContext: z.string().optional(),
-          photoDate: z.date().optional(),
-          petAgeAtPhoto: z.string().optional(),
-          quickMode: z.boolean().optional(),
-        })
-      )
-      .mutation(async ({ ctx, input }) => {
-        const { getPet, createAnalysis } = await import("./db");
-        const { analyzeBehavior } = await import("./aiAgents");
-        const { deductCredits } = await import("./credits");
-
-        // Verify pet belongs to user
-        const pet = await getPet(input.petId);
-        if (!pet) {
-          throw new Error("Pet not found. Please check that the pet exists and try again.");
-        }
-        if (pet.userId !== ctx.user.id) {
-          throw new Error("You don't have permission to analyze this pet. Please contact support if you believe this is an error.");
-        }
-
-        // Deduct credits before analysis
-        const creditsDeducted = await deductCredits(ctx.user.id, 1);
-        if (!creditsDeducted) {
-          throw new Error("Insufficient credits. Please purchase more credits or upgrade your plan.");
-        }
-
-        // Run AI agent swarm analysis with Phase 1 optimizations
-        const result = await analyzeBehavior(
-          input.mediaUrl, 
-          pet, 
-          input.userContext,
-          {
-            quickMode: input.quickMode,
-          }
-        );
-
-        // Store analysis in database
-        const analysis = await createAnalysis({
-          petId: input.petId,
-          mediaUrl: input.mediaUrl,
-          mediaType: input.mediaType,
-          userContext: input.userContext,
-          photoDate: input.photoDate,
-          petAgeAtPhoto: input.petAgeAtPhoto,
-          visionData: JSON.stringify(result.vision),
-          contextData: JSON.stringify(result.context),
-          synthesisData: JSON.stringify(result.synthesis),
-          recommendations: JSON.stringify(result.recommendations),
-          primaryBehavior: result.synthesis.primaryBehavior,
-          confidenceScore: `${Math.round(result.synthesis.confidence)}%`,
-        });
-
-        return {
-          analysis,
-          result,
-        };
-      }),
+      .input(analysisInput)
+      .mutation(({ ctx, input }) => runAnalysis(ctx.user.id, input)),
     listForPet: protectedProcedure.input(z.object({ petId: z.string() })).query(async ({ ctx, input }) => {
       const { getPet, getPetAnalyses } = await import("./db");
 
@@ -274,8 +202,8 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input, ctx }) => {
-        const successUrl = `${process.env.VITE_APP_URL || "http://localhost:3000"}/dashboard?subscription=success`;
-        const cancelUrl = `${process.env.VITE_APP_URL || "http://localhost:3000"}/subscribe?subscription=cancelled`;
+        const successUrl = `${process.env.APP_URL || process.env.VITE_APP_URL || "http://localhost:3000"}/dashboard?subscription=success`;
+        const cancelUrl = `${process.env.APP_URL || process.env.VITE_APP_URL || "http://localhost:3000"}/subscribe?subscription=cancelled`;
 
         const checkoutUrl = await createSubscriptionCheckout(
           ctx.user.id,
@@ -297,8 +225,8 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input, ctx }) => {
-        const successUrl = `${process.env.VITE_APP_URL || "http://localhost:3000"}/dashboard?payment=success`;
-        const cancelUrl = `${process.env.VITE_APP_URL || "http://localhost:3000"}/dashboard?payment=cancelled`;
+        const successUrl = `${process.env.APP_URL || process.env.VITE_APP_URL || "http://localhost:3000"}/dashboard?payment=success`;
+        const cancelUrl = `${process.env.APP_URL || process.env.VITE_APP_URL || "http://localhost:3000"}/dashboard?payment=cancelled`;
 
         const checkoutUrl = await createCheckoutSession(
           ctx.user.id,
@@ -319,7 +247,7 @@ export const appRouter = router({
     getBalance: protectedProcedure.query(async ({ ctx }) => {
       const credits = await getUserCredits(ctx.user.id);
       const betaTester = await isBetaTester(ctx.user.id);
-      return { credits, isBetaTester: betaTester };
+      return { credits, isBetaTester: betaTester, unlimited: hasUnlimitedCredits(ctx.user) };
     }),
     validateBetaCode: publicProcedure
       .input(

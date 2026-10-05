@@ -84,7 +84,7 @@ export async function getUpcomingReminders(userId: string): Promise<Reminder[]> 
 /**
  * Mark reminder as completed
  */
-export async function completeReminder(reminderId: string): Promise<void> {
+export async function completeReminder(reminderId: string, userId: string): Promise<void> {
   const db = await getDb();
   if (!db) {
     throw new Error("Database not available");
@@ -96,19 +96,19 @@ export async function completeReminder(reminderId: string): Promise<void> {
       isCompleted: "yes",
       completedAt: new Date(),
     })
-    .where(eq(reminders.id, reminderId));
+    .where(and(eq(reminders.id, reminderId), eq(reminders.userId, userId)));
 }
 
 /**
  * Delete a reminder
  */
-export async function deleteReminder(reminderId: string): Promise<void> {
+export async function deleteReminder(reminderId: string, userId: string): Promise<void> {
   const db = await getDb();
   if (!db) {
     throw new Error("Database not available");
   }
 
-  await db.delete(reminders).where(eq(reminders.id, reminderId));
+  await db.delete(reminders).where(and(eq(reminders.id, reminderId), eq(reminders.userId, userId)));
 }
 
 /**

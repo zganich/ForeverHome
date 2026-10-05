@@ -2,8 +2,10 @@ import type { Express } from "express";
 import { getDb } from "../db";
 import { users, shelterPartners, adoptionVerifications, emailCampaigns, emailRecipients } from "../../drizzle/schema";
 import { eq, and, gte, sql } from "drizzle-orm";
+import { requireAdmin } from "../_core/auth";
 
 export function registerAdminRoutes(app: Express) {
+  app.use("/api/admin", requireAdmin);
   // Admin analytics endpoint (protected - add auth middleware in production)
   app.get("/api/admin/analytics", async (req, res) => {
     try {
@@ -165,4 +167,3 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 }
-

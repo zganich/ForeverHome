@@ -19,7 +19,12 @@ export type FileContent = {
   type: "file_url";
   file_url: {
     url: string;
-    mime_type?: "audio/mpeg" | "audio/wav" | "application/pdf" | "audio/mp4" | "video/mp4" ;
+    mime_type?:
+      | "audio/mpeg"
+      | "audio/wav"
+      | "application/pdf"
+      | "audio/mp4"
+      | "video/mp4";
   };
 };
 
@@ -210,14 +215,10 @@ const normalizeToolChoice = (
 };
 
 const resolveApiUrl = () =>
-  ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
-    ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`
-    : "https://forge.manus.im/v1/chat/completions";
+  `${ENV.openaiBaseUrl.replace(/\/$/, "")}/chat/completions`;
 
 const assertApiKey = () => {
-  if (!ENV.forgeApiKey) {
-    throw new Error("OPENAI_API_KEY is not configured");
-  }
+  if (!ENV.openaiApiKey) throw new Error("OPENAI_API_KEY is not configured");
 };
 
 const normalizeResponseFormat = ({
@@ -265,7 +266,9 @@ const normalizeResponseFormat = ({
   };
 };
 
-export async function invokeLLM(params: InvokeParams & { model?: string }): Promise<InvokeResult> {
+export async function invokeLLM(
+  params: InvokeParams & { model?: string }
+): Promise<InvokeResult> {
   assertApiKey();
 
   const {
@@ -280,9 +283,8 @@ export async function invokeLLM(params: InvokeParams & { model?: string }): Prom
     model,
   } = params;
 
-  // Phase 1 Optimization: Use faster/cheaper models for non-critical agents
-  // Default to gemini-2.5-flash (fast and cost-effective), but allow override
-  const selectedModel = model || "gemini-2.5-flash";
+  // One configurable vision-capable model serves the existing pipeline.
+  const selectedModel = model || ENV.openaiModel;
 
   const payload: Record<string, unknown> = {
     model: selectedModel,
@@ -301,10 +303,7 @@ export async function invokeLLM(params: InvokeParams & { model?: string }): Prom
     payload.tool_choice = normalizedToolChoice;
   }
 
-  payload.max_tokens = 32768
-  payload.thinking = {
-    "budget_tokens": 128
-  }
+  payload.max_completion_tokens = params.maxTokens ?? params.max_tokens ?? 2048;
 
   const normalizedResponseFormat = normalizeResponseFormat({
     responseFormat,
@@ -321,15 +320,15 @@ export async function invokeLLM(params: InvokeParams & { model?: string }): Prom
     method: "POST",
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${ENV.forgeApiKey}`,
+      authorization: `Bearer ${ENV.openaiApiKey}`,
     },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(40_000),
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
     throw new Error(
-      `LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`
+      `AI provider request failed (${response.status}). Please try again.`
     );
   }
 

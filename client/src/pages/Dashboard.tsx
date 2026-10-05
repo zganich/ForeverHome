@@ -100,7 +100,7 @@ export default function Dashboard() {
                     <Coins className="w-5 h-5 text-primary" />
                     <div>
                       <p className="text-xs text-muted-foreground">Credits</p>
-                      <p className="text-lg font-bold text-primary">{balance.isBetaTester ? "∞" : balance.credits}</p>
+                      <p className="text-lg font-bold text-primary">{(balance.isBetaTester || balance.unlimited) ? "∞" : balance.credits}</p>
                     </div>
                     {balance.isBetaTester && (
                       <Badge className="bg-gradient-to-r from-primary to-accent ml-2 text-xs">🏆 Founding</Badge>

@@ -1,7 +1,33 @@
-import { eq, and, gt, lte } from "drizzle-orm";
+import { eq, and, gt, lte, gte, sql } from "drizzle-orm";
 import { getDb } from "./db";
-import { users, purchases, betaCodes, InsertPurchase, InsertBetaCode } from "../drizzle/schema";
+import { users, purchases, betaCodes, InsertPurchase, InsertBetaCode, type User } from "../drizzle/schema";
 import { nanoid } from "nanoid";
+
+export function hasUnlimitedCredits(user: User): boolean {
+  const active = user.subscriptionStatus === "active" && !!user.subscriptionEndDate && user.subscriptionEndDate > new Date();
+  return user.isBetaTester || (active && ["premium", "shelter", "realtime", "ultimate"].includes(user.subscriptionPlan ?? ""));
+}
+
+export async function reserveAnalysisCredit(userId: string): Promise<{ allowed: boolean; charged: boolean }> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!user) return { allowed: false, charged: false };
+  if (hasUnlimitedCredits(user)) {
+    return { allowed: true, charged: false };
+  }
+  const rows = await db.update(users)
+    .set({ credits: sql`${users.credits} - 1` })
+    .where(and(eq(users.id, userId), gte(users.credits, 1)))
+    .returning({ id: users.id });
+  return { allowed: rows.length > 0, charged: rows.length > 0 };
+}
+
+export async function refundAnalysisCredit(userId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ credits: sql`${users.credits} + 1` }).where(eq(users.id, userId));
+}
 
 /**
  * Get user's current credit balance
@@ -384,4 +410,3 @@ export async function revokeBetaCode(codeId: string): Promise<void> {
     .set({ status: "revoked", updatedAt: new Date() })
     .where(eq(betaCodes.id, codeId));
 }
-

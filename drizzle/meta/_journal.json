@@ -15,6 +15,20 @@
       "when": 1762236730185,
       "tag": "0001_solid_night_thrasher",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791228050988,
+      "tag": "0002_married_legion",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791228282817,
+      "tag": "0003_protect_server_tables",
+      "breakpoints": true
     }
   ]
 }

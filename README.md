@@ -1,5 +1,7 @@
 # InterpWhat 🐾
 
+> October 2026 technical revival: see [TECHNICAL-REVIVE.md](docs/TECHNICAL-REVIVE.md) for the current runtime, verification evidence and remaining hosted acceptance work. Older feature and readiness claims below are historical.
+
 **AI-powered pet parenting platform** - Understand your pet's behavior, track their care, and make better decisions.
 
 *Built with ❤️ by Chantell and the guy with the mumbling drawl...and in memory of Paisley*

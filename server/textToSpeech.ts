@@ -1,9 +1,7 @@
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || process.env.BUILT_IN_FORGE_API_KEY,
-  baseURL: process.env.OPENAI_BASE_URL || process.env.BUILT_IN_FORGE_API_URL,
-});
+import { invokeLLM } from "./_core/llm";
+import { ENV } from "./_core/env";
 
 export type PersonalityType = "goofy" | "wise" | "sassy" | "serious" | "excited" | "sleepy" | "dramatic";
 
@@ -11,10 +9,10 @@ export type PersonalityType = "goofy" | "wise" | "sassy" | "serious" | "excited"
  * Generate personality-based interpretation text
  * This creates the "voice" of the pet based on their personality
  */
-export function generatePersonalityVoice(
+export async function generatePersonalityVoice(
   interpretation: string,
   personality: PersonalityType
-): string {
+): Promise<string> {
   const personalityPrompts = {
     goofy: `Rewrite this pet behavior interpretation in a playful, silly, energetic voice. Use casual language, exclamations, and enthusiasm. Make it fun and lighthearted:\n\n${interpretation}`,
     
@@ -31,7 +29,14 @@ export function generatePersonalityVoice(
     dramatic: `Rewrite this pet behavior interpretation in an over-the-top, theatrical voice. Make it dramatic and expressive. Add flair and emotion:\n\n${interpretation}`,
   };
 
-  return personalityPrompts[personality];
+  const response = await invokeLLM({
+    messages: [{ role: "user", content: personalityPrompts[personality] }],
+    maxTokens: 500,
+  });
+  const content = response.choices[0]?.message.content;
+  if (typeof content !== "string" || !content.trim()) throw new Error("Unable to generate pet interpretation.");
+  return content;
+
 }
 
 /**
@@ -43,6 +48,8 @@ export async function generateSpeech(
   voice: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer" = "alloy"
 ): Promise<Buffer> {
   try {
+    if (!ENV.openaiApiKey) throw new Error("OPENAI_API_KEY is not configured");
+    const openai = new OpenAI({ apiKey: ENV.openaiApiKey, baseURL: ENV.openaiBaseUrl });
     const response = await openai.audio.speech.create({
       model: "tts-1",
       voice: voice,

@@ -98,7 +98,6 @@ Return a JSON object with: posture, facialExpression, environmentalContext, and 
  */
 export async function contextAgent(pet: Pet, visionData: VisionAnalysis): Promise<ContextEnrichment> {
   const response = await invokeLLM({
-    model: "gemini-2.5-flash", // Fast model for context (non-critical path)
     messages: [
       {
         role: "system",
@@ -192,7 +191,7 @@ Return JSON with: primaryBehavior, confidence, reasoning, alternativeInterpretat
               description: "Alternative possibilities",
             },
           },
-          required: ["primaryBehavior", "confidence", "reasoning"],
+          required: ["primaryBehavior", "confidence", "reasoning", "alternativeInterpretations"],
           additionalProperties: false,
         },
       },
@@ -212,7 +211,6 @@ Return JSON with: primaryBehavior, confidence, reasoning, alternativeInterpretat
  */
 export async function recommendationAgent(synthesis: BehaviorSynthesis): Promise<Recommendations> {
   const response = await invokeLLM({
-    model: "gemini-2.5-flash", // Fast model for recommendations (non-critical path)
     messages: [
       {
         role: "system",
@@ -258,7 +256,7 @@ Return JSON with: actions (array of strings), safetyWarnings (array, optional), 
               description: "Whether to consult a vet",
             },
           },
-          required: ["actions", "vetConsultation"],
+          required: ["actions", "safetyWarnings", "vetConsultation"],
           additionalProperties: false,
         },
       },
@@ -311,7 +309,6 @@ export async function analyzeBehavior(
 
   // STEP 2: PHASE 1 OPTIMIZATION - Context agent (uses faster model for cost/speed)
   // Note: Context needs Vision data, so it runs after Vision completes
-  // Optimization: Uses faster model (gemini-2.5-flash) for 40-50% cost reduction
   options?.onProgress?.("context", { status: "analyzing" });
   const enrichedContext = await contextAgent(pet, vision);
   options?.onProgress?.("context", enrichedContext);
@@ -339,8 +336,8 @@ export async function analyzeBehavior(
   
   // Create a conversational interpretation from the synthesis
   const baseInterpretation = `${synthesis.primaryBehavior}. ${synthesis.reasoning}`;
-  const personalityVoice = generatePersonalityVoice(baseInterpretation, personality);
-  options?.onProgress?.("complete", { personalityVoice, personality });
+  const personalityVoice = await generatePersonalityVoice(baseInterpretation, personality);
+  options?.onProgress?.("voice", { personalityVoice, personality });
 
   return {
     vision,

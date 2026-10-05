@@ -1,3 +1,5 @@
+import { AnalysisStream } from "@/lib/analysisStream";
+import { authFetch } from "@/lib/api";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,7 +42,7 @@ export default function PetDetail() {
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisStatus, setAnalysisStatus] = useState("");
   const [currentStage, setCurrentStage] = useState<string>("");
-  const eventSourceRef = useRef<EventSource | null>(null);
+  const eventSourceRef = useRef<AnalysisStream | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -71,14 +73,14 @@ export default function PetDetail() {
 
   const validateAndSetFile = (selectedFile: File) => {
     // Validate file type
-    const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "video/mp4", "video/quicktime"];
+    const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
     if (!validTypes.includes(selectedFile.type)) {
-      toast.error("Please upload an image (JPG, PNG, GIF, WebP) or video (MP4, MOV)");
+      toast.error("Please upload an image (JPG, PNG, GIF, WebP) ");
       return false;
     }
-    // Validate file size (max 50MB)
-    if (selectedFile.size > 50 * 1024 * 1024) {
-      toast.error("File size must be less than 50MB. Please compress your file or choose a smaller one.");
+    // Validate file size (max 4 MB)
+    if (selectedFile.size > 4 * 1024 * 1024) {
+      toast.error("File size must be less than 4 MB. Please compress your file or choose a smaller one.");
       return false;
     }
     setFile(selectedFile);
@@ -159,7 +161,7 @@ export default function PetDetail() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const uploadResponse = await fetch("/api/upload", {
+      const uploadResponse = await authFetch("/api/upload", {
         method: "POST",
         body: formData,
       });
@@ -213,19 +215,15 @@ export default function PetDetail() {
       setAnalysisStatus("Connecting to analysis server...");
       setAnalysisProgress(15);
 
-      // Build query parameters for SSE endpoint
-      const params = new URLSearchParams({
+      const eventSource = new AnalysisStream({
         petId: pet.id,
         mediaUrl: url,
         mediaType,
-        ...(userContext.trim() && { userContext: userContext.trim() }),
-        ...(photoDate && { photoDate }),
-        ...(petAgeAtPhoto && { petAgeAtPhoto }),
-        ...(quickMode && { quickMode: "true" }),
+        userContext: userContext.trim() || undefined,
+        photoDate: photoDate || undefined,
+        petAgeAtPhoto: petAgeAtPhoto || undefined,
+        quickMode,
       });
-
-      // Create EventSource for SSE streaming
-      const eventSource = new EventSource(`/api/analysis/stream?${params.toString()}`);
       eventSourceRef.current = eventSource;
 
       eventSource.onmessage = (event) => {
@@ -237,7 +235,7 @@ export default function PetDetail() {
           setAnalysisProgress(progress || 0);
           setAnalysisStatus(getStatusMessage(stage, data));
 
-          if (stage === "complete") {
+          if (stage === "complete" && eventData.analysisId) {
             // Analysis complete - navigate to results page
             eventSource.close();
             eventSourceRef.current = null;
@@ -405,7 +403,7 @@ export default function PetDetail() {
             <CardHeader>
               <CardTitle className="text-2xl">Analyze Behavior</CardTitle>
               <CardDescription className="text-base">
-                Upload a photo or video to understand {pet.name}'s behavior
+                Upload a photo to understand {pet.name}'s behavior
               </CardDescription>
               <p className="text-sm text-muted-foreground mt-2">
                 <strong>How it works:</strong> Upload a photo of {pet.name}. Our AI will tell you what they're thinking or feeling in about {quickMode ? "8" : "20"} seconds.
@@ -456,7 +454,7 @@ export default function PetDetail() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*,video/*"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
                     onChange={handleFileSelect}
                     capture="environment"
                     className="hidden"
@@ -495,7 +493,7 @@ export default function PetDetail() {
                           Images (JPG, PNG, GIF, WebP) or Videos (MP4, MOV)
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Maximum file size: 50MB
+                          Maximum file size: 4 MB
                         </p>
                       </div>
                     </div>

@@ -108,3 +108,7 @@ supabase/.temp/
 *.sqlite3
 .vercel
 .env*.local
+
+# Local browser verification artifacts
+.playwright-cli/
+output/playwright/
