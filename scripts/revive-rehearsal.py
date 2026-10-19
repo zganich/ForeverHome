@@ -33,6 +33,9 @@ def main():
         env = os.environ.copy()
         env.update({
             "REVIVE_TEST_DATABASE_URL": f"postgresql://{os.environ.get('USER', 'postgres')}@127.0.0.1:{port}/foreverhome_rehearsal",
+            "GOOGLE_CLOUD_PROJECT": "foreverhome-test",
+            "GCS_BUCKET": "foreverhome-test-media",
+            "CLOUD_SQL_CONNECTION_NAME": "",
             "OPENAI_API_KEY": "sk-test-mock",
             "STRIPE_SECRET_KEY": "sk_test_mock",
             "STRIPE_WEBHOOK_SECRET": "whsec_test_mock",

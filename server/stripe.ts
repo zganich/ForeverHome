@@ -1,6 +1,11 @@
 import Stripe from "stripe";
 
-// Initialize Stripe (will need STRIPE_SECRET_KEY in environment)
+// Revival remains test-only, even if a live key is accidentally configured.
+if (
+  process.env.STRIPE_SECRET_KEY &&
+  !process.env.STRIPE_SECRET_KEY.startsWith("sk_test_")
+)
+  throw new Error("ForeverHome requires a Stripe test-mode secret key");
 export const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: "2025-09-30.clover",
@@ -146,7 +151,9 @@ export async function createCheckoutSession(
   cancelUrl: string
 ): Promise<string | null> {
   if (!stripe) {
-    console.error("[Stripe] Stripe not initialized - missing STRIPE_SECRET_KEY");
+    console.error(
+      "[Stripe] Stripe not initialized - missing STRIPE_SECRET_KEY"
+    );
     return null;
   }
 
@@ -196,7 +203,9 @@ export async function createSubscriptionCheckout(
   cancelUrl: string
 ): Promise<string | null> {
   if (!stripe) {
-    console.error("[Stripe] Stripe not initialized - missing STRIPE_SECRET_KEY");
+    console.error(
+      "[Stripe] Stripe not initialized - missing STRIPE_SECRET_KEY"
+    );
     return null;
   }
 
@@ -247,10 +256,17 @@ export async function createSubscriptionCheckout(
 /**
  * Verify webhook signature
  */
-export function constructWebhookEvent(payload: string | Buffer, signature: string) {
+export function constructWebhookEvent(
+  payload: string | Buffer,
+  signature: string
+) {
   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) {
     throw new Error("Stripe not configured");
   }
 
-  return stripe.webhooks.constructEvent(payload, signature, process.env.STRIPE_WEBHOOK_SECRET);
+  return stripe.webhooks.constructEvent(
+    payload,
+    signature,
+    process.env.STRIPE_WEBHOOK_SECRET
+  );
 }

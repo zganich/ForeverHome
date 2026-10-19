@@ -1,3 +1,4 @@
+import { publicObjectUrl, userUploadPrefix } from "./storage";
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { appRouter } from "./routers";
 import { createMockUser, createMockPet } from "../tests/utils/mocks";
@@ -56,13 +57,13 @@ vi.mock("./photoQuality", () => ({
 describe("tRPC Routers - Integration Tests", () => {
   const mockUser = createMockUser();
   const mockPet = createMockPet();
-  
+
   const mockContext: TrpcContext = {
     user: mockUser,
     req: {} as any,
     res: {} as any,
   };
-  
+
   // Create caller helper function
   const createCaller = (ctx: TrpcContext) => {
     return appRouter.createCaller(ctx);
@@ -70,11 +71,14 @@ describe("tRPC Routers - Integration Tests", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Setup default mocks
     vi.mocked(creditsModule.getUserCredits).mockResolvedValue(10);
     vi.mocked(creditsModule.deductCredits).mockResolvedValue(true);
-    vi.mocked(creditsModule.reserveAnalysisCredit).mockResolvedValue({ allowed: true, charged: true });
+    vi.mocked(creditsModule.reserveAnalysisCredit).mockResolvedValue({
+      allowed: true,
+      charged: true,
+    });
     vi.mocked(creditsModule.isBetaTester).mockResolvedValue(false);
   });
 
@@ -133,7 +137,9 @@ describe("tRPC Routers - Integration Tests", () => {
       const caller = appRouter.createCaller(mockContext);
 
       const result = await caller.pets.identifyBreed({
-        imageUrl: "https://example.com/pet.jpg",
+        imageUrl: publicObjectUrl(
+          `${userUploadPrefix(mockUser.id)}fictional.jpg`
+        ),
         species: "cat",
       });
 
@@ -147,7 +153,9 @@ describe("tRPC Routers - Integration Tests", () => {
       const caller = appRouter.createCaller(mockContext);
 
       const result = await caller.analysis.validatePhoto({
-        imageUrl: "https://example.com/photo.jpg",
+        imageUrl: publicObjectUrl(
+          `${userUploadPrefix(mockUser.id)}fictional.jpg`
+        ),
       });
 
       expect(result.isAcceptable).toBe(true);
@@ -164,7 +172,9 @@ describe("tRPC Routers - Integration Tests", () => {
       vi.mocked(dbModule.createAnalysis).mockResolvedValue({
         id: "analysis-123",
         petId: mockPet.id,
-        mediaUrl: "https://example.com/media.jpg",
+        mediaUrl: publicObjectUrl(
+          `${userUploadPrefix(mockUser.id)}fictional.jpg`
+        ),
         primaryBehavior: "Happy",
         confidenceScore: "95%",
         createdAt: new Date(),
@@ -172,14 +182,16 @@ describe("tRPC Routers - Integration Tests", () => {
 
       const result = await caller.analysis.create({
         petId: mockPet.id,
-        mediaUrl: "https://example.com/media.jpg",
+        mediaUrl: publicObjectUrl(
+          `${userUploadPrefix(mockUser.id)}fictional.jpg`
+        ),
         mediaType: "image",
       });
 
       expect(result).toBeDefined();
       expect(result.analysis.id).toBe("analysis-123");
       expect(dbModule.getPet).toHaveBeenCalledWith(mockPet.id);
-      // Note: deductCredits is called in the analysis.create handler, 
+      // Note: deductCredits is called in the analysis.create handler,
       // but we need to mock it in the actual router implementation
       // For now, we verify the analysis was created successfully
     });
@@ -193,7 +205,9 @@ describe("tRPC Routers - Integration Tests", () => {
       await expect(
         caller.analysis.create({
           petId: otherUserPet.id,
-          mediaUrl: "https://example.com/media.jpg",
+          mediaUrl: publicObjectUrl(
+            `${userUploadPrefix(mockUser.id)}fictional.jpg`
+          ),
           mediaType: "image",
         })
       ).rejects.toThrow("You don't have permission");
@@ -207,7 +221,9 @@ describe("tRPC Routers - Integration Tests", () => {
       await expect(
         caller.analysis.create({
           petId: "non-existent-pet",
-          mediaUrl: "https://example.com/media.jpg",
+          mediaUrl: publicObjectUrl(
+            `${userUploadPrefix(mockUser.id)}fictional.jpg`
+          ),
           mediaType: "image",
         })
       ).rejects.toThrow("Pet not found");
@@ -224,4 +240,3 @@ describe("tRPC Routers - Integration Tests", () => {
     });
   });
 });
-

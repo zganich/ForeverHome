@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link } from "wouter";
-import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
+import { useFirebaseAuth } from "@/contexts/AuthContext";
 
 interface StickyCTAProps {
   primaryText?: string;
@@ -16,7 +16,7 @@ export default function StickyCTA({
   primaryHref = "/login",
   secondaryHref = "/subscribe",
 }: StickyCTAProps) {
-  const { user } = useSupabaseAuth();
+  const { user } = useFirebaseAuth();
   const isAuthenticated = !!user;
 
   if (isAuthenticated) {

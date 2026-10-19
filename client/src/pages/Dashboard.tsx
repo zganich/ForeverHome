@@ -1,4 +1,4 @@
-import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
+import { useFirebaseAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 
 export default function Dashboard() {
-  const { user, loading, signOut } = useSupabaseAuth();
+  const { user, loading, signOut } = useFirebaseAuth();
   const isAuthenticated = !!user;
   const [, setLocation] = useLocation();
   const [betaCode, setBetaCode] = useState("");
@@ -109,7 +109,7 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             )}
-            <span className="text-sm text-muted-foreground hidden md:block">Hi, {user?.user_metadata?.name || user?.email?.split('@')[0] || "there"}!</span>
+            <span className="text-sm text-muted-foreground hidden md:block">Hi, {user?.displayName || user?.email?.split('@')[0] || "there"}!</span>
             <FeedbackWidget />
             <Button variant="outline" onClick={() => signOut()}>
               Sign Out

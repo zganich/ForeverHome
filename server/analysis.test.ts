@@ -1,3 +1,4 @@
+import { publicObjectUrl, userUploadPrefix } from "./storage";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("./db", () => ({ getPet: vi.fn(), createAnalysis: vi.fn() }));
 vi.mock("./credits", () => ({
@@ -13,7 +14,7 @@ import { runAnalysis } from "./analysis";
 describe("Analysis persistence and credit recovery", () => {
   const input = {
     petId: "pet",
-    mediaUrl: "https://fictional.example/photo.jpg",
+    mediaUrl: publicObjectUrl(`${userUploadPrefix("user")}fictional.jpg`),
     mediaType: "image" as const,
   };
   beforeEach(() => {

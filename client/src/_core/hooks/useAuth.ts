@@ -1,7 +1,5 @@
-
 import { trpc } from "@/lib/trpc";
-import { supabase } from "@/lib/supabase";
-import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
+import { useFirebaseAuth } from "@/contexts/AuthContext";
 import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo } from "react";
 
@@ -14,12 +12,12 @@ export function useAuth(options?: UseAuthOptions) {
   const { redirectOnUnauthenticated = false, redirectPath = "/login" } =
     options ?? {};
   const utils = trpc.useUtils();
-  const auth = useSupabaseAuth();
+  const auth = useFirebaseAuth();
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
-    enabled: !auth.loading && !!auth.session,
+    enabled: !auth.loading && auth.emailVerified,
   });
 
   const logoutMutation = trpc.auth.logout.useMutation({
@@ -30,7 +28,7 @@ export function useAuth(options?: UseAuthOptions) {
 
   const logout = useCallback(async () => {
     try {
-      await supabase.auth.signOut();
+      await auth.signOut();
       await logoutMutation.mutateAsync();
     } catch (error: unknown) {
       if (
@@ -44,18 +42,21 @@ export function useAuth(options?: UseAuthOptions) {
       utils.invalidate();
       utils.auth.me.setData(undefined, null);
     }
-  }, [logoutMutation, utils]);
+  }, [auth.signOut, logoutMutation, utils]);
 
   const state = useMemo(() => {
     return {
-      user: auth.session ? meQuery.data ?? null : null,
-      loading: auth.loading || (!!auth.session && meQuery.isLoading) || logoutMutation.isPending,
+      user: auth.emailVerified ? (meQuery.data ?? null) : null,
+      loading:
+        auth.loading ||
+        (auth.emailVerified && meQuery.isLoading) ||
+        logoutMutation.isPending,
       error: meQuery.error ?? logoutMutation.error ?? null,
-      isAuthenticated: Boolean(auth.session && meQuery.data),
+      isAuthenticated: Boolean(auth.emailVerified && meQuery.data),
     };
   }, [
     auth.loading,
-    auth.session,
+    auth.emailVerified,
     meQuery.data,
     meQuery.error,
     meQuery.isLoading,
@@ -65,18 +66,19 @@ export function useAuth(options?: UseAuthOptions) {
 
   useEffect(() => {
     if (!redirectOnUnauthenticated) return;
-    if (meQuery.isLoading || logoutMutation.isPending) return;
+    if (state.loading) return;
     if (state.user) return;
     if (typeof window === "undefined") return;
     if (window.location.pathname === redirectPath) return;
 
-    window.location.href = redirectPath
+    window.location.href = redirectPath;
   }, [
     redirectOnUnauthenticated,
     redirectPath,
     logoutMutation.isPending,
     meQuery.isLoading,
     state.user,
+    state.loading,
   ]);
 
   return {

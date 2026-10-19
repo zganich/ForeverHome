@@ -1,25 +1,34 @@
+import { assertOwnedImageUrl } from "./storage";
 import { analysisInput, runAnalysis } from "./analysis";
-import { COOKIE_NAME } from "@shared/const";
-import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
-import { createCheckoutSession, createSubscriptionCheckout, CREDIT_PACKS, SUBSCRIPTION_PLANS, type CreditPackId, type SubscriptionPlanId } from "./stripe";
-import { getUserCredits, activateBetaTester, isBetaTester, validateBetaCode, hasUnlimitedCredits } from "./credits";
+import {
+  createCheckoutSession,
+  createSubscriptionCheckout,
+  CREDIT_PACKS,
+  SUBSCRIPTION_PLANS,
+  type CreditPackId,
+  type SubscriptionPlanId,
+} from "./stripe";
+import {
+  getUserCredits,
+  activateBetaTester,
+  isBetaTester,
+  validateBetaCode,
+  hasUnlimitedCredits,
+} from "./credits";
 
 export const appRouter = router({
   system: systemRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
-    syncSupabaseUser: protectedProcedure.mutation(({ ctx }) => ({ success: true, user: ctx.user })),
-    logout: publicProcedure.mutation(({ ctx }) => {
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return {
-        success: true,
-      } as const;
-    }),
+    syncUser: protectedProcedure.mutation(({ ctx }) => ({
+      success: true,
+      user: ctx.user,
+    })),
+    logout: publicProcedure.mutation(() => ({ success: true })),
   }),
 
   // Reminders
@@ -37,7 +46,8 @@ export const appRouter = router({
       .query(async ({ ctx, input }) => {
         const { getPet } = await import("./db");
         const pet = await getPet(input.petId);
-        if (!pet || pet.userId !== ctx.user.id) throw new Error("Access denied");
+        if (!pet || pet.userId !== ctx.user.id)
+          throw new Error("Access denied");
         const { getPetReminders } = await import("./reminders");
         return getPetReminders(input.petId);
       }),
@@ -49,13 +59,16 @@ export const appRouter = router({
           description: z.string().optional(),
           type: z.enum(["medication", "vet", "grooming", "training", "custom"]),
           dueDate: z.date(),
-          isRecurring: z.enum(["none", "daily", "weekly", "monthly", "yearly"]).default("none"),
+          isRecurring: z
+            .enum(["none", "daily", "weekly", "monthly", "yearly"])
+            .default("none"),
         })
       )
       .mutation(async ({ ctx, input }) => {
         const { getPet } = await import("./db");
         const pet = await getPet(input.petId);
-        if (!pet || pet.userId !== ctx.user.id) throw new Error("Access denied");
+        if (!pet || pet.userId !== ctx.user.id)
+          throw new Error("Access denied");
         const { createReminder } = await import("./reminders");
         return createReminder({
           userId: ctx.user.id,
@@ -92,7 +105,8 @@ export const appRouter = router({
           species: z.enum(["dog", "cat", "other"]),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        assertOwnedImageUrl(ctx.user.id, input.imageUrl);
         const { identifyBreed } = await import("./breedIdentification");
         return identifyBreed(input.imageUrl, input.species);
       }),
@@ -108,7 +122,17 @@ export const appRouter = router({
           breed: z.string().optional(),
           age: z.string().optional(),
           photoUrl: z.string().optional(),
-          personality: z.enum(["goofy", "wise", "sassy", "serious", "excited", "sleepy", "dramatic"]).optional(),
+          personality: z
+            .enum([
+              "goofy",
+              "wise",
+              "sassy",
+              "serious",
+              "excited",
+              "sleepy",
+              "dramatic",
+            ])
+            .optional(),
           voiceStyle: z.string().optional(),
         })
       )
@@ -122,8 +146,11 @@ export const appRouter = router({
   analysis: router({
     validatePhoto: protectedProcedure
       .input(z.object({ imageUrl: z.string() }))
-      .mutation(async ({ input }) => {
-        const { validatePhotoQuality, getPhotoTips } = await import("./photoQuality");
+      .mutation(async ({ ctx, input }) => {
+        assertOwnedImageUrl(ctx.user.id, input.imageUrl);
+        const { validatePhotoQuality, getPhotoTips } = await import(
+          "./photoQuality"
+        );
         const result = await validatePhotoQuality(input.imageUrl);
         const tips = getPhotoTips(result.issues);
         return { ...result, tips };
@@ -131,36 +158,44 @@ export const appRouter = router({
     create: protectedProcedure
       .input(analysisInput)
       .mutation(({ ctx, input }) => runAnalysis(ctx.user.id, input)),
-    listForPet: protectedProcedure.input(z.object({ petId: z.string() })).query(async ({ ctx, input }) => {
-      const { getPet, getPetAnalyses } = await import("./db");
+    listForPet: protectedProcedure
+      .input(z.object({ petId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const { getPet, getPetAnalyses } = await import("./db");
 
-      // Verify pet belongs to user
-      const pet = await getPet(input.petId);
-              if (!pet) {
-          throw new Error("Pet not found. Please check that the pet exists and try again.");
+        // Verify pet belongs to user
+        const pet = await getPet(input.petId);
+        if (!pet) {
+          throw new Error(
+            "Pet not found. Please check that the pet exists and try again."
+          );
         }
         if (pet.userId !== ctx.user.id) {
-          throw new Error("You don't have permission to access this pet. Please contact support if you believe this is an error.");
+          throw new Error(
+            "You don't have permission to access this pet. Please contact support if you believe this is an error."
+          );
         }
 
-      return getPetAnalyses(input.petId);
-    }),
-    get: protectedProcedure.input(z.object({ analysisId: z.string() })).query(async ({ ctx, input }) => {
-      const { getAnalysis, getPet } = await import("./db");
+        return getPetAnalyses(input.petId);
+      }),
+    get: protectedProcedure
+      .input(z.object({ analysisId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const { getAnalysis, getPet } = await import("./db");
 
-      const analysis = await getAnalysis(input.analysisId);
-      if (!analysis) {
-        throw new Error("Analysis not found");
-      }
+        const analysis = await getAnalysis(input.analysisId);
+        if (!analysis) {
+          throw new Error("Analysis not found");
+        }
 
-      // Verify pet belongs to user
-      const pet = await getPet(analysis.petId);
-      if (!pet || pet.userId !== ctx.user.id) {
-        throw new Error("Access denied");
-      }
+        // Verify pet belongs to user
+        const pet = await getPet(analysis.petId);
+        if (!pet || pet.userId !== ctx.user.id) {
+          throw new Error("Access denied");
+        }
 
-      return analysis;
-    }),
+        return analysis;
+      }),
     submitFeedback: protectedProcedure
       .input(
         z.object({
@@ -169,7 +204,9 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        const { getAnalysis, getPet, updateAnalysisFeedback } = await import("./db");
+        const { getAnalysis, getPet, updateAnalysisFeedback } = await import(
+          "./db"
+        );
 
         const analysis = await getAnalysis(input.analysisId);
         if (!analysis) {
@@ -213,7 +250,9 @@ export const appRouter = router({
         );
 
         if (!checkoutUrl) {
-          throw new Error("Unable to create checkout session. Please try again or contact support if the problem persists.");
+          throw new Error(
+            "Unable to create checkout session. Please try again or contact support if the problem persists."
+          );
         }
 
         return { url: checkoutUrl };
@@ -236,7 +275,9 @@ export const appRouter = router({
         );
 
         if (!checkoutUrl) {
-          throw new Error("Unable to process payment. Please check your payment information and try again.");
+          throw new Error(
+            "Unable to process payment. Please check your payment information and try again."
+          );
         }
 
         return { url: checkoutUrl };
@@ -247,7 +288,11 @@ export const appRouter = router({
     getBalance: protectedProcedure.query(async ({ ctx }) => {
       const credits = await getUserCredits(ctx.user.id);
       const betaTester = await isBetaTester(ctx.user.id);
-      return { credits, isBetaTester: betaTester, unlimited: hasUnlimitedCredits(ctx.user) };
+      return {
+        credits,
+        isBetaTester: betaTester,
+        unlimited: hasUnlimitedCredits(ctx.user),
+      };
     }),
     validateBetaCode: publicProcedure
       .input(
@@ -268,7 +313,9 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const success = await activateBetaTester(ctx.user.id, input.code);
         if (!success) {
-          throw new Error("Invalid or expired beta code. Please check your code and try again, or contact support if you believe this is an error.");
+          throw new Error(
+            "Invalid or expired beta code. Please check your code and try again, or contact support if you believe this is an error."
+          );
         }
         return { success: true };
       }),
@@ -278,7 +325,14 @@ export const appRouter = router({
     submit: protectedProcedure
       .input(
         z.object({
-          category: z.enum(["bug", "feature_request", "ux_improvement", "performance", "content", "other"]),
+          category: z.enum([
+            "bug",
+            "feature_request",
+            "ux_improvement",
+            "performance",
+            "content",
+            "other",
+          ]),
           rating: z.number().min(1).max(5).optional(),
           message: z.string().min(1),
           pageUrl: z.string().optional(),

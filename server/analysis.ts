@@ -1,3 +1,4 @@
+import { assertOwnedImageUrl } from "./storage";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { analyzeBehavior, type ProgressData } from "./aiAgents";
@@ -36,6 +37,7 @@ export async function runAnalysis(
       code: "FORBIDDEN",
       message: "You don't have permission to analyze this pet.",
     });
+  assertOwnedImageUrl(userId, input.mediaUrl);
   const reservation = await reserveAnalysisCredit(userId);
   if (!reservation.allowed)
     throw new Error(

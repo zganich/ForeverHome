@@ -1,143 +1,109 @@
-import { useEffect, useState } from 'react';
-import { useLocation } from 'wouter';
-import { supabase } from '@/lib/supabase';
-import { trpc } from '@/lib/trpc';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, CheckCircle2, XCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "wouter";
+import { applyActionCode, reload } from "firebase/auth";
+import { getFirebaseAuth } from "@/lib/firebase";
+import { trpc } from "@/lib/trpc";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
-/**
- * Auth Callback Page
- * 
- * Handles Supabase email confirmation and password reset callbacks.
- * Supabase automatically processes tokens from URL hash fragments.
- */
+type Outcome = { message: string; destination: string };
 export default function AuthCallback() {
-  const [, setLocation] = useLocation();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [message, setMessage] = useState('Processing authentication...');
-  
-  const utils = trpc.useUtils();
-  const syncUser = trpc.auth.syncSupabaseUser.useMutation();
-  const redeemCode = trpc.credits.redeemBetaCode.useMutation({
-    onSuccess: () => {
-      utils.credits.getBalance.invalidate();
-      toast.success('🎉 Beta code activated! You now have unlimited credits!');
-    },
-    onError: (error) => {
-      console.error('Failed to activate beta code:', error);
-      // Don't show error to user - they can still use the app
-    },
-  });
-
+  const [, navigate] = useLocation();
+  const [message, setMessage] = useState("Checking your email confirmation…");
+  const [outcome, setOutcome] = useState<Outcome | null>(null);
+  const task = useRef<Promise<Outcome> | null>(null);
+  const syncUser = trpc.auth.syncUser.useMutation();
+  const redeemCode = trpc.credits.redeemBetaCode.useMutation();
+  const syncIdentity = syncUser.mutateAsync;
+  const redeemPendingCode = redeemCode.mutateAsync;
   useEffect(() => {
-    async function handleAuthCallback() {
-      try {
-        // Supabase automatically handles tokens in URL hash when detectSessionInUrl is true
-        // Wait for session to be established
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          throw sessionError;
+    let active = true;
+    task.current ??= (async () => {
+      const auth = getFirebaseAuth();
+      await auth.authStateReady();
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get("mode");
+      const code = params.get("oobCode");
+      // Only the configured Firebase project is used. Ignore query API keys and
+      // continueUrl values: an email link must never select a project/redirect.
+      if (mode === "resetPassword" && code)
+        return {
+          message: "Continue to reset your password.",
+          destination: `/auth/reset-password?oobCode=${encodeURIComponent(code)}`,
+        };
+      if (mode && (mode !== "verifyEmail" || !code))
+        throw new Error("Invalid confirmation link. Request a new email.");
+      if (mode === "verifyEmail") await applyActionCode(auth, code!);
+      const user = auth.currentUser;
+      if (!user)
+        return {
+          message:
+            mode === "verifyEmail"
+              ? "Email confirmed. Sign in to open your account."
+              : "Sign in to finish opening your account.",
+          destination: "/login",
+        };
+      await reload(user);
+      await user.getIdToken(true);
+      if (!user.emailVerified)
+        throw new Error(
+          "Your email is not verified yet. Sign in to resend the confirmation email."
+        );
+      await syncIdentity();
+      const pendingCode = localStorage.getItem("pendingBetaCode");
+      if (pendingCode) {
+        try {
+          await redeemPendingCode({ code: pendingCode });
+          localStorage.removeItem("pendingBetaCode");
+        } catch {
+          /* Preserve the code for a dashboard retry. */
         }
-
-        if (!session?.user) {
-          // No session - might be password reset or invalid token
-          // Check if this is a password reset flow
-          const hashParams = new URLSearchParams(window.location.hash.substring(1));
-          const type = hashParams.get('type');
-          
-          if (type === 'recovery') {
-            // Password reset - redirect to reset password page
-            setLocation('/auth/reset-password');
-            return;
-          }
-          
-          // Invalid or expired token
-          setStatus('error');
-          setMessage('Invalid or expired confirmation link. Please try signing up again.');
-          setTimeout(() => {
-            setLocation('/login');
-          }, 3000);
-          return;
-        }
-
-        // A confirmed Supabase session must also establish a usable app account.
-        await syncUser.mutateAsync();
-        const pendingCode = localStorage.getItem('pendingBetaCode');
-        if (pendingCode) {
-          try {
-            await redeemCode.mutateAsync({ code: pendingCode });
-            localStorage.removeItem('pendingBetaCode');
-          } catch {
-            // Preserve the code so the adopter can retry from the dashboard.
-          }
-        }
-        setStatus('success');
-        setMessage('Email confirmed! Redirecting to dashboard...');
-        setTimeout(() => setLocation('/dashboard'), 1500);
-      } catch (error) {
-        console.error('Auth callback error:', error);
-        setStatus('error');
-        setMessage('An error occurred during authentication. Please try again.');
-        setTimeout(() => {
-          setLocation('/login');
-        }, 3000);
       }
-    }
-
-    handleAuthCallback();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+      return {
+        message: "Email confirmed. Your account is ready.",
+        destination: "/dashboard",
+      };
+    })();
+    task.current
+      .then(result => {
+        if (active) {
+          setMessage(result.message);
+          setOutcome(result);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setMessage(
+            "This link is invalid or expired, or verification could not complete. Sign in to request a new email."
+          );
+          setOutcome({ message: "", destination: "/login" });
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [syncIdentity, redeemPendingCode]);
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50 p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4">
-            {status === 'loading' && (
-              <Sparkles className="w-12 h-12 text-primary animate-spin" />
-            )}
-            {status === 'success' && (
-              <CheckCircle2 className="w-12 h-12 text-green-500" />
-            )}
-            {status === 'error' && (
-              <XCircle className="w-12 h-12 text-red-500" />
-            )}
-          </div>
-          <CardTitle className="text-2xl">
-            {status === 'loading' && 'Confirming Your Account'}
-            {status === 'success' && 'Email Confirmed!'}
-            {status === 'error' && 'Confirmation Failed'}
-          </CardTitle>
-          <CardDescription className="text-base mt-2">
-            {message}
-          </CardDescription>
+        <CardHeader>
+          <CardTitle>Email confirmation</CardTitle>
+          <CardDescription role="status">{message}</CardDescription>
         </CardHeader>
         <CardContent>
-          {status === 'loading' && (
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">
-                Please wait while we confirm your email address...
-              </p>
-            </div>
-          )}
-          {status === 'error' && (
-            <div className="text-center space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Redirecting to login page...
-              </p>
-              <button
-                onClick={() => setLocation('/login')}
-                className="text-sm text-primary hover:underline"
-              >
-                Go to Login
-              </button>
-            </div>
+          {outcome && (
+            <Button onClick={() => navigate(outcome.destination)}>
+              Continue
+            </Button>
           )}
         </CardContent>
       </Card>
     </div>
   );
 }
-

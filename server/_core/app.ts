@@ -5,23 +5,32 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { registerBillingRoutes } from "../billing";
+import { apiCors } from "./cors";
+import { getDb } from "../db";
+import { sql } from "drizzle-orm";
 
 /**
  * Create and configure Express app
- * Works for both local development and Vercel serverless
+ * Used by the local server and the Cloud Run container.
  */
 export async function createApp(): Promise<express.Express> {
   const app = express();
 
-  // Redirect www to non-www (fixes SSL certificate issue)
-  app.use((req, res, next) => {
-    if (req.hostname && req.hostname.startsWith("www.")) {
-      const nonWwwHost = req.hostname.replace(/^www\./, "");
-      return res.redirect(301, `https://${nonWwwHost}${req.url}`);
+  app.disable("x-powered-by");
+  app.get("/healthz", (_req, res) => res.json({ ok: true }));
+  app.get("/readyz", async (_req, res) => {
+    try {
+      const database = await getDb();
+      if (!database) throw new Error("Not configured");
+      await database.execute(sql`select 1`);
+      res.json({ ok: true });
+    } catch {
+      res.status(503).json({ ok: false });
     }
-    next();
   });
-
+  // Browser callers use exact-origin CORS and Firebase bearer tokens. Stripe
+  // has no browser Origin header and authenticates its raw body signature.
+  app.use("/api", apiCors());
   registerBillingRoutes(app);
 
   // Configure body parser with larger size limit for file uploads

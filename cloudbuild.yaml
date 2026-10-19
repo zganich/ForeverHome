@@ -1,0 +1,31 @@
+# REVIEW TEMPLATE ONLY. Creating a trigger, submitting a build and publishing
+# this image each require James's approval. This pipeline NEVER deploys.
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --tag
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/api:$BUILD_ID
+      - --build-arg
+      - VITE_FIREBASE_API_KEY=${_FIREBASE_API_KEY}
+      - --build-arg
+      - VITE_FIREBASE_AUTH_DOMAIN=${_FIREBASE_AUTH_DOMAIN}
+      - --build-arg
+      - VITE_FIREBASE_PROJECT_ID=$PROJECT_ID
+      - --build-arg
+      - VITE_FIREBASE_APP_ID=${_FIREBASE_APP_ID}
+      - --build-arg
+      - VITE_API_BASE_URL=${_API_ORIGIN}
+      - .
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/api:$BUILD_ID
+substitutions:
+  _REGION: us-central1
+  _REPOSITORY: REPLACE_AFTER_APPROVAL
+  _FIREBASE_API_KEY: REPLACE_PUBLIC_BROWSER_KEY
+  _FIREBASE_AUTH_DOMAIN: REPLACE_PROJECT.firebaseapp.com
+  _FIREBASE_APP_ID: REPLACE_PUBLIC_APP_ID
+  _API_ORIGIN: https://REPLACE_CLOUD_RUN_HOST.run.app
+options:
+  logging: CLOUD_LOGGING_ONLY
+timeout: 1200s

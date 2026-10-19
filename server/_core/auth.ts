@@ -1,49 +1,40 @@
-import { createClient } from "@supabase/supabase-js";
 import { TRPCError } from "@trpc/server";
 import type { Request, RequestHandler } from "express";
 import * as db from "../db";
-import { ENV } from "./env";
+import { verifyFirebaseToken } from "./firebase";
 
-let client: ReturnType<typeof createClient> | undefined;
+const invalidIdentityCodes = new Set([
+  "auth/argument-error",
+  "auth/invalid-id-token",
+  "auth/id-token-expired",
+  "auth/id-token-revoked",
+  "auth/user-disabled",
+  "auth/user-not-found",
+]);
 
 export async function authenticateRequest(req: Request) {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ") || !header.slice(7).trim()) return null;
-  if (!ENV.supabaseUrl || !ENV.supabaseAnonKey) {
+  let identity;
+  try {
+    identity = await verifyFirebaseToken(header.slice(7).trim());
+  } catch (error) {
+    if (invalidIdentityCodes.has((error as { code?: string }).code ?? ""))
+      return null;
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
-      message: "Supabase authentication is not configured.",
+      message: "Authentication service unavailable.",
     });
   }
-  client ??= createClient(ENV.supabaseUrl, ENV.supabaseAnonKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  });
-  // Verify with the configured project's Auth server. Never trust a browser ID,
-  // locally decoded JWT, user metadata role, or a legacy Manus cookie.
-  const { data, error } = await client.auth.getUser(header.slice(7));
-  if (error || !data.user) {
-    if (error?.status && error.status >= 500) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Authentication service unavailable.",
-      });
-    }
-    return null;
-  }
-  const identity = data.user;
+  if (!identity.uid || !identity.email_verified) return null;
   await db.upsertUser({
-    id: identity.id,
+    id: identity.uid,
     email: identity.email ?? null,
-    name:
-      identity.user_metadata?.name ?? identity.user_metadata?.full_name ?? null,
-    loginMethod: "supabase",
+    name: typeof identity.name === "string" ? identity.name : null,
+    loginMethod: "firebase",
     lastSignedIn: new Date(),
   });
-  const user = await db.getUser(identity.id);
+  const user = await db.getUser(identity.uid);
   if (!user)
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",

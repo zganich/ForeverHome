@@ -2,22 +2,30 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { InsertUser, users } from "../drizzle/schema";
-import { ENV } from './_core/env';
+import { ENV } from "./_core/env";
+import { databaseOptions } from "./_core/databaseConfig";
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let client: ReturnType<typeof postgres> | undefined;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      const client = postgres(process.env.DATABASE_URL, { prepare: false, max: 5 });
+      client = postgres(process.env.DATABASE_URL, databaseOptions());
       _db = drizzle(client);
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
+      // Never log a driver error that might contain a connection URI/password.
+      throw new Error("Database configuration is invalid");
     }
   }
   return _db;
+}
+
+export async function closeDatabase() {
+  if (client) await client.end({ timeout: 2 });
+  client = undefined;
+  _db = null;
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
@@ -55,9 +63,9 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     }
     if (user.role === undefined) {
       if (user.id === ENV.ownerId) {
-        user.role = 'admin';
-        values.role = 'admin';
-        updateSet.role = 'admin';
+        user.role = "admin";
+        values.role = "admin";
+        updateSet.role = "admin";
       }
     }
 
@@ -70,7 +78,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       set: updateSet,
     });
   } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
+    console.error("[Database] Failed to upsert user");
     throw error;
   }
 }
@@ -89,11 +97,21 @@ export async function getUser(id: string) {
 
 // ===== PET QUERIES =====
 
-import { analyses, pets, InsertPet, Pet, InsertAnalysis, Analysis } from "../drizzle/schema";
+import {
+  analyses,
+  pets,
+  InsertPet,
+  Pet,
+  InsertAnalysis,
+  Analysis,
+} from "../drizzle/schema";
 import { nanoid } from "nanoid";
 import { desc } from "drizzle-orm";
 
-export async function createPet(userId: string, data: Omit<InsertPet, "id" | "userId">): Promise<Pet> {
+export async function createPet(
+  userId: string,
+  data: Omit<InsertPet, "id" | "userId">
+): Promise<Pet> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
@@ -111,20 +129,30 @@ export async function getUserPets(userId: string): Promise<Pet[]> {
   const db = await getDb();
   if (!db) return [];
 
-  return db.select().from(pets).where(eq(pets.userId, userId)).orderBy(desc(pets.createdAt));
+  return db
+    .select()
+    .from(pets)
+    .where(eq(pets.userId, userId))
+    .orderBy(desc(pets.createdAt));
 }
 
 export async function getPet(petId: string): Promise<Pet | undefined> {
   const db = await getDb();
   if (!db) return undefined;
 
-  const result = await db.select().from(pets).where(eq(pets.id, petId)).limit(1);
+  const result = await db
+    .select()
+    .from(pets)
+    .where(eq(pets.id, petId))
+    .limit(1);
   return result[0];
 }
 
 // ===== ANALYSIS QUERIES =====
 
-export async function createAnalysis(data: Omit<InsertAnalysis, "id">): Promise<Analysis> {
+export async function createAnalysis(
+  data: Omit<InsertAnalysis, "id">
+): Promise<Analysis> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
@@ -141,14 +169,24 @@ export async function getPetAnalyses(petId: string): Promise<Analysis[]> {
   const db = await getDb();
   if (!db) return [];
 
-  return db.select().from(analyses).where(eq(analyses.petId, petId)).orderBy(desc(analyses.createdAt));
+  return db
+    .select()
+    .from(analyses)
+    .where(eq(analyses.petId, petId))
+    .orderBy(desc(analyses.createdAt));
 }
 
-export async function getAnalysis(analysisId: string): Promise<Analysis | undefined> {
+export async function getAnalysis(
+  analysisId: string
+): Promise<Analysis | undefined> {
   const db = await getDb();
   if (!db) return undefined;
 
-  const result = await db.select().from(analyses).where(eq(analyses.id, analysisId)).limit(1);
+  const result = await db
+    .select()
+    .from(analyses)
+    .where(eq(analyses.id, analysisId))
+    .limit(1);
   return result[0];
 }
 
@@ -159,14 +197,19 @@ export async function updateAnalysisFeedback(
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  await db.update(analyses).set({ userFeedback: feedback }).where(eq(analyses.id, analysisId));
+  await db
+    .update(analyses)
+    .set({ userFeedback: feedback })
+    .where(eq(analyses.id, analysisId));
 }
 
 // ===== FEEDBACK QUERIES =====
 
 import { feedback, InsertFeedback, Feedback } from "../drizzle/schema";
 
-export async function createFeedback(data: Omit<InsertFeedback, "id">): Promise<Feedback> {
+export async function createFeedback(
+  data: Omit<InsertFeedback, "id">
+): Promise<Feedback> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
@@ -183,5 +226,9 @@ export async function getUserFeedback(userId: string): Promise<Feedback[]> {
   const db = await getDb();
   if (!db) return [];
 
-  return db.select().from(feedback).where(eq(feedback.userId, userId)).orderBy(desc(feedback.createdAt));
+  return db
+    .select()
+    .from(feedback)
+    .where(eq(feedback.userId, userId))
+    .orderBy(desc(feedback.createdAt));
 }

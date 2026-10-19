@@ -46,16 +46,14 @@ export async function fulfillBillingEvent(event: Stripe.Event) {
         .where(eq(users.id, userId))
         .returning();
       if (!changed.length) throw new Error("Purchase user not found");
-      await tx
-        .insert(purchases)
-        .values({
-          id: nanoid(),
-          userId,
-          stripePaymentId: session.id,
-          amount: (pack.price / 100).toFixed(2),
-          credits: pack.credits,
-          status: "completed",
-        });
+      await tx.insert(purchases).values({
+        id: nanoid(),
+        userId,
+        stripePaymentId: session.id,
+        amount: (pack.price / 100).toFixed(2),
+        credits: pack.credits,
+        status: "completed",
+      });
     });
   } else if (event.type === "invoice.paid") {
     const invoice = event.data.object as Stripe.Invoice;
@@ -139,6 +137,7 @@ export function registerBillingRoutes(app: Express) {
         if (typeof signature !== "string" || !Buffer.isBuffer(req.body))
           throw new Error("Missing signature or raw body");
         event = constructWebhookEvent(req.body, signature);
+        if (event.livemode) throw new Error("Live Stripe events are disabled");
       } catch {
         res.status(400).json({ error: "Invalid webhook signature" });
         return;

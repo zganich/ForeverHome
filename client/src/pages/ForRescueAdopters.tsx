@@ -4,7 +4,7 @@ import MainNavigation from "@/components/MainNavigation";
 import StickyCTA from "@/components/StickyCTA";
 import ExitIntentPopup from "@/components/ExitIntentPopup";
 import SocialProof from "@/components/SocialProof";
-import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
+import { useFirebaseAuth } from "@/contexts/AuthContext";
 import {
   Dog,
   Volume2,
@@ -20,7 +20,7 @@ import {
 import { Link } from "wouter";
 
 export default function ForRescueAdopters() {
-  const { user } = useSupabaseAuth();
+  const { user } = useFirebaseAuth();
   const isAuthenticated = !!user;
 
   return (

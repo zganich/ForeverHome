@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import MainNavigation from "@/components/MainNavigation";
-import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
+import { useFirebaseAuth } from "@/contexts/AuthContext";
 import {
   Building2,
   TrendingUp,
@@ -19,7 +19,7 @@ import {
 import { Link } from "wouter";
 
 export default function ForShelters() {
-  const { user } = useSupabaseAuth();
+  const { user } = useFirebaseAuth();
   const isAuthenticated = !!user;
 
   return (

@@ -16,13 +16,13 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { APP_TITLE, APP_LOGO } from "@/const";
-import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
+import { useFirebaseAuth } from "@/contexts/AuthContext";
 import { PawPrint, Heart, Users, Baby, Dog, Building2, Menu } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
 
 export default function MainNavigation() {
-  const { user } = useSupabaseAuth();
+  const { user } = useFirebaseAuth();
   const isAuthenticated = !!user;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 

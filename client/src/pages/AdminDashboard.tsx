@@ -1,7 +1,15 @@
+import { authFetch } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Users, DollarSign, TrendingUp, Download, RefreshCw } from "lucide-react";
+import {
+  BarChart3,
+  Users,
+  DollarSign,
+  TrendingUp,
+  Download,
+  RefreshCw,
+} from "lucide-react";
 
 interface AdminStats {
   totalUsers: number;
@@ -20,7 +28,12 @@ interface AdminStats {
   shelterRevenueShare: number;
   avgSignupRate: number;
   topShelter: string;
-  recentActivity: Array<{ type: string; user: string; value: string; timestamp: string }>;
+  recentActivity: Array<{
+    type: string;
+    user: string;
+    value: string;
+    timestamp: string;
+  }>;
 }
 
 const defaultStats: AdminStats = {
@@ -40,12 +53,24 @@ const defaultStats: AdminStats = {
   shelterRevenueShare: 0,
   avgSignupRate: 0,
   topShelter: "N/A",
-  recentActivity: []
+  recentActivity: [],
 };
 
 export default function AdminDashboard() {
-  const { data: analytics, isLoading, refetch } = useQuery<AdminStats>({
+  const {
+    data: analytics,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<AdminStats>({
     queryKey: ["/api/admin/analytics"],
+    queryFn: async () => {
+      const response = await authFetch("/api/admin/analytics");
+      if (!response.ok)
+        throw new Error("Admin analytics unavailable or access denied");
+      return response.json();
+    },
+    retry: false,
   });
 
   if (isLoading) {
@@ -55,6 +80,9 @@ export default function AdminDashboard() {
       </div>
     );
   }
+
+  if (error)
+    return <p role="alert">Admin analytics unavailable or access denied.</p>;
 
   const stats: AdminStats = analytics || defaultStats;
 
@@ -82,7 +110,9 @@ export default function AdminDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.totalRevenue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              ${stats.totalRevenue.toLocaleString()}
+            </div>
             <p className="text-xs text-muted-foreground">
               +{stats.monthlyGrowth}% from last month
             </p>
@@ -91,11 +121,15 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Active Subscribers</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Active Subscribers
+            </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeSubscriptions.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              {stats.activeSubscriptions.toLocaleString()}
+            </div>
             <p className="text-xs text-muted-foreground">
               {stats.rescueAdopters} rescue adopters
             </p>
@@ -104,14 +138,14 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Shelter Partners</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Shelter Partners
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.shelterPartners}</div>
-            <p className="text-xs text-muted-foreground">
-              Active partnerships
-            </p>
+            <p className="text-xs text-muted-foreground">Active partnerships</p>
           </CardContent>
         </Card>
 
@@ -121,7 +155,9 @@ export default function AdminDashboard() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.avgLifetimeValue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">
+              ${stats.avgLifetimeValue.toFixed(2)}
+            </div>
             <p className="text-xs text-muted-foreground">
               Churn rate: {stats.churnRate}%
             </p>
@@ -139,19 +175,33 @@ export default function AdminDashboard() {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">Premium ($19.99/mo)</span>
-                <span className="text-sm font-bold">${(stats.premiumRevenue || 0).toLocaleString()}</span>
+                <span className="text-sm font-bold">
+                  ${(stats.premiumRevenue || 0).toLocaleString()}
+                </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Essential ($9.99/mo)</span>
-                <span className="text-sm font-bold">${(stats.essentialRevenue || 0).toLocaleString()}</span>
+                <span className="text-sm font-medium">
+                  Essential ($9.99/mo)
+                </span>
+                <span className="text-sm font-bold">
+                  ${(stats.essentialRevenue || 0).toLocaleString()}
+                </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Rescue Adopter ($14.99/mo)</span>
-                <span className="text-sm font-bold">${(stats.rescueRevenue || 0).toLocaleString()}</span>
+                <span className="text-sm font-medium">
+                  Rescue Adopter ($14.99/mo)
+                </span>
+                <span className="text-sm font-bold">
+                  ${(stats.rescueRevenue || 0).toLocaleString()}
+                </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Shelter Org ($33/mo)</span>
-                <span className="text-sm font-bold">${(stats.shelterOrgRevenue || 0).toLocaleString()}</span>
+                <span className="text-sm font-medium">
+                  Shelter Org ($33/mo)
+                </span>
+                <span className="text-sm font-bold">
+                  ${(stats.shelterOrgRevenue || 0).toLocaleString()}
+                </span>
               </div>
             </div>
           </CardContent>
@@ -164,20 +214,32 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Total Adopter Sign-Ups</span>
-                <span className="text-sm font-bold">{stats.totalAdopterSignups || 0}</span>
+                <span className="text-sm font-medium">
+                  Total Adopter Sign-Ups
+                </span>
+                <span className="text-sm font-bold">
+                  {stats.totalAdopterSignups || 0}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">Revenue Share Paid</span>
-                <span className="text-sm font-bold">${(stats.shelterRevenueShare || 0).toLocaleString()}</span>
+                <span className="text-sm font-bold">
+                  ${(stats.shelterRevenueShare || 0).toLocaleString()}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">Avg Sign-Up Rate</span>
-                <span className="text-sm font-bold">{(stats.avgSignupRate || 0).toFixed(1)}%</span>
+                <span className="text-sm font-bold">
+                  {(stats.avgSignupRate || 0).toFixed(1)}%
+                </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Top Performing Shelter</span>
-                <span className="text-sm font-bold">{stats.topShelter || "N/A"}</span>
+                <span className="text-sm font-medium">
+                  Top Performing Shelter
+                </span>
+                <span className="text-sm font-bold">
+                  {stats.topShelter || "N/A"}
+                </span>
               </div>
             </div>
           </CardContent>
@@ -191,18 +253,27 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {(stats.recentActivity || []).map((activity: any, index: number) => (
-              <div key={index} className="flex justify-between items-center border-b pb-2">
-                <div>
-                  <p className="text-sm font-medium">{activity.type}</p>
-                  <p className="text-xs text-muted-foreground">{activity.user}</p>
+            {(stats.recentActivity || []).map(
+              (activity: any, index: number) => (
+                <div
+                  key={index}
+                  className="flex justify-between items-center border-b pb-2"
+                >
+                  <div>
+                    <p className="text-sm font-medium">{activity.type}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {activity.user}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold">{activity.value}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {activity.timestamp}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold">{activity.value}</p>
-                  <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
-                </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </CardContent>
       </Card>

@@ -4,7 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { SupabaseAuthProvider } from "./contexts/SupabaseAuthContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ComparePets from "./pages/ComparePets";
@@ -59,7 +59,7 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <SupabaseAuthProvider>
+      <AuthProvider>
         <ThemeProvider
           defaultTheme="light"
           // switchable
@@ -69,7 +69,7 @@ function App() {
             <Router />
           </TooltipProvider>
         </ThemeProvider>
-      </SupabaseAuthProvider>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

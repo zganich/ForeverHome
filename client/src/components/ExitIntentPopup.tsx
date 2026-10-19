@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowRight, X } from "lucide-react";
 import { Link } from "wouter";
-import { useSupabaseAuth } from "@/contexts/SupabaseAuthContext";
+import { useFirebaseAuth } from "@/contexts/AuthContext";
 
 export default function ExitIntentPopup() {
-  const { user } = useSupabaseAuth();
+  const { user } = useFirebaseAuth();
   const [show, setShow] = useState(false);
   const [hasShown, setHasShown] = useState(false);
 

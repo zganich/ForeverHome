@@ -1,97 +1,84 @@
-import { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
-import { APP_TITLE, APP_LOGO } from '@/const';
-import { Lock, CheckCircle2, XCircle } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import { confirmPasswordReset, verifyPasswordResetCode } from "firebase/auth";
+import { getFirebaseAuth } from "@/lib/firebase";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { toast } from "sonner";
+import { APP_TITLE, APP_LOGO } from "@/const";
+import { Lock, CheckCircle2, XCircle } from "lucide-react";
 
 /**
  * Reset Password Page
- * 
- * Handles password reset flow from Supabase email link.
+ *
+ * Handles password reset flow from a Firebase email action link.
  * User must have clicked the reset link from their email.
  */
 export default function ResetPassword() {
   const [, setLocation] = useLocation();
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [hasSession, setHasSession] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
+  const actionCode = new URLSearchParams(window.location.search).get("oobCode");
   useEffect(() => {
-    // Check if user has a valid session (required for password reset)
-    async function checkSession() {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        // Check if there's a recovery token in the URL
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        const type = hashParams.get('type');
-        
-        if (type === 'recovery' && accessToken) {
-          // Supabase should handle this automatically, but let's verify
-          // Wait a moment for Supabase to process the token
-          setTimeout(async () => {
-            const { data: { session: newSession } } = await supabase.auth.getSession();
-            if (newSession) {
-              setHasSession(true);
-            } else {
-              setError('Invalid or expired reset link. Please request a new password reset.');
-            }
-          }, 1000);
-        } else {
-          setError('No valid reset link found. Please check your email and click the reset link.');
-        }
-      } else {
-        setHasSession(true);
+    let active = true;
+    async function checkCode() {
+      try {
+        if (!actionCode) throw new Error("No reset code");
+        await verifyPasswordResetCode(getFirebaseAuth(), actionCode);
+        if (active) setHasSession(true);
+      } catch {
+        if (active)
+          setError(
+            "Invalid or expired reset link. Please request a new password reset."
+          );
       }
     }
-
-    checkSession();
-  }, []);
+    void checkCode();
+    return () => {
+      active = false;
+    };
+  }, [actionCode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     // Validate passwords
     if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+      setError("Password must be at least 6 characters long.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError("Passwords do not match.");
       return;
     }
 
     setLoading(true);
 
     try {
-      // Update password using Supabase
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: password,
-      });
+      if (!actionCode) throw new Error("No valid password reset code.");
+      await confirmPasswordReset(getFirebaseAuth(), actionCode, password);
 
-      if (updateError) {
-        throw updateError;
-      }
+      toast.success("Password updated successfully!");
 
-      toast.success('Password updated successfully!');
-      
       // Redirect to login after short delay
-      setTimeout(() => {
-        setLocation('/login');
-      }, 1500);
+      setLocation("/login");
     } catch (error: any) {
-      console.error('Password reset error:', error);
-      setError(error.message || 'Failed to update password. Please try again.');
+      console.error("Password reset error:", error);
+      setError(error.message || "Failed to update password. Please try again.");
       setLoading(false);
     }
   };
@@ -114,7 +101,7 @@ export default function ResetPassword() {
               <p className="text-sm text-muted-foreground">
                 Please request a new password reset link.
               </p>
-              <Button onClick={() => setLocation('/login')} className="w-full">
+              <Button onClick={() => setLocation("/login")} className="w-full">
                 Go to Login
               </Button>
             </div>
@@ -150,9 +137,7 @@ export default function ResetPassword() {
             <img src={APP_LOGO} alt={APP_TITLE} className="h-16 mx-auto mb-4" />
           )}
           <CardTitle className="text-2xl">Reset Your Password</CardTitle>
-          <CardDescription>
-            Enter your new password below
-          </CardDescription>
+          <CardDescription>Enter your new password below</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -163,7 +148,7 @@ export default function ResetPassword() {
                 type="password"
                 placeholder="••••••••"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={e => setPassword(e.target.value)}
                 required
                 disabled={loading}
                 minLength={6}
@@ -176,7 +161,7 @@ export default function ResetPassword() {
                 type="password"
                 placeholder="••••••••"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={e => setConfirmPassword(e.target.value)}
                 required
                 disabled={loading}
                 minLength={6}
@@ -188,12 +173,12 @@ export default function ResetPassword() {
               </div>
             )}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Updating Password...' : 'Update Password'}
+              {loading ? "Updating Password..." : "Update Password"}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
             <button
-              onClick={() => setLocation('/login')}
+              onClick={() => setLocation("/login")}
               className="text-primary hover:underline"
               disabled={loading}
             >
@@ -205,4 +190,3 @@ export default function ResetPassword() {
     </div>
   );
 }
-

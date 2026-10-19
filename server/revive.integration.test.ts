@@ -9,40 +9,38 @@ import type Stripe from "stripe";
 const fixtures = vi.hoisted(() => ({
   failAi: false,
   subscription: null as any,
-  identity: `rehearsal-${crypto.randomUUID()}`,
+  identity: `rehearsal-${crypto.randomUUID()}-${"x".repeat(64)}`,
+  mediaUrl: "",
   checkoutId: `cs_${crypto.randomUUID()}`,
   invoiceId: `in_${crypto.randomUUID()}`,
 }));
-vi.mock("@supabase/supabase-js", () => ({
-  createClient: () => ({
-    auth: {
-      getUser: async (token: string) =>
-        token === "fictional-valid-token"
-          ? {
-              data: {
-                user: {
-                  id: fixtures.identity,
-                  email: "fictional@example.test",
-                },
-              },
-              error: null,
-            }
-          : { data: { user: null }, error: { status: 401 } },
-    },
-  }),
+vi.mock("./_core/firebase", () => ({
+  verifyFirebaseToken: async (token: string) => {
+    if (token !== "fictional-valid-token")
+      throw { code: "auth/invalid-id-token" };
+    return {
+      uid: fixtures.identity,
+      email: "fictional@example.test",
+      email_verified: true,
+    };
+  },
 }));
-vi.mock("./storage", () => ({
-  storagePut: async () => ({
-    url: "https://fictional.example/photo.jpg",
-    key: "fictional/photo.jpg",
-  }),
-}));
+vi.mock("./storage", async importOriginal => {
+  const real = await importOriginal<typeof import("./storage")>();
+  return {
+    ...real,
+    storagePut: async (key: string) => ({
+      key,
+      url: real.publicObjectUrl(key),
+    }),
+  };
+});
 // Exercise the real AI request builder, schemas, pipeline and persistence. Only
 // the outbound transport is replaced. No AI, Blob or Stripe network requests.
 vi.mock("./_core/env", () => ({
   ENV: {
-    supabaseUrl: "https://fictional.supabase.co",
-    supabaseAnonKey: "fictional-public",
+    firebaseProjectId: "foreverhome-test",
+    storageBucket: "foreverhome-test-media",
     openaiApiKey: "fictional-key",
     openaiBaseUrl: "https://fictional-ai.example/v1",
     openaiModel: "gpt-4.1-mini",
@@ -76,6 +74,10 @@ describe.runIf(Boolean(testUrl))(
     beforeAll(async () => {
       sql = postgres(testUrl!, { max: 3 });
       await migrate(drizzle(sql), { migrationsFolder: "drizzle" });
+      const storage = await import("./storage");
+      fixtures.mediaUrl = storage.publicObjectUrl(
+        `${storage.userUploadPrefix(fixtures.identity)}fictional.jpg`
+      );
       db = await import("./db");
       credits = await import("./credits");
       billing = await import("./billing");
@@ -142,6 +144,7 @@ describe.runIf(Boolean(testUrl))(
       vi.unstubAllGlobals();
       if (server)
         await new Promise<void>(resolve => server.close(() => resolve()));
+      if (db) await db.closeDatabase();
       if (sql) await sql.end();
     });
 
@@ -196,8 +199,8 @@ describe.runIf(Boolean(testUrl))(
         body: form,
       });
       expect(response.status).toBe(200);
-      expect((await response.json()).url).toBe(
-        "https://fictional.example/photo.jpg"
+      expect((await response.json()).url).toMatch(
+        /^https:\/\/storage.googleapis.com\/foreverhome-test-media\/uploads\//
       );
     });
     it("saves pet and analysis and emits one completion with a stored result ID", async () => {
@@ -210,7 +213,7 @@ describe.runIf(Boolean(testUrl))(
         headers: { ...token, "Content-Type": "application/json" },
         body: JSON.stringify({
           petId: pet.id,
-          mediaUrl: "https://fictional.example/photo.jpg",
+          mediaUrl: fixtures.mediaUrl,
           mediaType: "image",
         }),
       });
@@ -237,7 +240,7 @@ describe.runIf(Boolean(testUrl))(
         headers: { ...token, "Content-Type": "application/json" },
         body: JSON.stringify({
           petId: pet.id,
-          mediaUrl: "https://fictional.example/photo.jpg",
+          mediaUrl: fixtures.mediaUrl,
           mediaType: "image",
         }),
       });
@@ -304,6 +307,29 @@ describe.runIf(Boolean(testUrl))(
       expect(
         await sql`select * from purchases where "stripePaymentId"=${fixtures.checkoutId}`
       ).toHaveLength(1);
+    });
+    it("rejects even a correctly signed live event without granting credits", async () => {
+      const before = await credits.getUserCredits(fixtures.identity);
+      const payload = JSON.stringify({
+        id: "evt_live_fictional",
+        type: "checkout.session.completed",
+        livemode: true,
+        data: { object: {} },
+      });
+      const signature = stripe!.webhooks.generateTestHeaderString({
+        payload,
+        secret: process.env.STRIPE_WEBHOOK_SECRET!,
+      });
+      const response = await fetch(origin + "/api/stripe/webhook", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "stripe-signature": signature,
+        },
+        body: payload,
+      });
+      expect(response.status).toBe(400);
+      expect(await credits.getUserCredits(fixtures.identity)).toBe(before);
     });
     it("grants a paid subscription once and respects its expiry", async () => {
       fixtures.subscription = {

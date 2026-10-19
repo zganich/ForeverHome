@@ -19,7 +19,7 @@ export const feedbackCategoryEnum = pgEnum("feedback_category", ["bug", "feature
  * Core user table backing auth flow.
  */
 export const users = pgTable("users", {
-  id: varchar("id", { length: 64 }).primaryKey(),
+  id: varchar("id", { length: 128 }).primaryKey(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
@@ -50,7 +50,7 @@ export const billingReceipts = pgTable("billing_receipts", {
  */
 export const pets = pgTable("pets", {
   id: varchar("id", { length: 64 }).primaryKey(),
-  userId: varchar("userId", { length: 64 }).notNull().references(() => users.id),
+  userId: varchar("userId", { length: 128 }).notNull().references(() => users.id),
   name: varchar("name", { length: 100 }).notNull(),
   species: speciesEnum("species").notNull(),
   breed: varchar("breed", { length: 100 }),
@@ -98,7 +98,7 @@ export type InsertAnalysis = typeof analyses.$inferInsert;
  */
 export const reminders = pgTable("reminders", {
   id: varchar("id", { length: 64 }).primaryKey(),
-  userId: varchar("userId", { length: 64 }).notNull(),
+  userId: varchar("userId", { length: 128 }).notNull(),
   petId: varchar("petId", { length: 64 }).notNull(),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
@@ -122,7 +122,7 @@ export const purchaseStatusEnum = pgEnum("purchase_status", ["pending", "complet
 
 export const purchases = pgTable("purchases", {
   id: varchar("id", { length: 64 }).primaryKey(),
-  userId: varchar("userId", { length: 64 }).notNull().references(() => users.id),
+  userId: varchar("userId", { length: 128 }).notNull().references(() => users.id),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   credits: integer("credits").notNull(),
   stripePaymentId: varchar("stripePaymentId", { length: 255 }),
@@ -162,7 +162,7 @@ export type InsertShelterPartner = typeof shelterPartners.$inferInsert;
  */
 export const adoptionVerifications = pgTable("adoption_verifications", {
   id: varchar("id", { length: 64 }).primaryKey(),
-  userId: varchar("userId", { length: 64 }).notNull().references(() => users.id),
+  userId: varchar("userId", { length: 128 }).notNull().references(() => users.id),
   shelterId: varchar("shelterId", { length: 64 }).notNull().references(() => shelterPartners.id),
   petId: varchar("petId", { length: 64 }).references(() => pets.id),
   adoptionDate: date("adoptionDate").notNull(),
@@ -171,7 +171,7 @@ export const adoptionVerifications = pgTable("adoption_verifications", {
   documentUrl: varchar("documentUrl", { length: 500 }),
   notes: text("notes"),
   verifiedAt: timestamp("verifiedAt"),
-  verifiedBy: varchar("verifiedBy", { length: 64 }),
+  verifiedBy: varchar("verifiedBy", { length: 128 }),
   createdAt: timestamp("createdAt").defaultNow(),
 });
 
@@ -205,7 +205,7 @@ export type InsertEmailCampaign = typeof emailCampaigns.$inferInsert;
 export const emailRecipients = pgTable("email_recipients", {
   id: varchar("id", { length: 64 }).primaryKey(),
   campaignId: varchar("campaignId", { length: 64 }).notNull().references(() => emailCampaigns.id),
-  userId: varchar("userId", { length: 64 }).notNull().references(() => users.id),
+  userId: varchar("userId", { length: 128 }).notNull().references(() => users.id),
   email: varchar("email", { length: 320 }).notNull(),
   sentAt: timestamp("sentAt"),
   openedAt: timestamp("openedAt"),
@@ -223,7 +223,7 @@ export type InsertEmailRecipient = typeof emailRecipients.$inferInsert;
  */
 export const analyticsEvents = pgTable("analytics_events", {
   id: varchar("id", { length: 64 }).primaryKey(),
-  userId: varchar("userId", { length: 64 }).references(() => users.id),
+  userId: varchar("userId", { length: 128 }).references(() => users.id),
   eventType: varchar("eventType", { length: 100 }).notNull(),
   eventData: text("eventData"),
   ipAddress: varchar("ipAddress", { length: 45 }),
@@ -238,7 +238,7 @@ export type InsertAnalyticsEvent = typeof analyticsEvents.$inferInsert;
  */
 export const feedback = pgTable("feedback", {
   id: varchar("id", { length: 64 }).primaryKey(),
-  userId: varchar("userId", { length: 64 }).notNull().references(() => users.id),
+  userId: varchar("userId", { length: 128 }).notNull().references(() => users.id),
   category: feedbackCategoryEnum("category").notNull(),
   rating: integer("rating"), // 1-5 satisfaction rating
   message: text("message").notNull(),
@@ -258,7 +258,7 @@ export const betaCodeStatusEnum = pgEnum("beta_code_status", ["active", "used", 
 export const betaCodes = pgTable("beta_codes", {
   id: varchar("id", { length: 64 }).primaryKey(),
   code: varchar("code", { length: 64 }).notNull().unique(),
-  createdBy: varchar("createdBy", { length: 64 }), // Admin user ID who created it
+  createdBy: varchar("createdBy", { length: 128 }), // Admin user ID who created it
   maxUses: integer("maxUses").default(1), // How many times this code can be used (1 = single use)
   uses: integer("uses").default(0).notNull(), // Current number of uses
   status: betaCodeStatusEnum("status").default("active").notNull(),
