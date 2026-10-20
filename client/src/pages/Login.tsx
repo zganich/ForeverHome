@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
+import { SESSION_REJECTION_MESSAGE } from "@/lib/session";
 import { useFirebaseAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,9 @@ import { trpc } from "@/lib/trpc";
 
 export default function Login() {
   const [, setLocation] = useLocation();
+  // Only a fixed reason is accepted; no user content or credential goes in URLs.
+  const sessionRejected =
+    new URLSearchParams(useSearch()).get("reason") === "session-unavailable";
   const {
     signIn,
     signUp,
@@ -72,7 +76,7 @@ export default function Login() {
           // The Dashboard component will check for pending code
 
           toast.success("Welcome back!");
-          setLocation("/dashboard");
+          setLocation("/dashboard", { replace: true });
         }
       }
     } catch (error) {
@@ -100,6 +104,11 @@ export default function Login() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {sessionRejected && (
+            <p role="alert" className="mb-4">
+              {SESSION_REJECTION_MESSAGE}
+            </p>
+          )}
           {pendingVerification && (
             <div className="mb-4 space-y-2" role="status">
               <p>Verify your email before opening your account.</p>

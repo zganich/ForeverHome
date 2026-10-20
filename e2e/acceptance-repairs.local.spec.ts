@@ -34,6 +34,8 @@ const analysis = {
 async function fixture(page: Page, role = "admin") {
   const state = {
     disabled: false,
+    meNull: false,
+    authUnavailable: false,
     adminFailure: false,
     checkoutCalls: 0,
     mediaCalls: 0,
@@ -139,6 +141,19 @@ async function fixture(page: Page, role = "admin") {
       });
     if (url.pathname.startsWith("/api/trpc/")) {
       const names = url.pathname.slice("/api/trpc/".length).split(",");
+      if (state.authUnavailable && names.includes("auth.me"))
+        return route.fulfill({
+          status: 503,
+          json: names.map(() => ({
+            error: {
+              json: {
+                message: "Account service unavailable",
+                code: -32603,
+                data: { code: "INTERNAL_SERVER_ERROR", httpStatus: 503 },
+              },
+            },
+          })),
+        });
       if (state.disabled && names.some(n => n !== "payment.getAvailability"))
         return route.fulfill({
           status: 401,
@@ -171,7 +186,8 @@ async function fixture(page: Page, role = "admin") {
       const values = names.map(name => {
         if (/createCheckout|createSubscriptionCheckout/.test(name))
           state.checkoutCalls++;
-        if (name === "auth.me") return { id: uid, email, role, credits: 3 };
+        if (name === "auth.me")
+          return state.meNull ? null : { id: uid, email, role, credits: 3 };
         if (name === "pets.list") return [pet];
         if (name === "credits.getBalance")
           return { credits: 3, isBetaTester: false, unlimited: false };
@@ -211,8 +227,7 @@ async function fixture(page: Page, role = "admin") {
   });
   return state;
 }
-async function login(page: Page) {
-  await page.goto("/login");
+async function submitLogin(page: Page) {
   await page.getByLabel("Email", { exact: true }).fill(email);
   await page
     .getByLabel("Password", { exact: true })
@@ -222,6 +237,18 @@ async function login(page: Page) {
   await expect(page.getByText("LOCAL TEST PET", { exact: true })).toBeVisible();
   if (await page.getByRole("button", { name: "Skip", exact: true }).isVisible())
     await page.getByRole("button", { name: "Skip", exact: true }).click();
+}
+async function login(page: Page) {
+  await page.goto("/login");
+  await submitLogin(page);
+}
+async function expectRejectedLogin(page: Page) {
+  await expect(page).toHaveURL(/\/login\?reason=session-unavailable$/);
+  await expect(page.getByRole("alert")).toHaveText(
+    "Your session is unavailable. Please sign in again."
+  );
+  await expect(page.getByLabel("Email", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
 }
 test("cold owner analytics, retryable 500, private photo and disabled-session recovery", async ({
   page,
@@ -269,8 +296,16 @@ test("cold owner analytics, retryable 500, private photo and disabled-session re
   });
   state.disabled = true;
   await page.goto("/pets/pet-local");
-  await expect(page.getByRole("alert")).toContainText("sign in again");
+  await expectRejectedLogin(page);
+  await page.reload();
+  await expectRejectedLogin(page);
   await expect(page.getByRole("img")).toHaveCount(0);
+  await page.screenshot({
+    path: "/tmp/foreverhome-local-repair-results/session-rejected-login.png",
+  });
+  state.disabled = false;
+  await submitLogin(page);
+  await expect(page.getByRole("alert")).toHaveCount(0);
   expect(state.checkoutCalls).toBe(0);
   expect(state.analysisCalls).toBe(0);
 });
@@ -281,6 +316,7 @@ test("regular user sees admin denial; both billing surfaces disable every paid C
   await login(page);
   await page.goto("/admin/dashboard");
   await expect(page.getByRole("alert")).toContainText("Access denied");
+  await expect(page).toHaveURL(/\/admin\/dashboard$/);
   for (const [path, name, count] of [
     ["/purchase", "Purchase", 3],
     ["/subscribe", "Subscribe Now", 5],
@@ -299,6 +335,60 @@ test("regular user sees admin denial; both billing surfaces disable every paid C
   await page.screenshot({
     path: "/tmp/foreverhome-local-repair-results/billing-unavailable.png",
   });
+});
+
+test("null server identity clears the cached Firebase session and permits fresh sign-in", async ({
+  page,
+}) => {
+  const state = await fixture(page);
+  await login(page);
+  state.meNull = true;
+  await page.goto("/pets/pet-local");
+  await expectRejectedLogin(page);
+  state.meNull = false;
+  await submitLogin(page);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
+test("account service outage remains retryable without a session rejection redirect", async ({
+  page,
+}) => {
+  const state = await fixture(page);
+  await login(page);
+  state.authUnavailable = true;
+  await page.goto("/pets/pet-local");
+  await expect(page.getByRole("alert")).toContainText(
+    "Your account could not be loaded"
+  );
+  await expect(page).toHaveURL(/\/pets\/pet-local$/);
+  state.authUnavailable = false;
+  await page.getByRole("button", { name: "Retry", exact: true }).click();
+  await expect(
+    page.getByText("Analyze Behavior", { exact: true })
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/pets\/pet-local$/);
+});
+
+test("ordinary sign-in has no rejection banner and arbitrary reasons are not reflected", async ({
+  page,
+}) => {
+  await fixture(page);
+  await page.goto("/login");
+  await expect(
+    page.getByRole("button", { name: "Sign In", exact: true })
+  ).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await page.goto(
+    "/login?reason=untrusted-message&returnTo=https://example.test"
+  );
+  await expect(
+    page.getByRole("button", { name: "Sign In", exact: true })
+  ).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(
+    page.getByText("untrusted-message", { exact: true })
+  ).toHaveCount(0);
+  await submitLogin(page);
 });
 test("uploaded hosted preview renders and one mocked completion reaches persisted result view", async ({
   page,

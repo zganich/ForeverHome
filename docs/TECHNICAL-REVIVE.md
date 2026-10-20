@@ -2,7 +2,13 @@
 
 Scope: restore the existing application after Manus retirement. James selected **Cloud SQL (Option A)** and separately approved the prerequisite provisioning, DB bootstrap/migrations, and Firebase Auth/runtime IAM phases. Rebrand, adopter track, Jev and shelter dashboard remain separate work. The InterpWhat UI and GitHub history are preserved.
 
-**Current status:** staging was deployed and acceptance-tested on October 20; acceptance failed. The approved repair batch below is local only and has not been pushed, built in Cloud Build or deployed. Read the private checkpoint and acceptance report for exact hosted evidence. Earlier provisioning sections below are historical snapshots; their not-yet-deployed/owner-unverified/six-binding statements are superseded by the checkpoint. Runtime currently has seven scoped bindings; no IAM change is part of these repairs. No DNS/public-read/Stripe change is authorized.
+**Current status:** repair commit `95afb1b` was pushed and deployed to staging on October 20. Hosted retests passed owner analytics and regular-user admin denial, then stopped at disabled-session recovery: the message appeared, but the URL stayed on the protected page. The separately approved automatic sign-in redirect below is local only; it has not been pushed or deployed. Read the private checkpoint and acceptance report for exact hosted evidence. Earlier provisioning sections below are historical snapshots; their not-yet-deployed/owner-unverified/six-binding statements are superseded by the checkpoint. Runtime currently has seven scoped bindings; no IAM change is part of these repairs. No DNS/public-read/Stripe change is authorized.
+
+## Local session redirect repair
+
+Rejected sessions clear the cached identity and replace the protected route with `/login?reason=session-unavailable`. The sign-in page shows the fixed message “Your session is unavailable. Please sign in again.” across reloads; successful sign-in replaces that URL with `/dashboard`. The query carries a fixed reason only, with no credential or reflected user content. Both HTTP401 invalidation and `auth.me` returning200/null take this path. Account-service errors retain Retry; regular users retain explicit admin access denial without being signed out.
+
+Local browser regressions assert the actual URL, visible message and form, reload persistence, successful subsequent sign-in, null-identity rejection, retryable503, unchanged admin-denial route and ordinary sign-in without a banner. All external services are intercepted with fictional fixtures; hosted verification of this redirect remains **UNVERIFIED** until a separately approved release/retest.
 
 ## Local acceptance repair design
 
