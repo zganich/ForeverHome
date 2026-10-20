@@ -1,8 +1,52 @@
-# Technical revival — GCP code review, October 19, 2026
+# Technical revival — verified GCP prerequisites, October 20, 2026
 
-Scope: restore the existing application after Manus retirement. James selected **Cloud SQL (Option A)** and authorized local code changes only. Rebrand, adopter track, Jev and shelter dashboard remain separate work. The InterpWhat UI and GitHub history are preserved.
+Scope: restore the existing application after Manus retirement. James selected **Cloud SQL (Option A)** and separately approved the prerequisite provisioning, DB bootstrap/migrations, and Firebase Auth/runtime IAM phases. Rebrand, adopter track, Jev and shelter dashboard remain separate work. The InterpWhat UI and GitHub history are preserved.
 
-**Nothing in these files authorizes provisioning, spending, pushing, a PR, deployment, DNS changes, external sends or live Stripe.** No such action was performed in this code migration. Resource names in templates are proposals, not existing resources. Hosted acceptance is **UNVERIFIED**.
+**This document records results; it does not authorize further actions.** No branch was pushed, PR opened, build/trigger created, app deployed, DNS changed, anonymous storage access granted, Stripe object changed, or external email sent. Deployment templates still contain placeholders. Hosted end-to-end acceptance is **UNVERIFIED**.
+
+## Verified Firebase and runtime configuration
+
+Project `foreverhome-reclaimware-2026` / `726465463592` is ACTIVE with billing linked to the approved account (Firebase Blaze; standard Auth subtype `FIREBASE_AUTH`, no Identity Platform upgrade). Cloud SQL `foreverhome-postgres` is RUNNABLE; database `foreverhome` and restricted owner/login `foreverhome_app` are created. All five migrations through `0004` and all 13 app tables/RLS settings were verified through Auth Proxy. The private media bucket and project-only $20 monthly alert exist.
+
+Firebase Web app **ForeverHome Web** is ACTIVE. These are public build inputs, including the Firebase API key; they are not server secrets:
+
+```dotenv
+VITE_FIREBASE_API_KEY=AIzaSyCsMIt-zUA8cvr45rJeh3vAA409jauEv5k
+VITE_FIREBASE_AUTH_DOMAIN=foreverhome-reclaimware-2026.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=foreverhome-reclaimware-2026
+VITE_FIREBASE_APP_ID=1:726465463592:web:3d63e9c45f93bf87f4bc1d
+```
+
+Email/Password is enabled with `passwordRequired=true`. Authorized domains are exactly `localhost`, `foreverhome-reclaimware-2026.web.app`, and `foreverhome-reclaimware-2026.firebaseapp.com`; `interpwhat.com` is not added. Verification/reset use Firebase's managed `https://foreverhome-reclaimware-2026.firebaseapp.com/__/auth/action` handler and the existing client SDK flow. Reset and verification links were generated and checked only in memory, with the staging `/auth/callback` continue URL. No action code, link, or email was sent/saved. Actual email delivery and complete browser flows remain **UNVERIFIED**.
+
+Owner `ops@reclaimware.com` was created through the Admin SDK with UID **`5NX6T4XBIUZbKSy0nX7pgPLdj3l2`**. Password exists only in macOS Keychain service `ForeverHome`, account `OWNER_PASSWORD`. The owner is enabled but **emailVerified=false**; the existing client/server verification gate remains active. This UID is the runtime `OWNER_OPEN_ID`; it does not bypass verification.
+
+Proposed deploy-time non-secret runtime values (recorded, not deployed):
+
+```dotenv
+NODE_ENV=production
+GOOGLE_CLOUD_PROJECT=foreverhome-reclaimware-2026
+GCS_BUCKET=foreverhome-reclaimware-2026-media
+CLOUD_SQL_CONNECTION_NAME=foreverhome-reclaimware-2026:us-central1:foreverhome-postgres
+OWNER_OPEN_ID=5NX6T4XBIUZbKSy0nX7pgPLdj3l2
+APP_URL=https://foreverhome-reclaimware-2026.web.app
+CORS_ALLOWED_ORIGINS=https://foreverhome-reclaimware-2026.web.app,https://foreverhome-reclaimware-2026.firebaseapp.com
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4.1-mini
+```
+
+Cloud Run supplies `PORT`. Its future service identity is **`foreverhome-run@foreverhome-reclaimware-2026.iam.gserviceaccount.com`**, configured as `serviceAccountName`, not a secret/env credential. `VITE_API_BASE_URL` is still **UNVERIFIED** until a separately approved Run deployment returns an origin. Analytics and notification variables remain omitted.
+
+| Runtime secret | Resource | Current version |
+| --- | --- | --- |
+| DATABASE_URL | `projects/726465463592/secrets/foreverhome-database-url` | 1, ENABLED |
+| OPENAI_API_KEY | `projects/726465463592/secrets/foreverhome-openai-api-key` | 1, ENABLED |
+| STRIPE_SECRET_KEY | `projects/726465463592/secrets/foreverhome-stripe-test-secret-key` | Empty; TEST input missing |
+| STRIPE_WEBHOOK_SECRET | `projects/726465463592/secrets/foreverhome-stripe-test-webhook-secret` | Empty; TEST input missing |
+
+Runtime IAM has exactly the requested bindings: `roles/secretmanager.secretAccessor` on each named secret individually; `roles/cloudsql.client` on the ForeverHome project; and custom role `projects/foreverhome-reclaimware-2026/roles/foreverhomeMediaObjects` on the media bucket only. That role contains only `storage.objects.create` and `storage.objects.get`, matching create-with-generation-precondition and metadata/read calls; no list, overwrite, delete or IAM permission. No project editor/owner role, user-managed service-account key, anonymous member, impersonation/deployer binding, or additional Firebase role was granted. Bucket public access prevention remains enforced. No workload runs as this identity yet; effective runtime access is **UNVERIFIED**.
+
+**Runtime blocker:** `verifyIdToken(token, true)` calls Firebase `getUser` for revoked/disabled-user checks and requires `firebaseauth.users.get`. That permission is outside the approved “no other bindings” set and was **not granted**. Separately approve an additional minimal user-read role/binding before hosted auth acceptance; retain the revocation check. [Firebase permissions](https://docs.cloud.google.com/iam/docs/roles-permissions/firebaseauth).
 
 ## Frontend, TLS and routing proposal
 
@@ -52,15 +96,15 @@ Active auth files: `client/src/contexts/AuthContext.tsx`, `client/src/lib/fireba
 
 ## Environment and secret inventory
 
-**Proposed destinations only. No ForeverHome GCP secrets, Firebase app, DB, bucket, registry or service have been created.** Values and permissions in the destination are **UNVERIFIED**. No actual credential payloads were read or moved during this code migration.
+The project, Firebase Web app/Auth configuration, database, private bucket, four secret containers and runtime IAM now exist as recorded above. DATABASE_URL and OPENAI_API_KEY version 1 were imported with memory-only round-trip checks. Both Stripe containers remain empty. No registry, build trigger or application service has been deployed. Secret payloads never belong in this document.
 
 | Variable                                                                                                 | Intended location / status                                                                                                                                                                                                                                            |
 | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                                                                                           | Secret Manager `foreverhome-database-url`, pinned version; NOT CREATED. Percent-encoded URI credentials, chosen app database. Runtime socket supplied separately.                                                                                                     |
-| `OPENAI_API_KEY`                                                                                         | Secret Manager `foreverhome-openai-api-key`, pinned version; NOT CREATED. Historical source: macOS Keychain service `ForeverHome`, account `OPENAI_API_KEY` (existence verified in Phase 0, current validity UNVERIFIED). Reuse already approved; import still gated. |
-| `STRIPE_SECRET_KEY`                                                                                      | Secret Manager `foreverhome-stripe-test-secret-key`; NOT CREATED, input missing. Test key only.                                                                                                                                                                       |
-| `STRIPE_WEBHOOK_SECRET`                                                                                  | Secret Manager `foreverhome-stripe-test-webhook-secret`; NOT CREATED, input missing. Approved test endpoint's signing secret only.                                                                                                                                    |
-| `GOOGLE_CLOUD_PROJECT`, `GCS_BUCKET`, `CLOUD_SQL_CONNECTION_NAME`                                        | Non-secret Run environment, placeholders until resources approved. Firebase Admin uses the same project.                                                                                                                                                              |
+| `DATABASE_URL`                                                                                           | Secret Manager `foreverhome-database-url`, version 1 ENABLED. Percent-encoded URI credentials for the dedicated app database/user; runtime socket supplied separately.                                                                                                     |
+| `OPENAI_API_KEY`                                                                                         | Secret Manager `foreverhome-openai-api-key`, version 1 ENABLED. Imported from Keychain service `ForeverHome`, account `OPENAI_API_KEY`, with memory-only equality verification. Live provider validity remains UNVERIFIED. |
+| `STRIPE_SECRET_KEY`                                                                                      | Secret Manager `foreverhome-stripe-test-secret-key`; container exists but has no version; TEST input missing. Test key only.                                                                                                                                                                       |
+| `STRIPE_WEBHOOK_SECRET`                                                                                  | Secret Manager `foreverhome-stripe-test-webhook-secret`; container exists but has no version; TEST input missing. Approved test endpoint's signing secret only.                                                                                                                                    |
+| `GOOGLE_CLOUD_PROJECT`, `GCS_BUCKET`, `CLOUD_SQL_CONNECTION_NAME`                                        | Non-secret Run environment; verified values listed above. Firebase Admin uses the same project.                                                                                                                                                              |
 | `APP_URL`, `CORS_ALLOWED_ORIGINS`                                                                        | Non-secret Run environment. Canonical frontend plus explicit staging/preview origins only; no wildcards/cookies.                                                                                                                                                      |
 | `OWNER_OPEN_ID`                                                                                          | Non-secret Run environment; exact verified Firebase owner UID, not the old Supabase ID.                                                                                                                                                                               |
 | `OPENAI_BASE_URL`, `OPENAI_MODEL`                                                                        | Run env; defaults `https://api.openai.com/v1`, `gpt-4.1-mini`.                                                                                                                                                                                                        |
@@ -71,7 +115,7 @@ Active auth files: `client/src/contexts/AuthContext.tsx`, `client/src/lib/fireba
 | `VITE_ANALYTICS_ENDPOINT`, `VITE_ANALYTICS_WEBSITE_ID`                                                   | Optional public build config; leave omitted unless selected.                                                                                                                                                                                                          |
 | `NOTIFICATION_WEBHOOK_URL`, `NOTIFICATION_WEBHOOK_TOKEN`                                                 | Disabled by omission. If later authorized, both go to separate reviewed Secret Manager secrets; external sends need approval.                                                                                                                                         |
 
-Runtime SA needs only approved Cloud SQL Client, Firebase user-read/revocation verification permissions, bucket write permissions, and accessor on its four named secrets. Build SA must have no runtime secret access. Database migration identity/DDL is separate from the browser. No service-account JSON keys. Obsolete `SUPABASE_*`, `VITE_SUPABASE_*`, `BLOB_READ_WRITE_TOKEN`, Manus/Forge variables and `JWT_SECRET` are unused. Historical Keychain `ForeverHome / BLOB_READ_WRITE_TOKEN` and `SUPABASE_DB_PASSWORD` stay untouched.
+Runtime SA has the scoped SQL, media create/get and per-secret access listed above. Firebase user-read for revocation verification is still missing and needs separate authorization. Build SA must have no runtime secret access. Database migration identity/DDL is separate from the browser. No service-account JSON keys. Obsolete `SUPABASE_*`, `VITE_SUPABASE_*`, `BLOB_READ_WRITE_TOKEN`, Manus/Forge variables and `JWT_SECRET` are unused. Historical Keychain `ForeverHome / BLOB_READ_WRITE_TOKEN` and `SUPABASE_DB_PASSWORD` stay untouched.
 
 ## Verification and remaining gates
 
@@ -87,8 +131,8 @@ Current local rehearsal: **85/85 tests passed**, real disposable Postgres migrat
 
 Local production bundle startup and `/healthz` were checked on Node 25.9.0 with fictional runtime configuration and env-file loading disabled. Playwright confirmed login rendering, zero JavaScript errors and the visible missing-Firebase-configuration error after fictional sign-in inputs. This is shell/configuration evidence, not a real Firebase login. The temporary app and browser were stopped.
 
-**Docker image build is UNVERIFIED**: Docker is not installed on this Mac. Node 24 image execution, Cloud Build, Hosting rewrites/CDN/TLS, GCP IAM/ADC, hosted Cloud SQL socket/TLS, actual Firebase signup/email/reset/revocation, public GCS access, direct hosted SSE/CORS, Stripe test payment delivery and complete hosted acceptance are **UNVERIFIED**. Local mocked-provider tests do not establish any of them.
+**Docker image build is UNVERIFIED**: Docker is not installed on this Mac. Node 24 image execution, Cloud Build, Hosting rewrites/CDN/TLS, ADC/effective access as the new runtime SA, the deployed Run SQL socket, browser signup/email/reset/revocation flows, public GCS access, hosted SSE/CORS, Stripe test delivery and complete hosted acceptance are **UNVERIFIED**. Hosted DB migrations/queries through this Mac’s Auth Proxy, Firebase setup, and IAM policy metadata were verified separately. Local mocked-provider tests do not establish any of them.
 
-Next approvals remain separate: project/billing attachment and each API; Cloud SQL tier/10-GiB storage/backups; each IAM identity/binding; four Secret Manager secrets/versions; Firebase app/auth/Hosting setup; public GCS bucket/policy; Artifact Registry and build/trigger; staging Run deploy/public access; Hosting staging deploy; test Stripe endpoint actions; web-domain detach/cutover and eventual DNS delegation. No approval is inferred from choosing Cloud SQL or allowing code changes. The private Phase 0 plan has detailed cost estimates; its proposed names/config are historical until reconciled with this implementation.
+Next approvals remain separate: the missing Firebase user-read runtime binding; any verification/reset email send or end-to-end action; registry/build/trigger; staging Run deploy/public access; Hosting deploy; public GCS policy; Stripe test endpoint changes; domain/DNS cutover. Existing empty Stripe-container imports remain approved once the selected TEST inputs are securely available. No push or deployment approval is inferred from prerequisite completion. The private checkpoint is the current provisioning handoff.
 
-Still missing/deferred: old user/data/media recovery and UID mapping, backup/restore drill, resource budgets/alerts (alerts are not caps), storage lifecycle/egress limits, request/AI spend/rate limits, durable analysis-credit recovery after process death, external uptime alerting, GitHub connection/trigger controls and disabling legacy Vercel auto-deploy before any push, test-mode billing acceptance, admin stats real-data wiring, video frame extraction, scheduled user reminder delivery and notification provider configuration. Do not market unbuilt realtime/video/reminder claims as working.
+Still missing/deferred: old user/data/media recovery and UID mapping, backup/restore drill, resource spending caps (the configured budget alert is not a cap), storage lifecycle/egress limits, request/AI spend/rate limits, durable analysis-credit recovery after process death, external uptime alerting, GitHub connection/trigger controls and disabling legacy Vercel auto-deploy before any push, test-mode billing acceptance, admin stats real-data wiring, video frame extraction, scheduled user reminder delivery and notification provider configuration. Do not market unbuilt realtime/video/reminder claims as working.
