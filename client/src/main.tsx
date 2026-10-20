@@ -1,11 +1,11 @@
 import { trpc } from "@/lib/trpc";
-import { UNAUTHED_ERR_MSG } from "@shared/const";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import { APP_TITLE, APP_LOGO } from "./const";
+import { invalidateSession } from "./lib/session";
 
 document.title = APP_TITLE;
 if (APP_LOGO) {
@@ -34,11 +34,11 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
   if (typeof window === "undefined") return;
 
-  const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
+  const isUnauthorized = error.data?.code === "UNAUTHORIZED";
 
   if (!isUnauthorized) return;
 
-  window.location.href = "/login";
+  invalidateSession();
 };
 
 queryClient.getQueryCache().subscribe(event => {
@@ -63,11 +63,13 @@ const trpcClient = trpc.createClient({
       url: apiUrl("/api/trpc"),
       transformer: superjson,
       headers: authHeaders,
-      fetch(input, init) {
-        return globalThis.fetch(input, {
+      async fetch(input, init) {
+        const response = await globalThis.fetch(input, {
           ...(init ?? {}),
           credentials: "omit",
         });
+        if (response.status === 401) invalidateSession();
+        return response;
       },
     }),
   ],

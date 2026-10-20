@@ -1,4 +1,5 @@
 import { invokeLLM } from "./_core/llm";
+import { z } from "zod";
 
 export interface PhotoQualityResult {
   isAcceptable: boolean;
@@ -84,7 +85,13 @@ Return a JSON response with:
                 description: "Whether to allow analysis to proceed",
               },
             },
-            required: ["isAcceptable", "score", "issues", "suggestions", "canProceed"],
+            required: [
+              "isAcceptable",
+              "score",
+              "issues",
+              "suggestions",
+              "canProceed",
+            ],
             additionalProperties: false,
           },
         },
@@ -96,22 +103,26 @@ Return a JSON response with:
       throw new Error("No response from quality check");
     }
 
-    const content = typeof message.content === 'string' 
-      ? message.content 
-      : JSON.stringify(message.content);
-    
-    const result = JSON.parse(content) as PhotoQualityResult;
+    const content =
+      typeof message.content === "string"
+        ? message.content
+        : JSON.stringify(message.content);
+
+    const result = z
+      .object({
+        isAcceptable: z.boolean(),
+        score: z.number().min(0).max(100),
+        issues: z.array(z.string()),
+        suggestions: z.array(z.string()),
+        canProceed: z.boolean(),
+      })
+      .parse(JSON.parse(content));
     return result;
   } catch (error) {
-    console.error("[Photo Quality] Validation error:", error);
-    // On error, allow the photo through (fail open)
-    return {
-      isAcceptable: true,
-      score: 50,
-      issues: ["Unable to validate photo quality"],
-      suggestions: ["Proceeding with analysis"],
-      canProceed: true,
-    };
+    // Provider outages and invalid responses are not successful quality checks.
+    throw new Error(
+      "Photo quality check unavailable. Please try again later. No analysis was started."
+    );
   }
 }
 
@@ -121,19 +132,37 @@ Return a JSON response with:
 export function getPhotoTips(issues: string[]): string[] {
   const tips: string[] = [];
 
-  if (issues.some(i => i.toLowerCase().includes("dark") || i.toLowerCase().includes("light"))) {
+  if (
+    issues.some(
+      i => i.toLowerCase().includes("dark") || i.toLowerCase().includes("light")
+    )
+  ) {
     tips.push("📸 Try taking the photo in natural light or near a window");
   }
 
-  if (issues.some(i => i.toLowerCase().includes("blur") || i.toLowerCase().includes("focus"))) {
+  if (
+    issues.some(
+      i => i.toLowerCase().includes("blur") || i.toLowerCase().includes("focus")
+    )
+  ) {
     tips.push("🎯 Hold your phone steady and make sure the pet is in focus");
   }
 
-  if (issues.some(i => i.toLowerCase().includes("far") || i.toLowerCase().includes("small"))) {
+  if (
+    issues.some(
+      i => i.toLowerCase().includes("far") || i.toLowerCase().includes("small")
+    )
+  ) {
     tips.push("🔍 Get closer to your pet - medium shots work best");
   }
 
-  if (issues.some(i => i.toLowerCase().includes("hidden") || i.toLowerCase().includes("obstruct"))) {
+  if (
+    issues.some(
+      i =>
+        i.toLowerCase().includes("hidden") ||
+        i.toLowerCase().includes("obstruct")
+    )
+  ) {
     tips.push("👁️ Make sure your pet's face or body is fully visible");
   }
 
@@ -149,4 +178,3 @@ export function getPhotoTips(issues: string[]): string[] {
 
   return tips;
 }
-

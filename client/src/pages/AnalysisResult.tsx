@@ -1,9 +1,25 @@
+import { PrivateImage } from "@/components/PrivateImage";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { PawPrint, ArrowLeft, ThumbsUp, ThumbsDown, AlertTriangle, Heart, Sparkles, CheckCircle2 } from "lucide-react";
+import {
+  PawPrint,
+  ArrowLeft,
+  ThumbsUp,
+  ThumbsDown,
+  AlertTriangle,
+  Heart,
+  Sparkles,
+  CheckCircle2,
+} from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "wouter";
 import { APP_TITLE } from "@/const";
@@ -24,7 +40,7 @@ export default function AnalysisResult() {
       setFeedbackSubmitted(true);
       toast.success("Thank you for your feedback!");
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(`Failed to submit feedback: ${error.message}`);
     },
   });
@@ -55,10 +71,18 @@ export default function AnalysisResult() {
   }
 
   // Parse JSON data
-  const visionData = analysis.visionData ? JSON.parse(analysis.visionData) : null;
-  const contextData = analysis.contextData ? JSON.parse(analysis.contextData) : null;
-  const synthesisData = analysis.synthesisData ? JSON.parse(analysis.synthesisData) : null;
-  const recommendations = analysis.recommendations ? JSON.parse(analysis.recommendations) : null;
+  const visionData = analysis.visionData
+    ? JSON.parse(analysis.visionData)
+    : null;
+  const contextData = analysis.contextData
+    ? JSON.parse(analysis.contextData)
+    : null;
+  const synthesisData = analysis.synthesisData
+    ? JSON.parse(analysis.synthesisData)
+    : null;
+  const recommendations = analysis.recommendations
+    ? JSON.parse(analysis.recommendations)
+    : null;
 
   const handleFeedback = (feedback: "helpful" | "not_helpful") => {
     submitFeedback.mutate({ analysisId: id!, feedback });
@@ -92,6 +116,13 @@ export default function AnalysisResult() {
             </Link>
           </Button>
 
+          {analysis.mediaUrl && (
+            <PrivateImage
+              locator={analysis.mediaUrl}
+              alt="Analyzed pet photo"
+              className="max-h-96 rounded-lg"
+            />
+          )}
           {/* Primary Result */}
           <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
             <CardHeader>
@@ -101,32 +132,46 @@ export default function AnalysisResult() {
                     <Badge className="text-lg px-4 py-2 bg-gradient-to-r from-primary to-accent">
                       {analysis.primaryBehavior}
                     </Badge>
-                    <div className="text-3xl font-bold text-primary">{analysis.confidenceScore}</div>
+                    <div className="text-3xl font-bold text-primary">
+                      {analysis.confidenceScore}
+                    </div>
                   </div>
                   <CardDescription className="text-base">
-                    Analysis completed on {new Date(analysis.createdAt!).toLocaleDateString()} at{" "}
+                    Analysis completed on{" "}
+                    {new Date(analysis.createdAt!).toLocaleDateString()} at{" "}
                     {new Date(analysis.createdAt!).toLocaleTimeString()}
                   </CardDescription>
                 </div>
                 <Sparkles className="w-12 h-12 text-primary" />
               </div>
             </CardHeader>
+            {analysis.personalityVoice && (
+              <CardContent>
+                <p className="font-semibold">Imagined pet voice</p>
+                <p className="text-lg">{analysis.personalityVoice}</p>
+              </CardContent>
+            )}
             {synthesisData && (
               <CardContent>
-                <p className="text-lg leading-relaxed">{synthesisData.reasoning}</p>
-                {synthesisData.alternativeInterpretations && synthesisData.alternativeInterpretations.length > 0 && (
-                  <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                    <h4 className="font-semibold mb-2 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4" />
-                      Alternative Interpretations
-                    </h4>
-                    <ul className="space-y-1 text-sm">
-                      {synthesisData.alternativeInterpretations.map((alt: string, idx: number) => (
-                        <li key={idx}>• {alt}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                <p className="text-lg leading-relaxed">
+                  {synthesisData.reasoning}
+                </p>
+                {synthesisData.alternativeInterpretations &&
+                  synthesisData.alternativeInterpretations.length > 0 && (
+                    <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                      <h4 className="font-semibold mb-2 flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        Alternative Interpretations
+                      </h4>
+                      <ul className="space-y-1 text-sm">
+                        {synthesisData.alternativeInterpretations.map(
+                          (alt: string, idx: number) => (
+                            <li key={idx}>• {alt}</li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                  )}
               </CardContent>
             )}
           </Card>
@@ -139,31 +184,41 @@ export default function AnalysisResult() {
                   <Heart className="w-6 h-6 text-accent" />
                   What You Can Do
                 </CardTitle>
-                <CardDescription>Actionable steps to support your pet</CardDescription>
+                <CardDescription>
+                  Actionable steps to support your pet
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  {recommendations.actions.map((action: string, idx: number) => (
-                    <div key={idx} className="flex items-start gap-3 p-3 bg-accent/5 rounded-lg">
-                      <CheckCircle2 className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                      <p className="flex-1">{action}</p>
-                    </div>
-                  ))}
+                  {recommendations.actions.map(
+                    (action: string, idx: number) => (
+                      <div
+                        key={idx}
+                        className="flex items-start gap-3 p-3 bg-accent/5 rounded-lg"
+                      >
+                        <CheckCircle2 className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+                        <p className="flex-1">{action}</p>
+                      </div>
+                    )
+                  )}
                 </div>
 
-                {recommendations.safetyWarnings && recommendations.safetyWarnings.length > 0 && (
-                  <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                    <h4 className="font-semibold mb-2 flex items-center gap-2 text-destructive">
-                      <AlertTriangle className="w-5 h-5" />
-                      Safety Warnings
-                    </h4>
-                    <ul className="space-y-1 text-sm">
-                      {recommendations.safetyWarnings.map((warning: string, idx: number) => (
-                        <li key={idx}>• {warning}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {recommendations.safetyWarnings &&
+                  recommendations.safetyWarnings.length > 0 && (
+                    <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                      <h4 className="font-semibold mb-2 flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="w-5 h-5" />
+                        Safety Warnings
+                      </h4>
+                      <ul className="space-y-1 text-sm">
+                        {recommendations.safetyWarnings.map(
+                          (warning: string, idx: number) => (
+                            <li key={idx}>• {warning}</li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                  )}
 
                 {recommendations.vetConsultation && (
                   <div className="p-4 bg-secondary/20 border border-secondary/30 rounded-lg">
@@ -172,8 +227,8 @@ export default function AnalysisResult() {
                       Veterinary Consultation Recommended
                     </h4>
                     <p className="text-sm">
-                      Based on this behavior, we recommend consulting with a veterinarian for professional evaluation
-                      and guidance.
+                      Based on this behavior, we recommend consulting with a
+                      veterinarian for professional evaluation and guidance.
                     </p>
                   </div>
                 )}
@@ -192,15 +247,21 @@ export default function AnalysisResult() {
                 <CardContent className="space-y-3 text-sm">
                   <div>
                     <h5 className="font-semibold mb-1">Body Posture</h5>
-                    <p className="text-muted-foreground">{visionData.posture}</p>
+                    <p className="text-muted-foreground">
+                      {visionData.posture}
+                    </p>
                   </div>
                   <div>
                     <h5 className="font-semibold mb-1">Facial Expression</h5>
-                    <p className="text-muted-foreground">{visionData.facialExpression}</p>
+                    <p className="text-muted-foreground">
+                      {visionData.facialExpression}
+                    </p>
                   </div>
                   <div>
                     <h5 className="font-semibold mb-1">Environment</h5>
-                    <p className="text-muted-foreground">{visionData.environmentalContext}</p>
+                    <p className="text-muted-foreground">
+                      {visionData.environmentalContext}
+                    </p>
                   </div>
                   <div className="pt-2 border-t">
                     <p className="text-xs text-muted-foreground">
@@ -215,16 +276,22 @@ export default function AnalysisResult() {
             {contextData && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">🧬 Behavioral Context</CardTitle>
+                  <CardTitle className="text-lg">
+                    🧬 Behavioral Context
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm">
                   <div>
                     <h5 className="font-semibold mb-1">Breed Traits</h5>
-                    <p className="text-muted-foreground">{contextData.breedTraits}</p>
+                    <p className="text-muted-foreground">
+                      {contextData.breedTraits}
+                    </p>
                   </div>
                   <div>
                     <h5 className="font-semibold mb-1">Age Considerations</h5>
-                    <p className="text-muted-foreground">{contextData.ageConsiderations}</p>
+                    <p className="text-muted-foreground">
+                      {contextData.ageConsiderations}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -238,7 +305,9 @@ export default function AnalysisResult() {
                 <CardTitle className="text-lg">📝 Your Note</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="italic text-muted-foreground">"{analysis.userContext}"</p>
+                <p className="italic text-muted-foreground">
+                  "{analysis.userContext}"
+                </p>
               </CardContent>
             </Card>
           )}
@@ -247,7 +316,9 @@ export default function AnalysisResult() {
           <Card className="border-2">
             <CardHeader>
               <CardTitle>Was this analysis helpful?</CardTitle>
-              <CardDescription>Your feedback helps us improve our AI</CardDescription>
+              <CardDescription>
+                Your feedback helps us improve our AI
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {feedbackSubmitted || analysis.userFeedback ? (
@@ -284,9 +355,10 @@ export default function AnalysisResult() {
           <Card className="bg-muted/20 border-dashed">
             <CardContent className="pt-6 text-center text-sm text-muted-foreground">
               <p>
-                <strong>Disclaimer:</strong> InterpWhat provides informational insights based on AI analysis. This is
-                not a substitute for professional veterinary advice, diagnosis, or treatment. Always consult with a
-                qualified veterinarian for medical concerns.
+                <strong>Disclaimer:</strong> InterpWhat provides informational
+                insights based on AI analysis. This is not a substitute for
+                professional veterinary advice, diagnosis, or treatment. Always
+                consult with a qualified veterinarian for medical concerns.
               </p>
             </CardContent>
           </Card>
@@ -295,4 +367,3 @@ export default function AnalysisResult() {
     </div>
   );
 }
-

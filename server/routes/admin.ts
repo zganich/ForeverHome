@@ -1,12 +1,18 @@
 import type { Express } from "express";
 import { getDb } from "../db";
-import { users, shelterPartners, adoptionVerifications, emailCampaigns, emailRecipients } from "../../drizzle/schema";
+import {
+  users,
+  shelterPartners,
+  adoptionVerifications,
+  emailCampaigns,
+  emailRecipients,
+} from "../../drizzle/schema";
 import { eq, and, gte, sql } from "drizzle-orm";
 import { requireAdmin } from "../_core/auth";
 
 export function registerAdminRoutes(app: Express) {
   app.use("/api/admin", requireAdmin);
-  // Admin analytics endpoint (protected - add auth middleware in production)
+  // Existing owner analytics; requireAdmin applies to every route below.
   app.get("/api/admin/analytics", async (req, res) => {
     try {
       const db = await getDb();
@@ -14,9 +20,6 @@ export function registerAdminRoutes(app: Express) {
         return res.status(500).json({ error: "Database not available" });
       }
 
-      // Check if user is admin (add proper auth check)
-      // For now, this is a placeholder - implement proper admin auth
-      
       // Get total users
       const totalUsersResult = await db
         .select({ count: sql<number>`count(*)` })
@@ -27,11 +30,10 @@ export function registerAdminRoutes(app: Express) {
       const activeSubsResult = await db
         .select({
           plan: users.subscriptionPlan,
-          status: users.subscriptionStatus,
           count: sql<number>`count(*)`,
         })
         .from(users)
-        .where(eq(users.subscriptionStatus, 'active'))
+        .where(eq(users.subscriptionStatus, "active"))
         .groupBy(users.subscriptionPlan);
 
       // Calculate revenue by plan type
@@ -46,71 +48,48 @@ export function registerAdminRoutes(app: Express) {
         const count = Number(sub.count);
         activeSubscriptions += count;
 
-        if (sub.plan === 'premium') {
+        if (sub.plan === "premium") {
           premiumRevenue = count * 19.99;
-        } else if (sub.plan === 'essential') {
+        } else if (sub.plan === "essential") {
           essentialRevenue = count * 9.99;
-        } else if (sub.plan === 'rescue_adopter') {
+        } else if (sub.plan === "rescue_adopter") {
           rescueRevenue = count * 14.99;
           rescueAdopters = count;
-        } else if (sub.plan === 'shelter_org') {
+        } else if (sub.plan === "shelter_org") {
           shelterOrgRevenue = count * 33;
         }
       });
 
-      const totalRevenue = premiumRevenue + essentialRevenue + rescueRevenue + shelterOrgRevenue;
+      const totalRevenue =
+        premiumRevenue + essentialRevenue + rescueRevenue + shelterOrgRevenue;
 
       // Get shelter partners count
       const shelterPartnersResult = await db
         .select({ count: sql<number>`count(*)` })
         .from(shelterPartners)
-        .where(eq(shelterPartners.status, 'active'));
+        .where(eq(shelterPartners.status, "active"));
       const shelterPartnersCount = Number(shelterPartnersResult[0]?.count || 0);
 
       // Get total adopter sign-ups
       const adopterSignupsResult = await db
         .select({ count: sql<number>`count(*)` })
         .from(adoptionVerifications)
-        .where(eq(adoptionVerifications.status, 'approved'));
+        .where(eq(adoptionVerifications.status, "approved"));
       const totalAdopterSignups = Number(adopterSignupsResult[0]?.count || 0);
 
       // Calculate shelter revenue share (10% of rescue adopter revenue)
-      const shelterRevenueShare = rescueRevenue * 0.10;
+      const shelterRevenueShare = rescueRevenue * 0.1;
 
       // Calculate average lifetime value (simplified - 12 months avg)
-      const avgLifetimeValue = activeSubscriptions > 0 
-        ? (totalRevenue / activeSubscriptions) * 12 
-        : 0;
+      const avgLifetimeValue =
+        activeSubscriptions > 0 ? (totalRevenue / activeSubscriptions) * 12 : 0;
 
-      // Mock data for growth and churn (implement real calculations)
-      const monthlyGrowth = 15.3; // Placeholder
-      const churnRate = 5.2; // Placeholder
-      const avgSignupRate = 18.5; // Placeholder
-
-      // Get recent activity (mock for now - implement real activity tracking)
-      const recentActivity = [
-        {
-          type: "New Subscription",
-          user: "user@example.com",
-          value: "Premium",
-          timestamp: "2 hours ago"
-        },
-        {
-          type: "Adoption Verified",
-          user: "adopter@example.com",
-          value: "Rescue Adopter",
-          timestamp: "5 hours ago"
-        },
-        {
-          type: "Shelter Partnership",
-          user: "Austin Pets Alive!",
-          value: "Active",
-          timestamp: "1 day ago"
-        }
-      ];
-
-      // Get top performing shelter (mock for now)
-      const topShelter = "Austin Pets Alive!";
+      // Unmeasured values must not be presented as business facts.
+      const monthlyGrowth = null,
+        churnRate = null,
+        avgSignupRate = null;
+      const recentActivity: unknown[] = [];
+      const topShelter = null;
 
       res.json({
         totalUsers,
@@ -129,10 +108,10 @@ export function registerAdminRoutes(app: Express) {
         shelterRevenueShare: Math.round(shelterRevenueShare * 100) / 100,
         avgSignupRate,
         topShelter,
-        recentActivity
+        recentActivity,
       });
     } catch (error) {
-      console.error("Error fetching admin analytics:", error);
+      console.error("Admin analytics unavailable");
       res.status(500).json({ error: "Failed to fetch analytics" });
     }
   });
@@ -146,16 +125,16 @@ export function registerAdminRoutes(app: Express) {
       }
 
       // Add proper admin auth check here
-      
+
       const { type } = req.query;
 
-      if (type === 'users') {
+      if (type === "users") {
         const userList = await db.select().from(users);
         res.json(userList);
-      } else if (type === 'shelters') {
+      } else if (type === "shelters") {
         const shelters = await db.select().from(shelterPartners);
         res.json(shelters);
-      } else if (type === 'adopters') {
+      } else if (type === "adopters") {
         const adopters = await db.select().from(adoptionVerifications);
         res.json(adopters);
       } else {

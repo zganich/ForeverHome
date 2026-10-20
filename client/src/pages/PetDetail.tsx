@@ -1,15 +1,30 @@
+import { PrivateImage } from "@/components/PrivateImage";
 import { AnalysisStream } from "@/lib/analysisStream";
 import { authFetch } from "@/lib/api";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Toggle } from "@/components/ui/toggle";
 import { trpc } from "@/lib/trpc";
-import { PawPrint, ArrowLeft, Upload, Sparkles, Clock, X, Zap } from "lucide-react";
+import {
+  PawPrint,
+  ArrowLeft,
+  Upload,
+  Sparkles,
+  Clock,
+  X,
+  Zap,
+} from "lucide-react";
 import { PetTimeline } from "@/components/PetTimeline";
 import Reminders from "@/components/Reminders";
 import { useState, useRef, useEffect } from "react";
@@ -33,6 +48,7 @@ export default function PetDetail() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { isAuthenticated } = useAuth();
+  const [uploadedLocator, setUploadedLocator] = useState<string>();
   const [file, setFile] = useState<File | null>(null);
   const [userContext, setUserContext] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -47,17 +63,21 @@ export default function PetDetail() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
-  const { data: pet, isLoading: petLoading } = trpc.pets.list.useQuery(undefined, {
-    enabled: isAuthenticated,
-    select: (pets) => pets.find((p) => p.id === id),
-  });
-
-  const { data: analyses, isLoading: analysesLoading } = trpc.analysis.listForPet.useQuery(
-    { petId: id! },
+  const { data: pet, isLoading: petLoading } = trpc.pets.list.useQuery(
+    undefined,
     {
-      enabled: isAuthenticated && !!id,
+      enabled: isAuthenticated,
+      select: pets => pets.find(p => p.id === id),
     }
   );
+
+  const { data: analyses, isLoading: analysesLoading } =
+    trpc.analysis.listForPet.useQuery(
+      { petId: id! },
+      {
+        enabled: isAuthenticated && !!id,
+      }
+    );
 
   // Cleanup EventSource on unmount
   useEffect(() => {
@@ -80,9 +100,12 @@ export default function PetDetail() {
     }
     // Validate file size (max 4 MB)
     if (selectedFile.size > 4 * 1024 * 1024) {
-      toast.error("File size must be less than 4 MB. Please compress your file or choose a smaller one.");
+      toast.error(
+        "File size must be less than 4 MB. Please compress your file or choose a smaller one."
+      );
       return false;
     }
+    setUploadedLocator(undefined);
     setFile(selectedFile);
     return true;
   };
@@ -104,7 +127,10 @@ export default function PetDetail() {
     e.preventDefault();
     e.stopPropagation();
     // Only set dragging to false if we're leaving the drop zone itself
-    if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget as Node)) {
+    if (
+      dropZoneRef.current &&
+      !dropZoneRef.current.contains(e.relatedTarget as Node)
+    ) {
       setIsDragging(false);
     }
   };
@@ -167,10 +193,13 @@ export default function PetDetail() {
       });
 
       if (!uploadResponse.ok) {
-        throw new Error("Upload failed. Please check your internet connection and try again.");
+        throw new Error(
+          "Upload failed. Please check your internet connection and try again."
+        );
       }
 
       const { url } = await uploadResponse.json();
+      setUploadedLocator(url);
 
       // Determine media type
       const mediaType = file.type.startsWith("video/") ? "video" : "image";
@@ -179,7 +208,7 @@ export default function PetDetail() {
       if (mediaType === "image") {
         setAnalysisStatus("Checking photo quality...");
         setAnalysisProgress(10);
-        
+
         const qualityCheck = await validatePhoto.mutateAsync({ imageUrl: url });
 
         if (!qualityCheck.canProceed) {
@@ -187,11 +216,11 @@ export default function PetDetail() {
           setAnalysisProgress(0);
           setAnalysisStatus("");
           setCurrentStage("");
-          
+
           toast.error("Photo quality issue detected", {
             description: qualityCheck.issues.join(", "),
           });
-          
+
           // Show suggestions
           if (qualityCheck.tips && qualityCheck.tips.length > 0) {
             setTimeout(() => {
@@ -206,7 +235,8 @@ export default function PetDetail() {
 
         if (qualityCheck.score < 70) {
           toast.warning("Photo quality could be better", {
-            description: "Analysis will proceed, but better lighting or focus may improve results.",
+            description:
+              "Analysis will proceed, but better lighting or focus may improve results.",
           });
         }
       }
@@ -226,7 +256,7 @@ export default function PetDetail() {
       });
       eventSourceRef.current = eventSource;
 
-      eventSource.onmessage = (event) => {
+      eventSource.onmessage = event => {
         try {
           const eventData = JSON.parse(event.data);
           const { stage, data, progress } = eventData;
@@ -239,13 +269,13 @@ export default function PetDetail() {
             // Analysis complete - navigate to results page
             eventSource.close();
             eventSourceRef.current = null;
-            
+
             setAnalysisProgress(100);
             setAnalysisStatus("Analysis complete!");
             setUploading(false);
-            
+
             toast.success("Analysis complete!");
-            
+
             // Navigate to results page
             setTimeout(() => {
               if (eventData.analysisId) {
@@ -256,22 +286,31 @@ export default function PetDetail() {
             // Error occurred
             eventSource.close();
             eventSourceRef.current = null;
-            
+
             setUploading(false);
             setAnalysisProgress(0);
             setAnalysisStatus("");
             setCurrentStage("");
-            
-            const errorMessage = eventData.error || "Analysis failed. Please try again.";
-            
+
+            const errorMessage =
+              eventData.error || "Analysis failed. Please try again.";
+
             // User-friendly error messages
             let friendlyMessage = errorMessage;
-            if (errorMessage.includes("credits") || errorMessage.includes("balance")) {
-              friendlyMessage = "Insufficient credits. Please purchase more credits to continue.";
-            } else if (errorMessage.includes("Pet not found") || errorMessage.includes("Access denied")) {
-              friendlyMessage = "Unable to analyze this pet. Please try again or contact support.";
+            if (
+              errorMessage.includes("credits") ||
+              errorMessage.includes("balance")
+            ) {
+              friendlyMessage =
+                "Insufficient credits. Please purchase more credits to continue.";
+            } else if (
+              errorMessage.includes("Pet not found") ||
+              errorMessage.includes("Access denied")
+            ) {
+              friendlyMessage =
+                "Unable to analyze this pet. Please try again or contact support.";
             }
-            
+
             toast.error(friendlyMessage);
           }
         } catch (error) {
@@ -279,34 +318,37 @@ export default function PetDetail() {
         }
       };
 
-      eventSource.onerror = (error) => {
+      eventSource.onerror = error => {
         console.error("SSE connection error:", error);
         eventSource.close();
         eventSourceRef.current = null;
-        
+
         setUploading(false);
         setAnalysisProgress(0);
         setAnalysisStatus("");
         setCurrentStage("");
-        
-        toast.error("Connection error. Please check your internet and try again.");
+
+        toast.error(
+          "Connection error. Please check your internet and try again."
+        );
       };
     } catch (error) {
       console.error("Upload error:", error);
-      
+
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
       }
-      
+
       setUploading(false);
       setAnalysisProgress(0);
       setAnalysisStatus("");
       setCurrentStage("");
-      
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "Failed to upload file. Please check your internet connection and try again.";
+
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to upload file. Please check your internet connection and try again.";
       toast.error(errorMessage);
     }
   };
@@ -317,14 +359,16 @@ export default function PetDetail() {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
     }
-    
+
     // Note: Analysis continues in background, but we stop showing progress
     setUploading(false);
     setAnalysisProgress(0);
     setAnalysisStatus("");
     setCurrentStage("");
-    
-    toast.info("Analysis continues in the background. You'll be notified when it's complete.");
+
+    toast.info(
+      "Stopped watching progress. Check the timeline later; the request may still finish."
+    );
   };
 
   if (!isAuthenticated) {
@@ -398,6 +442,13 @@ export default function PetDetail() {
             </CardHeader>
           </Card>
 
+          {uploadedLocator && (
+            <PrivateImage
+              locator={uploadedLocator}
+              alt="Uploaded pet photo"
+              className="max-h-80 rounded-lg"
+            />
+          )}
           {/* Upload Section */}
           <Card className="border-2 border-primary/20">
             <CardHeader>
@@ -406,7 +457,9 @@ export default function PetDetail() {
                 Upload a photo to understand {pet.name}'s behavior
               </CardDescription>
               <p className="text-sm text-muted-foreground mt-2">
-                <strong>How it works:</strong> Upload a photo of {pet.name}. Our AI will tell you what they're thinking or feeling in about {quickMode ? "8" : "20"} seconds.
+                <strong>How it works:</strong> Upload a photo of {pet.name}. Our
+                AI will tell you what they're thinking or feeling in about{" "}
+                {quickMode ? "8" : "20"} seconds.
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -415,11 +468,15 @@ export default function PetDetail() {
                 <div className="flex items-center gap-3">
                   <Zap className="w-5 h-5 text-accent" />
                   <div>
-                    <Label htmlFor="quickMode" className="text-sm font-semibold cursor-pointer">
+                    <Label
+                      htmlFor="quickMode"
+                      className="text-sm font-semibold cursor-pointer"
+                    >
                       Quick Mode
                     </Label>
                     <p className="text-xs text-muted-foreground">
-                      Faster analysis (5-8s) with basic insights, skip detailed recommendations
+                      Faster analysis (5-8s) with basic insights, skip detailed
+                      recommendations
                     </p>
                   </div>
                 </div>
@@ -442,8 +499,8 @@ export default function PetDetail() {
                     isDragging
                       ? "border-primary bg-primary/10 scale-105"
                       : file
-                      ? "border-primary bg-primary/5"
-                      : "border-muted-foreground/25 hover:border-primary/50 hover:bg-primary/5"
+                        ? "border-primary bg-primary/5"
+                        : "border-muted-foreground/25 hover:border-primary/50 hover:bg-primary/5"
                   }`}
                   onClick={() => fileInputRef.current?.click()}
                   onDragEnter={handleDragEnter}
@@ -465,17 +522,18 @@ export default function PetDetail() {
                       <div>
                         <p className="font-medium text-base">{file.name}</p>
                         <p className="text-sm text-muted-foreground mt-1">
-                          {(file.size / 1024 / 1024).toFixed(2)} MB • {file.type.split('/')[0].toUpperCase()}
+                          {(file.size / 1024 / 1024).toFixed(2)} MB •{" "}
+                          {file.type.split("/")[0].toUpperCase()}
                         </p>
                       </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={(e) => { 
-                          e.stopPropagation(); 
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={e => {
+                          e.stopPropagation();
                           setFile(null);
                           if (fileInputRef.current) {
-                            fileInputRef.current.value = '';
+                            fileInputRef.current.value = "";
                           }
                         }}
                       >
@@ -484,10 +542,14 @@ export default function PetDetail() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      <Upload className={`w-12 h-12 mx-auto transition-transform ${isDragging ? "text-primary scale-110" : "text-muted-foreground"}`} />
+                      <Upload
+                        className={`w-12 h-12 mx-auto transition-transform ${isDragging ? "text-primary scale-110" : "text-muted-foreground"}`}
+                      />
                       <div>
                         <p className="font-medium text-base">
-                          {isDragging ? "Drop file here" : "Click to upload or drag and drop"}
+                          {isDragging
+                            ? "Drop file here"
+                            : "Click to upload or drag and drop"}
                         </p>
                         <p className="text-sm text-muted-foreground mt-2">
                           Images (JPG, PNG, GIF, WebP) or Videos (MP4, MOV)
@@ -508,7 +570,7 @@ export default function PetDetail() {
                   id="context"
                   placeholder="e.g., 'My dog was barking at the mailman' or 'My cat was hiding under the bed'"
                   value={userContext}
-                  onChange={(e) => setUserContext(e.target.value)}
+                  onChange={e => setUserContext(e.target.value)}
                   rows={3}
                 />
                 <p className="text-xs text-muted-foreground">
@@ -520,37 +582,45 @@ export default function PetDetail() {
               <div className="bg-accent/10 p-4 rounded-lg border border-accent/20 space-y-4">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-accent" />
-                  <Label className="text-sm font-semibold">Is this an older photo?</Label>
+                  <Label className="text-sm font-semibold">
+                    Is this an older photo?
+                  </Label>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Help our AI learn {pet.name}'s behavior over time by dating older photos
+                  Help our AI learn {pet.name}'s behavior over time by dating
+                  older photos
                 </p>
-                
+
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="photoDate" className="text-sm">When was this taken?</Label>
+                    <Label htmlFor="photoDate" className="text-sm">
+                      When was this taken?
+                    </Label>
                     <Input
                       id="photoDate"
                       type="date"
                       value={photoDate}
-                      onChange={(e) => setPhotoDate(e.target.value)}
-                      max={new Date().toISOString().split('T')[0]}
+                      onChange={e => setPhotoDate(e.target.value)}
+                      max={new Date().toISOString().split("T")[0]}
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
-                    <Label htmlFor="petAge" className="text-sm">How old was {pet.name}?</Label>
+                    <Label htmlFor="petAge" className="text-sm">
+                      How old was {pet.name}?
+                    </Label>
                     <Input
                       id="petAge"
                       placeholder="e.g., '6 months' or '2 years'"
                       value={petAgeAtPhoto}
-                      onChange={(e) => setPetAgeAtPhoto(e.target.value)}
+                      onChange={e => setPetAgeAtPhoto(e.target.value)}
                     />
                   </div>
                 </div>
-                
+
                 <p className="text-xs text-muted-foreground italic">
-                  💡 The more historical photos you upload, the better our AI understands {pet.name}'s unique patterns!
+                  💡 The more historical photos you upload, the better our AI
+                  understands {pet.name}'s unique patterns!
                 </p>
               </div>
 
@@ -569,7 +639,8 @@ export default function PetDetail() {
                 ) : (
                   <>
                     <Sparkles className="w-6 h-6 mr-2" />
-                    Click to Analyze {pet.name}'s Behavior {quickMode && "(Quick Mode)"}
+                    Click to Analyze {pet.name}'s Behavior{" "}
+                    {quickMode && "(Quick Mode)"}
                   </>
                 )}
               </Button>
@@ -578,7 +649,9 @@ export default function PetDetail() {
               {uploading && (
                 <div className="mt-6 space-y-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold">Analysis in Progress</h3>
+                    <h3 className="text-sm font-semibold">
+                      Analysis in Progress
+                    </h3>
                     <span className="text-xs text-muted-foreground">
                       {analysisProgress}%
                     </span>
@@ -603,7 +676,8 @@ export default function PetDetail() {
                     Cancel (continues in background)
                   </Button>
                   <p className="text-xs text-muted-foreground text-center">
-                    💡 You can navigate away. We'll notify you when the analysis is complete.
+                    💡 You can navigate away. We'll notify you when the analysis
+                    is complete.
                   </p>
                 </div>
               )}
@@ -627,4 +701,3 @@ export default function PetDetail() {
     </div>
   );
 }
-

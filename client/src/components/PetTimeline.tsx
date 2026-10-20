@@ -1,4 +1,11 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PrivateImage } from "@/components/PrivateImage";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, TrendingUp, Calendar } from "lucide-react";
 import { Link } from "wouter";
@@ -24,7 +31,10 @@ export function PetTimeline({ analyses, petName }: PetTimelineProps) {
       <Card>
         <CardHeader>
           <CardTitle>📅 {petName}'s Timeline</CardTitle>
-          <CardDescription>No analyses yet. Upload some photos to start building {petName}'s behavioral history!</CardDescription>
+          <CardDescription>
+            No analyses yet. Upload some photos to start building {petName}'s
+            behavioral history!
+          </CardDescription>
         </CardHeader>
       </Card>
     );
@@ -32,14 +42,22 @@ export function PetTimeline({ analyses, petName }: PetTimelineProps) {
 
   // Sort analyses by photo date (or created date if no photo date)
   const sortedAnalyses = [...analyses].sort((a, b) => {
-    const dateA = a.photoDate ? new Date(a.photoDate) : (a.createdAt ? new Date(a.createdAt) : new Date());
-    const dateB = b.photoDate ? new Date(b.photoDate) : (b.createdAt ? new Date(b.createdAt) : new Date());
+    const dateA = a.photoDate
+      ? new Date(a.photoDate)
+      : a.createdAt
+        ? new Date(a.createdAt)
+        : new Date();
+    const dateB = b.photoDate
+      ? new Date(b.photoDate)
+      : b.createdAt
+        ? new Date(b.createdAt)
+        : new Date();
     return dateB.getTime() - dateA.getTime(); // Most recent first
   });
 
   // Group by age if available
   const groupedByAge: Record<string, Analysis[]> = {};
-  sortedAnalyses.forEach((analysis) => {
+  sortedAnalyses.forEach(analysis => {
     const ageGroup = analysis.petAgeAtPhoto || "Recent";
     if (!groupedByAge[ageGroup]) {
       groupedByAge[ageGroup] = [];
@@ -49,7 +67,11 @@ export function PetTimeline({ analyses, petName }: PetTimelineProps) {
 
   const formatDate = (date: Date | string) => {
     const d = new Date(date);
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
   return (
@@ -62,7 +84,9 @@ export function PetTimeline({ analyses, petName }: PetTimelineProps) {
               {petName}'s Behavioral Timeline
             </CardTitle>
             <CardDescription>
-              {analyses.length} {analyses.length === 1 ? "analysis" : "analyses"} • Track how {petName} has changed over time
+              {analyses.length}{" "}
+              {analyses.length === 1 ? "analysis" : "analyses"} • Track how{" "}
+              {petName} has changed over time
             </CardDescription>
           </div>
           <Badge variant="secondary" className="flex items-center gap-1">
@@ -81,18 +105,26 @@ export function PetTimeline({ analyses, petName }: PetTimelineProps) {
                   When {petName} was {ageGroup}
                 </h4>
               )}
-              
+
               <div className="space-y-3">
                 {groupAnalyses.map((analysis, index) => {
-                  const displayDate = analysis.photoDate ? new Date(analysis.photoDate) : (analysis.createdAt ? new Date(analysis.createdAt) : new Date());
-                  const isHistorical = analysis.photoDate !== null && analysis.photoDate !== undefined;
-                  
+                  const displayDate = analysis.photoDate
+                    ? new Date(analysis.photoDate)
+                    : analysis.createdAt
+                      ? new Date(analysis.createdAt)
+                      : new Date();
+                  const isHistorical =
+                    analysis.photoDate !== null &&
+                    analysis.photoDate !== undefined;
+
                   return (
                     <Link key={analysis.id} href={`/analysis/${analysis.id}`}>
                       <div className="flex gap-4 p-4 rounded-lg border hover:border-primary/50 transition-colors cursor-pointer group">
                         {/* Timeline dot */}
                         <div className="flex flex-col items-center">
-                          <div className={`w-3 h-3 rounded-full ${isHistorical ? 'bg-accent' : 'bg-primary'} group-hover:scale-125 transition-transform`} />
+                          <div
+                            className={`w-3 h-3 rounded-full ${isHistorical ? "bg-accent" : "bg-primary"} group-hover:scale-125 transition-transform`}
+                          />
                           {index < groupAnalyses.length - 1 && (
                             <div className="w-0.5 h-full bg-border mt-2" />
                           )}
@@ -103,7 +135,8 @@ export function PetTimeline({ analyses, petName }: PetTimelineProps) {
                           <div className="flex items-start justify-between gap-4">
                             <div>
                               <p className="font-medium group-hover:text-primary transition-colors">
-                                {analysis.primaryBehavior || "Behavior Analysis"}
+                                {analysis.primaryBehavior ||
+                                  "Behavior Analysis"}
                               </p>
                               <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                                 <Clock className="w-3 h-3" />
@@ -124,9 +157,12 @@ export function PetTimeline({ analyses, petName }: PetTimelineProps) {
 
                           {/* Thumbnail */}
                           {analysis.mediaUrl && (
-                            <img
-                              src={analysis.mediaUrl}
-                              alt={analysis.primaryBehavior || "Pet behavior analysis"}
+                            <PrivateImage
+                              locator={analysis.mediaUrl}
+                              alt={
+                                analysis.primaryBehavior ||
+                                "Pet behavior analysis"
+                              }
                               className="w-full h-32 object-cover rounded border"
                             />
                           )}
@@ -148,8 +184,9 @@ export function PetTimeline({ analyses, petName }: PetTimelineProps) {
               Pattern Recognition Active
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              With {analyses.length} analyses, our AI is learning {petName}'s unique behavioral patterns. 
-              Keep uploading to unlock deeper insights!
+              With {analyses.length} analyses, our AI is learning {petName}'s
+              unique behavioral patterns. Keep uploading to unlock deeper
+              insights!
             </p>
           </div>
         )}
@@ -157,4 +194,3 @@ export function PetTimeline({ analyses, petName }: PetTimelineProps) {
     </Card>
   );
 }
-

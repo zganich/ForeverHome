@@ -14,7 +14,7 @@ describe("Photo Validation", () => {
   describe("validatePhotoQuality", () => {
     test("accepts high-quality photos", async () => {
       const { invokeLLM } = await import("../_core/llm");
-      
+
       vi.mocked(invokeLLM).mockResolvedValue({
         choices: [
           {
@@ -31,7 +31,9 @@ describe("Photo Validation", () => {
         ],
       });
 
-      const result = await validatePhotoQuality("https://example.com/good-photo.jpg");
+      const result = await validatePhotoQuality(
+        "https://example.com/good-photo.jpg"
+      );
 
       expect(result.isAcceptable).toBe(true);
       expect(result.score).toBe(95);
@@ -41,7 +43,7 @@ describe("Photo Validation", () => {
 
     test("rejects low-quality photos", async () => {
       const { invokeLLM } = await import("../_core/llm");
-      
+
       vi.mocked(invokeLLM).mockResolvedValue({
         choices: [
           {
@@ -58,7 +60,9 @@ describe("Photo Validation", () => {
         ],
       });
 
-      const result = await validatePhotoQuality("https://example.com/bad-photo.jpg");
+      const result = await validatePhotoQuality(
+        "https://example.com/bad-photo.jpg"
+      );
 
       expect(result.isAcceptable).toBe(false);
       expect(result.score).toBe(30);
@@ -66,17 +70,21 @@ describe("Photo Validation", () => {
       expect(result.issues.length).toBeGreaterThan(0);
     });
 
-    test("handles API errors gracefully (fail open)", async () => {
+    test("provider outage never reports a passing quality check", async () => {
       const { invokeLLM } = await import("../_core/llm");
-      
       vi.mocked(invokeLLM).mockRejectedValue(new Error("API Error"));
-
-      const result = await validatePhotoQuality("https://example.com/photo.jpg");
-
-      // Should fail open (allow photo through)
-      expect(result.isAcceptable).toBe(true);
-      expect(result.canProceed).toBe(true);
-      expect(result.issues).toContain("Unable to validate photo quality");
+      await expect(
+        validatePhotoQuality("data:image/jpeg;base64,/9j/2Q==")
+      ).rejects.toThrow("No analysis was started");
+    });
+    test("malformed provider results cannot pass validation", async () => {
+      const { invokeLLM } = await import("../_core/llm");
+      vi.mocked(invokeLLM).mockResolvedValue({
+        choices: [{ message: { content: '{"canProceed":true}' } }],
+      } as any);
+      await expect(
+        validatePhotoQuality("data:image/jpeg;base64,/9j/2Q==")
+      ).rejects.toThrow("quality check unavailable");
     });
   });
 
@@ -86,7 +94,13 @@ describe("Photo Validation", () => {
       const tips = getPhotoTips(issues);
 
       expect(tips.length).toBeGreaterThan(0);
-      expect(tips.some(tip => tip.toLowerCase().includes("focus") || tip.toLowerCase().includes("steady"))).toBe(true);
+      expect(
+        tips.some(
+          tip =>
+            tip.toLowerCase().includes("focus") ||
+            tip.toLowerCase().includes("steady")
+        )
+      ).toBe(true);
     });
 
     test("provides tips for lighting issues", () => {
@@ -102,7 +116,13 @@ describe("Photo Validation", () => {
       const tips = getPhotoTips(issues);
 
       expect(tips.length).toBeGreaterThan(0);
-      expect(tips.some(tip => tip.toLowerCase().includes("visible") || tip.toLowerCase().includes("see"))).toBe(true);
+      expect(
+        tips.some(
+          tip =>
+            tip.toLowerCase().includes("visible") ||
+            tip.toLowerCase().includes("see")
+        )
+      ).toBe(true);
     });
 
     test("returns general tips when no specific issues", () => {
@@ -114,4 +134,3 @@ describe("Photo Validation", () => {
     });
   });
 });
-

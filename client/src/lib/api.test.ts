@@ -72,3 +72,35 @@ it("rejects external URLs and API path traversal before fetch", async () => {
   ])
     expect(() => apiUrl(path)).toThrow();
 });
+
+it("invalidates a rejected session on 401, but preserves it on 403 and service outages", async () => {
+  vi.stubEnv("VITE_API_BASE_URL", "https://api.example.test");
+  const dispatch = vi.fn();
+  vi.stubGlobal("window", { dispatchEvent: dispatch });
+  auth.ready.mockResolvedValue(undefined);
+  auth.token.mockResolvedValue("fixture-token");
+  const fetcher = vi.fn();
+  vi.stubGlobal("fetch", fetcher);
+  const { authFetch } = await import("./api");
+  for (const status of [403, 503]) {
+    fetcher.mockResolvedValue({ status });
+    await authFetch("/api/example");
+  }
+  expect(dispatch).not.toHaveBeenCalled();
+  fetcher.mockResolvedValue({ status: 401 });
+  await authFetch("/api/example");
+  expect(dispatch).toHaveBeenCalledTimes(1);
+});
+it("handles a disabled identity during token refresh without sending a request", async () => {
+  const dispatch = vi.fn();
+  vi.stubGlobal("window", { dispatchEvent: dispatch });
+  const fetcher = vi.fn();
+  vi.stubGlobal("fetch", fetcher);
+  auth.token.mockRejectedValue({ code: "auth/user-disabled" });
+  const { authFetch } = await import("./api");
+  await expect(authFetch("/api/example")).rejects.toMatchObject({
+    code: "auth/user-disabled",
+  });
+  expect(dispatch).toHaveBeenCalledTimes(1);
+  expect(fetcher).not.toHaveBeenCalled();
+});

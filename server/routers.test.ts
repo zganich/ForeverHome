@@ -240,3 +240,34 @@ describe("tRPC Routers - Integration Tests", () => {
     });
   });
 });
+
+vi.mock("./storage", async original => {
+  const real = await original<typeof import("./storage")>();
+  return {
+    ...real,
+    ownedImageDataUrl: vi.fn(async (uid: string, url: string) => {
+      real.assertOwnedImageUrl(uid, url);
+      return "data:image/jpeg;base64,/9j/2Q==";
+    }),
+  };
+});
+
+describe("unconfigured billing mutations", () => {
+  test("blocks checkout before any Stripe call, including subscription checkout", async () => {
+    vi.stubEnv("STRIPE_SECRET_KEY", "");
+    vi.stubEnv("STRIPE_WEBHOOK_SECRET", "");
+    try {
+      const ctx = { user: createMockUser(), req: {}, res: {} } as TrpcContext;
+      const caller = appRouter.createCaller(ctx);
+      expect((await caller.payment.getAvailability()).available).toBe(false);
+      await expect(
+        caller.payment.createCheckout({ packId: "starter" })
+      ).rejects.toMatchObject({ code: "SERVICE_UNAVAILABLE" });
+      await expect(
+        caller.payment.createSubscriptionCheckout({ planId: "essential" })
+      ).rejects.toMatchObject({ code: "SERVICE_UNAVAILABLE" });
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+});

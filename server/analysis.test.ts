@@ -68,3 +68,14 @@ describe("Analysis persistence and credit recovery", () => {
     expect(reserveAnalysisCredit).not.toHaveBeenCalled();
   });
 });
+
+vi.mock("./storage", async original => {
+  const real = await original<typeof import("./storage")>();
+  return {
+    ...real,
+    ownedImageDataUrl: vi.fn(async (uid: string, url: string) => {
+      real.assertOwnedImageUrl(uid, url);
+      return "data:image/jpeg;base64,/9j/2Q==";
+    }),
+  };
+});

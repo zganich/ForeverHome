@@ -1,6 +1,7 @@
 import { Storage } from "@google-cloud/storage";
 import { createHash } from "node:crypto";
 import { ENV } from "./_core/env";
+import { TRPCError } from "@trpc/server";
 
 let storage: Storage | undefined;
 function bucket() {
@@ -52,6 +53,66 @@ export function assertOwnedImageUrl(userId: string, value: string) {
     throw new Error("Use a photo uploaded to your account");
   return value;
 }
+
+// Stored URLs are locators, never publicly readable delivery URLs.
+export async function readOwnedImage(userId: string, locator: string) {
+  assertOwnedImageUrl(userId, locator);
+  const key = locator.slice(
+    `https://storage.googleapis.com/${ENV.storageBucket}/`.length
+  );
+  try {
+    const object = bucket().file(key);
+    const [metadata] = await object.getMetadata();
+    const size = Number(metadata.size);
+    const type = metadata.contentType ?? "";
+    if (
+      !Number.isFinite(size) ||
+      size <= 0 ||
+      size > 4 * 1024 * 1024 ||
+      !["image/jpeg", "image/png", "image/webp", "image/gif"].includes(type)
+    )
+      throw new Error("Unsupported image");
+    // Pin the generation inspected above; bound memory even if metadata is wrong.
+    const chunks: Buffer[] = [];
+    let length = 0;
+    const stream = bucket()
+      .file(key, { generation: metadata.generation })
+      .createReadStream();
+    try {
+      for await (const chunk of stream) {
+        length += chunk.length;
+        if (length > 4 * 1024 * 1024) throw new Error("Image too large");
+        chunks.push(Buffer.from(chunk));
+      }
+    } finally {
+      stream.destroy();
+    }
+    const bytes = Buffer.concat(chunks);
+    const valid =
+      type === "image/jpeg"
+        ? bytes.subarray(0, 3).equals(Buffer.from([255, 216, 255]))
+        : type === "image/png"
+          ? bytes
+              .subarray(0, 8)
+              .equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+          : type === "image/gif"
+            ? ["GIF87a", "GIF89a"].includes(bytes.subarray(0, 6).toString())
+            : bytes.subarray(0, 4).toString() === "RIFF" &&
+              bytes.subarray(8, 12).toString() === "WEBP";
+    if (!valid || length !== size) throw new Error("Invalid image");
+    return { bytes, contentType: type };
+  } catch {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Photo unavailable. Please upload it again.",
+    });
+  }
+}
+
+export async function ownedImageDataUrl(userId: string, locator: string) {
+  const { bytes, contentType } = await readOwnedImage(userId, locator);
+  return `data:${contentType};base64,${bytes.toString("base64")}`;
+}
 export async function storagePut(
   relKey: string,
   data: Buffer | Uint8Array | string,
@@ -64,9 +125,9 @@ export async function storagePut(
       .save(Buffer.from(data), {
         resumable: false,
         preconditionOpts: { ifGenerationMatch: 0 },
-        metadata: { contentType, cacheControl: "public, max-age=3600" },
+        metadata: { contentType, cacheControl: "private, no-store" },
       });
-    // Public read is an explicitly approved bucket policy, not an object ACL.
+    // Retain the existing DB locator contract; delivery requires the media API.
     return { key, url: publicObjectUrl(key) };
   } catch {
     throw new Error("Cloud Storage upload failed");

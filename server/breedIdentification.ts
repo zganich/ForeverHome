@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { invokeLLM } from "./_core/llm";
 
 export interface BreedPrediction {
@@ -86,7 +87,13 @@ Guidelines:
               careTips: { type: "array", items: { type: "string" } },
               behaviorTraits: { type: "array", items: { type: "string" } },
             },
-            required: ["primaryBreed", "confidence", "candidates", "careTips", "behaviorTraits"],
+            required: [
+              "primaryBreed",
+              "confidence",
+              "candidates",
+              "careTips",
+              "behaviorTraits",
+            ],
             additionalProperties: false,
           },
         },
@@ -98,11 +105,28 @@ Guidelines:
       throw new Error("No response from breed identification");
     }
 
-    const content = typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
-    const result: BreedIdentificationResult = JSON.parse(content);
+    const content =
+      typeof message.content === "string"
+        ? message.content
+        : JSON.stringify(message.content);
+    const result = z
+      .object({
+        primaryBreed: z.string(),
+        confidence: z.enum(["low", "medium", "high"]),
+        candidates: z.array(
+          z.object({
+            breed: z.string(),
+            confidence: z.number().min(0).max(1),
+            traits: z.array(z.string()),
+          })
+        ),
+        careTips: z.array(z.string()),
+        behaviorTraits: z.array(z.string()),
+      })
+      .parse(JSON.parse(content));
     return result;
   } catch (error) {
-    console.error("[Breed ID] Error:", error);
+    console.error("[Breed ID] Response unavailable");
     throw new Error("Failed to identify breed");
   }
 }
@@ -117,4 +141,3 @@ export function getBreedBehaviorContext(
   // This provides context to the behavior analysis agents
   return `This ${species} is identified as a ${breed}. Consider breed-specific traits when analyzing behavior.`;
 }
-

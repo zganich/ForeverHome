@@ -33,9 +33,10 @@ export class AnalysisStream {
       while (!this.controller.signal.aborted) {
         const { value, done } = await reader.read();
         if (done) break;
-        buffer += decoder
-          .decode(value, { stream: true })
-          .replace(/\r\n/g, "\n");
+        buffer = (buffer + decoder.decode(value, { stream: true })).replace(
+          /\r\n/g,
+          "\n"
+        );
         let end: number;
         while ((end = buffer.indexOf("\n\n")) >= 0) {
           const event = buffer.slice(0, end);

@@ -1,4 +1,4 @@
-import { assertOwnedImageUrl } from "./storage";
+import { assertOwnedImageUrl, ownedImageDataUrl } from "./storage";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { analyzeBehavior, type ProgressData } from "./aiAgents";
@@ -38,18 +38,17 @@ export async function runAnalysis(
       message: "You don't have permission to analyze this pet.",
     });
   assertOwnedImageUrl(userId, input.mediaUrl);
+  const imageData = await ownedImageDataUrl(userId, input.mediaUrl);
   const reservation = await reserveAnalysisCredit(userId);
   if (!reservation.allowed)
     throw new Error(
       "Insufficient credits. Please purchase more credits or upgrade your plan."
     );
   try {
-    const result = await analyzeBehavior(
-      input.mediaUrl,
-      pet,
-      input.userContext,
-      { quickMode: input.quickMode, onProgress }
-    );
+    const result = await analyzeBehavior(imageData, pet, input.userContext, {
+      quickMode: input.quickMode,
+      onProgress,
+    });
     const analysis = await createAnalysis({
       petId: input.petId,
       mediaUrl: input.mediaUrl,

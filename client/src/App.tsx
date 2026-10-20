@@ -17,6 +17,7 @@ import PurchaseCredits from "./pages/PurchaseCredits";
 import AdminDashboard from "./pages/AdminDashboard";
 import AuthCallback from "./pages/AuthCallback";
 import ResetPassword from "./pages/ResetPassword";
+import { ProtectedPage } from "./components/ProtectedPage";
 import ForDevotedParents from "./pages/ForDevotedParents";
 import ForNewOwners from "./pages/ForNewOwners";
 import ForMultiPet from "./pages/ForMultiPet";
@@ -31,14 +32,42 @@ function Router() {
       <Route path={"/login"} component={Login} />
       <Route path={"/auth/callback"} component={AuthCallback} />
       <Route path={"/auth/reset-password"} component={ResetPassword} />
-      <Route path={"/compare"} component={ComparePets} />
+      <Route path={"/compare"}>
+        <ProtectedPage>
+          <ComparePets />
+        </ProtectedPage>
+      </Route>
       <Route path={"/subscribe"} component={Subscribe} />
-      <Route path={"/dashboard"} component={Dashboard} />
-      <Route path={"/pets/new"} component={AddPet} />
-      <Route path={"/pets/:id"} component={PetDetail} />
-      <Route path={"/analysis/:id"} component={AnalysisResult} />
-      <Route path={"/purchase"} component={PurchaseCredits} />
-      <Route path={"/admin/dashboard"} component={AdminDashboard} />
+      <Route path={"/dashboard"}>
+        <ProtectedPage>
+          <Dashboard />
+        </ProtectedPage>
+      </Route>
+      <Route path={"/pets/new"}>
+        <ProtectedPage>
+          <AddPet />
+        </ProtectedPage>
+      </Route>
+      <Route path={"/pets/:id"}>
+        <ProtectedPage>
+          <PetDetail />
+        </ProtectedPage>
+      </Route>
+      <Route path={"/analysis/:id"}>
+        <ProtectedPage>
+          <AnalysisResult />
+        </ProtectedPage>
+      </Route>
+      <Route path={"/purchase"}>
+        <ProtectedPage>
+          <PurchaseCredits />
+        </ProtectedPage>
+      </Route>
+      <Route path={"/admin/dashboard"}>
+        <ProtectedPage admin>
+          <AdminDashboard />
+        </ProtectedPage>
+      </Route>
       <Route path={"/for-devoted-parents"} component={ForDevotedParents} />
       <Route path={"/for-new-owners"} component={ForNewOwners} />
       <Route path={"/for-multi-pet"} component={ForMultiPet} />
@@ -65,7 +94,7 @@ function App() {
           // switchable
         >
           <TooltipProvider>
-          <Toaster />
+            <Toaster />
             <Router />
           </TooltipProvider>
         </ThemeProvider>
@@ -75,4 +104,3 @@ function App() {
 }
 
 export default App;
-

@@ -29,6 +29,10 @@ vi.mock("./storage", async importOriginal => {
   const real = await importOriginal<typeof import("./storage")>();
   return {
     ...real,
+    ownedImageDataUrl: async (uid: string, url: string) => {
+      real.assertOwnedImageUrl(uid, url);
+      return "data:image/jpeg;base64,/9j/2Q==";
+    },
     storagePut: async (key: string) => ({
       key,
       url: real.publicObjectUrl(key),
@@ -91,6 +95,12 @@ describe.runIf(Boolean(testUrl))(
         if (fixtures.failAi)
           return new Response("provider failure", { status: 503 });
         const request = JSON.parse(init.body);
+        for (const message of request.messages ?? [])
+          if (Array.isArray(message.content))
+            for (const part of message.content)
+              if (part.type === "image_url")
+                expect(part.image_url.url).toMatch(/^data:image\/jpeg;base64,/);
+
         expect(request).not.toHaveProperty("thinking");
         const schema = request.response_format?.json_schema;
         const data =
@@ -247,6 +257,26 @@ describe.runIf(Boolean(testUrl))(
       expect(await response.text()).toContain('"stage":"error"');
       fixtures.failAi = false;
       expect(await credits.getUserCredits(fixtures.identity)).toBe(2);
+    });
+    it("owner analytics executes on PostgreSQL without fabricated metrics", async () => {
+      await sql`update users set role='admin' where id=${fixtures.identity}`;
+      try {
+        const response = await fetch(origin + "/api/admin/analytics", {
+          headers: token,
+        });
+        expect(response.status).toBe(200);
+        const stats = await response.json();
+        expect(stats.totalUsers).toBeGreaterThan(0);
+        expect(stats.monthlyGrowth).toBeNull();
+        expect(stats.recentActivity).toEqual([]);
+      } finally {
+        await sql`update users set role='user' where id=${fixtures.identity}`;
+      }
+    });
+    it("exposes a non-reserved liveness endpoint", async () => {
+      expect(await (await fetch(origin + "/health")).json()).toEqual({
+        ok: true,
+      });
     });
     it("allows only one concurrent claim for the last credit", async () => {
       await sql`update users set credits=1 where id=${fixtures.identity}`;

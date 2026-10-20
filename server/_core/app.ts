@@ -17,7 +17,7 @@ export async function createApp(): Promise<express.Express> {
   const app = express();
 
   app.disable("x-powered-by");
-  app.get("/healthz", (_req, res) => res.json({ ok: true }));
+  app.get(["/health", "/healthz"], (_req, res) => res.json({ ok: true }));
   app.get("/readyz", async (_req, res) => {
     try {
       const database = await getDb();
@@ -43,6 +43,8 @@ export async function createApp(): Promise<express.Express> {
   // File upload endpoint
   const uploadRouter = await import("../upload");
   app.use("/api", uploadRouter.default);
+  const mediaRouter = await import("../routes/media");
+  app.use("/api", mediaRouter.default);
 
   // Admin routes
   const { registerAdminRoutes } = await import("../routes/admin");

@@ -1,7 +1,14 @@
+import { PrivateImage } from "@/components/PrivateImage";
 import { useFirebaseAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -14,7 +21,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { PawPrint, Plus, Sparkles, Upload, ShoppingCart, Gift, Coins, GitCompare } from "lucide-react";
+import {
+  PawPrint,
+  Plus,
+  Sparkles,
+  Upload,
+  ShoppingCart,
+  Gift,
+  Coins,
+  GitCompare,
+} from "lucide-react";
 import { PhotoTips } from "@/components/PhotoTips";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
 import OnboardingModal from "@/components/OnboardingModal";
@@ -30,10 +46,15 @@ export default function Dashboard() {
   const [betaCode, setBetaCode] = useState("");
   const [isRedeemOpen, setIsRedeemOpen] = useState(false);
 
-  const { data: pets, isLoading: petsLoading } = trpc.pets.list.useQuery(undefined, {
+  const { data: pets, isLoading: petsLoading } = trpc.pets.list.useQuery(
+    undefined,
+    {
+      enabled: isAuthenticated,
+    }
+  );
+  const { data: balance } = trpc.credits.getBalance.useQuery(undefined, {
     enabled: isAuthenticated,
   });
-  const { data: balance } = trpc.credits.getBalance.useQuery(undefined, { enabled: isAuthenticated });
   const utils = trpc.useUtils();
 
   const redeemCode = trpc.credits.redeemBetaCode.useMutation({
@@ -43,9 +64,9 @@ export default function Dashboard() {
       setBetaCode("");
       utils.credits.getBalance.invalidate();
       // Clear pending code from localStorage
-      localStorage.removeItem('pendingBetaCode');
+      localStorage.removeItem("pendingBetaCode");
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(`Failed to redeem code: ${error.message}`);
     },
   });
@@ -53,7 +74,7 @@ export default function Dashboard() {
   // Check for pending beta code from signup
   useEffect(() => {
     if (isAuthenticated && !balance?.isBetaTester) {
-      const pendingCode = localStorage.getItem('pendingBetaCode');
+      const pendingCode = localStorage.getItem("pendingBetaCode");
       if (pendingCode) {
         redeemCode.mutate({ code: pendingCode });
       }
@@ -100,16 +121,24 @@ export default function Dashboard() {
                     <Coins className="w-5 h-5 text-primary" />
                     <div>
                       <p className="text-xs text-muted-foreground">Credits</p>
-                      <p className="text-lg font-bold text-primary">{(balance.isBetaTester || balance.unlimited) ? "∞" : balance.credits}</p>
+                      <p className="text-lg font-bold text-primary">
+                        {balance.isBetaTester || balance.unlimited
+                          ? "∞"
+                          : balance.credits}
+                      </p>
                     </div>
                     {balance.isBetaTester && (
-                      <Badge className="bg-gradient-to-r from-primary to-accent ml-2 text-xs">🏆 Founding</Badge>
+                      <Badge className="bg-gradient-to-r from-primary to-accent ml-2 text-xs">
+                        🏆 Founding
+                      </Badge>
                     )}
                   </div>
                 </CardContent>
               </Card>
             )}
-            <span className="text-sm text-muted-foreground hidden md:block">Hi, {user?.displayName || user?.email?.split('@')[0] || "there"}!</span>
+            <span className="text-sm text-muted-foreground hidden md:block">
+              Hi, {user?.displayName || user?.email?.split("@")[0] || "there"}!
+            </span>
             <FeedbackWidget />
             <Button variant="outline" onClick={() => signOut()}>
               Sign Out
@@ -123,12 +152,17 @@ export default function Dashboard() {
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Welcome Section */}
           <div className="text-center space-y-4">
-            <h2 className="text-4xl font-bold">Welcome to Your Pet Dashboard</h2>
+            <h2 className="text-4xl font-bold">
+              Welcome to Your Pet Dashboard
+            </h2>
             <p className="text-xl text-base text-muted-foreground">
               Add your pets and start understanding their behavior better.
             </p>
             <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-              <strong>What you can do:</strong> Upload photos of your pet to see what they're thinking, set reminders for vet visits and medications, and track your pet's behavior over time.
+              <strong>What you can do:</strong> Upload photos of your pet to see
+              what they're thinking, save reminders for vet visits and
+              medications (scheduled notifications are unavailable), and track
+              your pet's behavior over time.
             </p>
           </div>
 
@@ -157,7 +191,9 @@ export default function Dashboard() {
                     <Plus className="w-5 h-5" />
                     Add a New Pet
                   </CardTitle>
-                  <CardDescription>Create a profile for your furry friend</CardDescription>
+                  <CardDescription>
+                    Create a profile for your furry friend
+                  </CardDescription>
                 </CardHeader>
               </Card>
             </Link>
@@ -190,7 +226,8 @@ export default function Dashboard() {
                 <DialogHeader>
                   <DialogTitle>Redeem Beta Code</DialogTitle>
                   <DialogDescription>
-                    Enter your beta invite code to unlock unlimited free analyses and Founding Member status.
+                    Enter your beta invite code to unlock unlimited free
+                    analyses and Founding Member status.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
@@ -200,7 +237,7 @@ export default function Dashboard() {
                       id="betaCode"
                       placeholder="BETA-XXXXX-XXXX"
                       value={betaCode}
-                      onChange={(e) => setBetaCode(e.target.value.toUpperCase())}
+                      onChange={e => setBetaCode(e.target.value.toUpperCase())}
                     />
                   </div>
                   <Button
@@ -219,7 +256,7 @@ export default function Dashboard() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-2xl font-semibold">Your Pets</h3>
-                                  <Button asChild size="lg" className="text-base min-h-[48px]">
+              <Button asChild size="lg" className="text-base min-h-[48px]">
                 <Link href="/pets/new">
                   <Plus className="w-5 h-5 mr-2" />
                   Add Pet
@@ -234,13 +271,22 @@ export default function Dashboard() {
               </div>
             ) : pets && pets.length > 0 ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pets.map((pet) => (
+                {pets.map(pet => (
                   <Link key={pet.id} href={`/pets/${pet.id}`}>
                     <Card className="cursor-pointer hover:border-primary/50 transition-all hover:shadow-lg h-full">
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div>
-                            <CardTitle className="text-xl">{pet.name}</CardTitle>
+                            {pet.photoUrl && (
+                              <PrivateImage
+                                locator={pet.photoUrl}
+                                alt={`${pet.name} photo`}
+                                className="w-20 h-20 object-cover rounded"
+                              />
+                            )}
+                            <CardTitle className="text-xl">
+                              {pet.name}
+                            </CardTitle>
                             <CardDescription>
                               {pet.breed || "Mixed breed"} {pet.species}
                               {pet.age && ` • ${pet.age}`}
@@ -268,9 +314,12 @@ export default function Dashboard() {
                     <PawPrint className="w-12 h-12 text-primary" />
                   </div>
                   <div className="space-y-3 max-w-md">
-                    <h4 className="text-2xl font-bold">Welcome to InterpWhat! 🐾</h4>
+                    <h4 className="text-2xl font-bold">
+                      Welcome to InterpWhat! 🐾
+                    </h4>
                     <p className="text-muted-foreground text-lg">
-                      Ready to understand your pet better? Add your first furry friend to get started with AI-powered behavior analysis.
+                      Ready to understand your pet better? Add your first furry
+                      friend to get started with AI-powered behavior analysis.
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 pt-2">
@@ -280,10 +329,13 @@ export default function Dashboard() {
                         Add Your First Pet
                       </Link>
                     </Button>
-                    <Button asChild variant="outline" size="lg" className="text-base px-8">
-                      <a href="#how-it-works">
-                        Learn How It Works
-                      </a>
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="lg"
+                      className="text-base px-8"
+                    >
+                      <a href="#how-it-works">Learn How It Works</a>
                     </Button>
                   </div>
                   <div className="pt-4 space-y-2 text-sm text-muted-foreground max-w-md">
@@ -308,16 +360,20 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <p>
-                ✨ <strong>Good lighting:</strong> Make sure your pet is well-lit and clearly visible
+                ✨ <strong>Good lighting:</strong> Make sure your pet is
+                well-lit and clearly visible
               </p>
               <p>
-                📹 <strong>Short videos:</strong> 5-30 seconds works best for behavior analysis
+                📸 <strong>Photos only:</strong> Video analysis is currently
+                unavailable
               </p>
               <p>
-                🎯 <strong>Focus on behavior:</strong> Capture the specific behavior you want to understand
+                🎯 <strong>Focus on behavior:</strong> Capture the specific
+                behavior you want to understand
               </p>
               <p>
-                📝 <strong>Add context:</strong> Tell us what was happening when you captured the media
+                📝 <strong>Add context:</strong> Tell us what was happening when
+                you captured the media
               </p>
             </CardContent>
           </Card>
@@ -326,4 +382,3 @@ export default function Dashboard() {
     </div>
   );
 }
-

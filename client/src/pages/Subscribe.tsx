@@ -1,9 +1,24 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { APP_TITLE } from "@/const";
-import { Check, ArrowLeft, Sparkles, Shield, Lock, CreditCard, Users } from "lucide-react";
+import {
+  Check,
+  ArrowLeft,
+  Sparkles,
+  Shield,
+  Lock,
+  CreditCard,
+  Users,
+} from "lucide-react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -18,7 +33,7 @@ const PLANS = [
     features: [
       "15 analyses per month",
       "Breed identification",
-      "Reminders & notifications",
+      "Saved reminders (notifications unavailable)",
       "Email support",
       "Pet timeline",
       "Photo quality check",
@@ -48,10 +63,10 @@ const PLANS = [
     name: "Real-Time Premium",
     price: "$39.99",
     interval: "/month",
-    description: "Live behavior insights in real-time",
+    description: "Unavailable: live monitoring is not implemented",
     features: [
-      "5 hours real-time monitoring/month",
-      "Live behavior insights (< 5 seconds)",
+      "Real-time monitoring (unavailable)",
+      "Live behavior insights (unavailable)",
       "Unlimited standard analyses",
       "All Premium features",
       "Priority support",
@@ -66,10 +81,10 @@ const PLANS = [
     name: "Ultimate Real-Time",
     price: "$79.99",
     interval: "/month",
-    description: "Maximum real-time monitoring",
+    description: "Unavailable: live monitoring is not implemented",
     features: [
-      "15 hours real-time monitoring/month",
-      "Live behavior insights (< 5 seconds)",
+      "1Real-time monitoring (unavailable)",
+      "Live behavior insights (unavailable)",
       "Unlimited standard analyses",
       "Advanced analytics dashboard",
       "All Premium features",
@@ -98,22 +113,32 @@ const PLANS = [
 ];
 
 export default function Subscribe() {
+  const { data: availability } = trpc.payment.getAvailability.useQuery(
+    undefined,
+    { retry: false }
+  );
+  const paymentsAvailable = availability?.available === true;
   const { user, isAuthenticated } = useAuth();
 
-  const createSubscription = trpc.payment.createSubscriptionCheckout.useMutation({
-    onSuccess: (data) => {
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        toast.error("Failed to create checkout session");
-      }
-    },
-    onError: (error) => {
-      toast.error(`Failed to start subscription: ${error.message}`);
-    },
-  });
+  const createSubscription =
+    trpc.payment.createSubscriptionCheckout.useMutation({
+      onSuccess: data => {
+        if (data?.url) {
+          window.location.href = data.url;
+        } else {
+          toast.error("Failed to create checkout session");
+        }
+      },
+      onError: error => {
+        toast.error(`Failed to start subscription: ${error.message}`);
+      },
+    });
 
   const handleSubscribe = (planId: string) => {
+    if (!paymentsAvailable) {
+      toast.error("Payments are currently unavailable.");
+      return;
+    }
     if (!isAuthenticated) {
       toast.error("Please sign in to subscribe");
       return;
@@ -144,6 +169,16 @@ export default function Subscribe() {
       </header>
 
       <main className="container mx-auto px-4 py-12">
+        {!paymentsAvailable && (
+          <p role="status" className="p-6 text-center">
+            Payments are currently unavailable. You can still use your existing
+            credits.
+          </p>
+        )}
+        <p className="text-center text-muted-foreground">
+          Video, live monitoring, scheduled notifications, medical record
+          storage and shelter donations are unavailable.
+        </p>
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
@@ -152,7 +187,7 @@ export default function Subscribe() {
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-6">
               Choose the plan that works best for you and your furry companions.
-              Every subscription helps support Chantell's family and no-kill animal shelters.
+              Payments and shelter donation features are currently unavailable.
             </p>
             {/* Trust Signals */}
             <div className="flex flex-wrap justify-center items-center gap-6 text-sm text-muted-foreground">
@@ -193,7 +228,7 @@ export default function Subscribe() {
               <ul className="space-y-2">
                 <li className="flex items-start gap-2">
                   <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm">3 analyses per month</span>
+                  <span className="text-sm">3 initial analysis credits</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -201,7 +236,7 @@ export default function Subscribe() {
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm">Community support</span>
+                  <span className="text-sm">Photo analysis and timeline</span>
                 </li>
               </ul>
             </CardContent>
@@ -217,7 +252,9 @@ export default function Subscribe() {
           {/* Feature Comparison Table */}
           <Card className="mb-8 overflow-hidden">
             <CardHeader>
-              <CardTitle className="text-2xl text-center">Compare Plans</CardTitle>
+              <CardTitle className="text-2xl text-center">
+                Compare Plans
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -226,74 +263,136 @@ export default function Subscribe() {
                     <tr className="border-b bg-muted/50">
                       <th className="text-left p-4 font-semibold">Features</th>
                       <th className="text-center p-4 font-semibold">Free</th>
-                      <th className="text-center p-4 font-semibold">Essential</th>
-                      <th className="text-center p-4 font-semibold bg-purple-50">Premium</th>
-                      <th className="text-center p-4 font-semibold">Shelter Partner</th>
+                      <th className="text-center p-4 font-semibold">
+                        Essential
+                      </th>
+                      <th className="text-center p-4 font-semibold bg-purple-50">
+                        Premium
+                      </th>
+                      <th className="text-center p-4 font-semibold">
+                        Shelter Partner
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr className="border-b">
-                      <td className="p-4 font-medium">Monthly Analyses</td>
-                      <td className="text-center p-4">3</td>
+                      <td className="p-4 font-medium">Analysis Credits</td>
+                      <td className="text-center p-4">3 initial</td>
                       <td className="text-center p-4">15</td>
-                      <td className="text-center p-4 bg-purple-50"><strong>Unlimited</strong></td>
-                      <td className="text-center p-4"><strong>Unlimited</strong></td>
+                      <td className="text-center p-4 bg-purple-50">
+                        <strong>Unlimited</strong>
+                      </td>
+                      <td className="text-center p-4">
+                        <strong>Unlimited</strong>
+                      </td>
                     </tr>
                     <tr className="border-b bg-muted/20">
                       <td className="p-4 font-medium">Breed Identification</td>
-                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="text-center p-4 bg-purple-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
+                      <td className="text-center p-4">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
+                      <td className="text-center p-4 bg-purple-50">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
+                      <td className="text-center p-4">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
                     </tr>
                     <tr className="border-b">
                       <td className="p-4 font-medium">Pet Timeline</td>
-                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="text-center p-4 bg-purple-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
+                      <td className="text-center p-4">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
+                      <td className="text-center p-4 bg-purple-50">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
+                      <td className="text-center p-4">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
                     </tr>
                     <tr className="border-b bg-muted/20">
-                      <td className="p-4 font-medium">Reminders & Notifications</td>
-                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="text-center p-4 bg-purple-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="p-4 font-medium">
+                        Reminders & Notifications
+                      </td>
+                      <td className="text-center p-4">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
+                      <td className="text-center p-4">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
+                      <td className="text-center p-4 bg-purple-50">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
+                      <td className="text-center p-4">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
                     </tr>
                     <tr className="border-b">
                       <td className="p-4 font-medium">Photo Quality Check</td>
-                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="text-center p-4 bg-purple-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
+                      <td className="text-center p-4">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
+                      <td className="text-center p-4 bg-purple-50">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
+                      <td className="text-center p-4">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
                     </tr>
                     <tr className="border-b bg-muted/20">
                       <td className="p-4 font-medium">Multi-Pet Comparison</td>
                       <td className="text-center p-4">—</td>
                       <td className="text-center p-4">—</td>
-                      <td className="text-center p-4 bg-purple-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4 bg-purple-50">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
+                      <td className="text-center p-4">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
                     </tr>
                     <tr className="border-b">
                       <td className="p-4 font-medium">Advanced Insights</td>
                       <td className="text-center p-4">—</td>
                       <td className="text-center p-4">—</td>
-                      <td className="text-center p-4 bg-purple-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4 bg-purple-50">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
+                      <td className="text-center p-4">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
                     </tr>
                     <tr className="border-b bg-muted/20">
-                      <td className="p-4 font-medium">Medical Records Storage</td>
+                      <td className="p-4 font-medium">
+                        Medical Records Storage
+                      </td>
                       <td className="text-center p-4">—</td>
                       <td className="text-center p-4">—</td>
-                      <td className="text-center p-4 bg-purple-50"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                      <td className="text-center p-4"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
+                      <td className="text-center p-4 bg-purple-50">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
+                      <td className="text-center p-4">
+                        <Check className="w-5 h-5 text-green-600 mx-auto" />
+                      </td>
                     </tr>
                     <tr className="border-b">
                       <td className="p-4 font-medium">Support</td>
                       <td className="text-center p-4">Community</td>
                       <td className="text-center p-4">Email</td>
-                      <td className="text-center p-4 bg-purple-50"><strong>Priority</strong></td>
-                      <td className="text-center p-4"><strong>Priority</strong></td>
+                      <td className="text-center p-4 bg-purple-50">
+                        <strong>Priority</strong>
+                      </td>
+                      <td className="text-center p-4">
+                        <strong>Priority</strong>
+                      </td>
                     </tr>
                     <tr className="bg-muted/20">
                       <td className="p-4 font-medium">Shelter Donation</td>
@@ -310,7 +409,7 @@ export default function Subscribe() {
 
           {/* Paid Plans */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {PLANS.map((plan) => (
+            {PLANS.map(plan => (
               <Card
                 key={plan.id}
                 className={`relative ${
@@ -331,7 +430,9 @@ export default function Subscribe() {
                   <CardDescription>{plan.description}</CardDescription>
                   <div className="mt-4">
                     <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className="text-muted-foreground">{plan.interval}</span>
+                    <span className="text-muted-foreground">
+                      {plan.interval}
+                    </span>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -349,7 +450,9 @@ export default function Subscribe() {
                     className="w-full"
                     variant={plan.highlight ? "default" : "outline"}
                     onClick={() => handleSubscribe(plan.id)}
-                    disabled={createSubscription.isPending}
+                    disabled={
+                      !paymentsAvailable || createSubscription.isPending
+                    }
                   >
                     {createSubscription.isPending ? (
                       <>
@@ -373,7 +476,8 @@ export default function Subscribe() {
                 30-Day Money-Back Guarantee
               </h3>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                Not satisfied? Get a full refund within 30 days, no questions asked. We're confident you'll love InterpWhat!
+                Not satisfied? Get a full refund within 30 days, no questions
+                asked. We're confident you'll love InterpWhat!
               </p>
             </CardContent>
           </Card>
@@ -382,11 +486,13 @@ export default function Subscribe() {
           <div className="mt-8 text-center">
             <Card className="bg-gradient-to-r from-purple-50 to-peach-50 border-purple-200">
               <CardContent className="pt-6">
-                <h3 className="text-xl font-bold mb-2">Your Subscription Makes a Difference</h3>
+                <h3 className="text-xl font-bold mb-2">
+                  Your Subscription Makes a Difference
+                </h3>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
-                  Every subscription helps support Chantell's family and contributes to no-kill
-                  animal shelters. Together, we're making the world better for pets and the people
-                  who love them. 🐾💜
+                  Every subscription helps support Chantell's family and
+                  contributes to no-kill animal shelters. Together, we're making
+                  the world better for pets and the people who love them. 🐾💜
                 </p>
               </CardContent>
             </Card>
@@ -394,52 +500,64 @@ export default function Subscribe() {
 
           {/* FAQ */}
           <div className="mt-12">
-            <h3 className="text-2xl font-bold text-center mb-6">Frequently Asked Questions</h3>
+            <h3 className="text-2xl font-bold text-center mb-6">
+              Frequently Asked Questions
+            </h3>
             <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Can I cancel anytime?</CardTitle>
+                  <CardTitle className="text-lg">
+                    Can I cancel anytime?
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    Yes! You can cancel your subscription at any time. You'll continue to have
-                    access until the end of your billing period.
+                    Yes! You can cancel your subscription at any time. You'll
+                    continue to have access until the end of your billing
+                    period.
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">What if I need more analyses?</CardTitle>
+                  <CardTitle className="text-lg">
+                    What if I need more analyses?
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    Essential plan users can upgrade to Premium for unlimited analyses, or purchase
-                    one-time credit packs as needed.
+                    Essential plan users can upgrade to Premium for unlimited
+                    analyses, or purchase one-time credit packs as needed.
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Is the shelter donation tax-deductible?</CardTitle>
+                  <CardTitle className="text-lg">
+                    Are shelter donations available?
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    Yes! The $10 shelter donation portion of the Shelter Partner plan is
-                    tax-deductible. We'll provide documentation for your records.
+                    Shelter donations and donation receipts are not implemented.
+                    No donation is collected through this app.
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Can I switch plans later?</CardTitle>
+                  <CardTitle className="text-lg">
+                    Can I switch plans later?
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    Absolutely! You can upgrade or downgrade your plan at any time. Changes take
-                    effect at the start of your next billing cycle.
+                    Absolutely! You can upgrade or downgrade your plan at any
+                    time. Changes take effect at the start of your next billing
+                    cycle.
                   </p>
                 </CardContent>
               </Card>
@@ -450,4 +568,3 @@ export default function Subscribe() {
     </div>
   );
 }
-

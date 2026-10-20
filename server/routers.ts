@@ -1,4 +1,8 @@
-import { assertOwnedImageUrl } from "./storage";
+import { assertOwnedImageUrl, ownedImageDataUrl } from "./storage";
+import {
+  billingAvailability,
+  requireBillingAvailable,
+} from "./billingAvailability";
 import { analysisInput, runAnalysis } from "./analysis";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
@@ -108,7 +112,10 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         assertOwnedImageUrl(ctx.user.id, input.imageUrl);
         const { identifyBreed } = await import("./breedIdentification");
-        return identifyBreed(input.imageUrl, input.species);
+        return identifyBreed(
+          await ownedImageDataUrl(ctx.user.id, input.imageUrl),
+          input.species
+        );
       }),
     list: protectedProcedure.query(async ({ ctx }) => {
       const { getUserPets } = await import("./db");
@@ -151,7 +158,9 @@ export const appRouter = router({
         const { validatePhotoQuality, getPhotoTips } = await import(
           "./photoQuality"
         );
-        const result = await validatePhotoQuality(input.imageUrl);
+        const result = await validatePhotoQuality(
+          await ownedImageDataUrl(ctx.user.id, input.imageUrl)
+        );
         const tips = getPhotoTips(result.issues);
         return { ...result, tips };
       }),
@@ -226,6 +235,7 @@ export const appRouter = router({
 
   // Payment and credits
   payment: router({
+    getAvailability: publicProcedure.query(() => billingAvailability()),
     getCreditPacks: publicProcedure.query(() => {
       return Object.values(CREDIT_PACKS);
     }),
@@ -240,6 +250,7 @@ export const appRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
         const successUrl = `${process.env.APP_URL || process.env.VITE_APP_URL || "http://localhost:3000"}/dashboard?subscription=success`;
+        requireBillingAvailable();
         const cancelUrl = `${process.env.APP_URL || process.env.VITE_APP_URL || "http://localhost:3000"}/subscribe?subscription=cancelled`;
 
         const checkoutUrl = await createSubscriptionCheckout(
@@ -265,6 +276,7 @@ export const appRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
         const successUrl = `${process.env.APP_URL || process.env.VITE_APP_URL || "http://localhost:3000"}/dashboard?payment=success`;
+        requireBillingAvailable();
         const cancelUrl = `${process.env.APP_URL || process.env.VITE_APP_URL || "http://localhost:3000"}/dashboard?payment=cancelled`;
 
         const checkoutUrl = await createCheckoutSession(

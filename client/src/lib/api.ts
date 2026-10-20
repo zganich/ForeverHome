@@ -1,4 +1,5 @@
 import { getFirebaseAuth, authConfigured } from "./firebase";
+import { invalidateSession, rejectInvalidIdentity } from "./session";
 
 const base = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 if (base) {
@@ -30,14 +31,25 @@ export async function authHeaders(): Promise<Record<string, string>> {
   const auth = getFirebaseAuth();
   await auth.authStateReady();
   const user = auth.currentUser;
-  return user?.emailVerified
-    ? { Authorization: `Bearer ${await user.getIdToken()}` }
-    : {};
+  try {
+    return user?.emailVerified
+      ? { Authorization: `Bearer ${await user.getIdToken()}` }
+      : {};
+  } catch (error) {
+    rejectInvalidIdentity(error);
+    throw error;
+  }
 }
 
 export async function authFetch(input: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers);
   for (const [key, value] of Object.entries(await authHeaders()))
     headers.set(key, value);
-  return fetch(apiUrl(input), { ...init, credentials: "omit", headers });
+  const response = await fetch(apiUrl(input), {
+    ...init,
+    credentials: "omit",
+    headers,
+  });
+  if (response.status === 401) invalidateSession();
+  return response;
 }

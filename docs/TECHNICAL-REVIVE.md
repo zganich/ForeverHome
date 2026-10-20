@@ -1,8 +1,24 @@
-# Technical revival — verified GCP prerequisites, October 20, 2026
+# Technical revival — local acceptance repairs, October 20, 2026
 
 Scope: restore the existing application after Manus retirement. James selected **Cloud SQL (Option A)** and separately approved the prerequisite provisioning, DB bootstrap/migrations, and Firebase Auth/runtime IAM phases. Rebrand, adopter track, Jev and shelter dashboard remain separate work. The InterpWhat UI and GitHub history are preserved.
 
-**This document records results; it does not authorize further actions.** No branch was pushed, PR opened, build/trigger created, app deployed, DNS changed, anonymous storage access granted, Stripe object changed, or external email sent. Deployment templates still contain placeholders. Hosted end-to-end acceptance is **UNVERIFIED**.
+**Current status:** staging was deployed and acceptance-tested on October 20; acceptance failed. The approved repair batch below is local only and has not been pushed, built in Cloud Build or deployed. Read the private checkpoint and acceptance report for exact hosted evidence. Earlier provisioning sections below are historical snapshots; their not-yet-deployed/owner-unverified/six-binding statements are superseded by the checkpoint. Runtime currently has seven scoped bindings; no IAM change is part of these repairs. No DNS/public-read/Stripe change is authorized.
+
+## Local acceptance repair design
+
+- GCS remains private. Stored GCS URLs are stable locators, not display URLs. GET `/api/media/:filename` verifies Firebase/revocation/email status through the existing auth boundary, derives the UID namespace, reads bounded validated image bytes with the existing `storage.objects.get` grant and returns `private, no-store`. No public-read, signed URL, new secret, bucket CORS, service account or IAM grant.
+- Browser `PrivateImage` loads via `authFetch`, displays a Blob URL and aborts/revokes it on identity/locator change or unmount. Analysis results, timeline, profile displays and uploaded preview use it. Existing canonical media URLs remain compatible without a database migration. Legacy external/other-identity locators are not reassociated.
+- Quality/vision/breed image calls use server-read in-memory Base64 data URLs. No prompt/image/credential logging or temporary AI upload file. Provider failures produce safe errors, never a fabricated acceptable quality score. Model-stage outputs are schema-checked; incomplete output cannot complete a pipeline. Existing persisted-completion/credit reservation/refund behavior is retained.
+- Admin aggregation removes the unused status projection that caused PostgreSQL42803. The existing owner screen shows actual counts and clearly labeled estimated subscription value; fabricated growth/activity/churn/shelter results are no longer presented. This is not a new shelter dashboard.
+- Protected pages wait for Firebase and server identity. Rejected sessions produce a sign-in state rather than blank pages; 401 and disabled token refresh clear identity caches, while403/503/network errors do not trigger blanket sign-out. The initial auth restoration does not cancel mounted queries through cache clearing. Owner analytics has bounded fetch/retry/back states; regular users see denial.
+- Billing capability is a non-secret boolean based on TEST checkout and webhook configuration. Absent/unavailable configuration disables all paid CTAs and stops server checkout mutations before contacting Stripe. No Stripe call is required to check capability. Configuration readiness is not payment-provider acceptance.
+- `/health` is the new external liveness path; `/healthz` remains a compatibility alias, `/readyz` checks SQL. Deployed probes remain unchanged until separately approved deployment. Touched UI copy identifies unavailable video, live monitoring, notification delivery and donation functionality; no deferred product feature is built.
+
+Local verification commands (no real providers): `python3 scripts/revive-rehearsal.py` creates/migrates/stops an isolated localhost PostgreSQL database and runs unit/HTTP/integration tests. `pnpm exec playwright test --config e2e/repair.config.ts` uses installed Chrome and localhost Vite; Firebase/AI/storage/billing endpoints are intercepted with fictional fixtures and every other remote request is blocked. `pnpm check` and `pnpm build` check types/build. The browser fixture is not proof of hosted Firebase or OpenAI success. Do not use a hosted database for the rehearsal.
+
+Production gates remain: actual staged repair acceptance, Stripe TEST inputs/acceptance, domain cutover, and the prior internal Firebase hashing-key-output security review. Container process-death credit recovery is still deferred. Any push, cloud build, API/Hosting deployment, IAM, DNS, public-media or Stripe mutation needs separate live approval.
+
+## Historical provisioning snapshot (before staging deployment)
 
 ## Verified Firebase and runtime configuration
 

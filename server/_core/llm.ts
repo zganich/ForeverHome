@@ -327,10 +327,35 @@ export async function invokeLLM(
   });
 
   if (!response.ok) {
+    // Never log provider messages or raw bodies: they may echo prompts/images.
+    const safeIdentifier = (value: unknown) =>
+      typeof value === "string" && /^[a-zA-Z0-9_.\[\]-]{1,100}$/.test(value)
+        ? value
+        : undefined;
+    let detail: Record<string, unknown> = {};
+    try {
+      detail = (await response.json()).error ?? {};
+    } catch {
+      /* no JSON */
+    }
+    console.error("[AI provider]", {
+      status: response.status,
+      code: safeIdentifier(detail.code),
+      type: safeIdentifier(detail.type),
+      param: safeIdentifier(detail.param),
+      requestId: safeIdentifier(response.headers?.get("x-request-id")),
+    });
     throw new Error(
       `AI provider request failed (${response.status}). Please try again.`
     );
   }
 
-  return (await response.json()) as InvokeResult;
+  const result = (await response.json()) as InvokeResult;
+  if (
+    !Array.isArray(result.choices) ||
+    !result.choices[0]?.message ||
+    result.choices[0].finish_reason === "length"
+  )
+    throw new Error("AI response incomplete. Please try again later.");
+  return result;
 }

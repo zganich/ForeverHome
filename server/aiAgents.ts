@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { invokeLLM } from "./_core/llm";
 import type { Pet } from "../drizzle/schema";
 import type { PersonalityType } from "./textToSpeech";
@@ -36,7 +37,10 @@ export interface Recommendations {
 /**
  * Vision Agent: Analyzes visual content from images/videos
  */
-export async function visionAgent(imageUrl: string, species: string): Promise<VisionAnalysis> {
+export async function visionAgent(
+  imageUrl: string,
+  species: string
+): Promise<VisionAnalysis> {
   const response = await invokeLLM({
     messages: [
       {
@@ -73,12 +77,29 @@ Return a JSON object with: posture, facialExpression, environmentalContext, and 
         schema: {
           type: "object",
           properties: {
-            posture: { type: "string", description: "Description of body posture" },
-            facialExpression: { type: "string", description: "Description of facial expression" },
-            environmentalContext: { type: "string", description: "Environmental observations" },
-            confidence: { type: "number", description: "Confidence score 0-100" },
+            posture: {
+              type: "string",
+              description: "Description of body posture",
+            },
+            facialExpression: {
+              type: "string",
+              description: "Description of facial expression",
+            },
+            environmentalContext: {
+              type: "string",
+              description: "Environmental observations",
+            },
+            confidence: {
+              type: "number",
+              description: "Confidence score 0-100",
+            },
           },
-          required: ["posture", "facialExpression", "environmentalContext", "confidence"],
+          required: [
+            "posture",
+            "facialExpression",
+            "environmentalContext",
+            "confidence",
+          ],
           additionalProperties: false,
         },
       },
@@ -89,19 +110,30 @@ Return a JSON object with: posture, facialExpression, environmentalContext, and 
   if (typeof content !== "string") {
     throw new Error("Unexpected response format from LLM");
   }
-  return JSON.parse(content || "{}");
+  return z
+    .object({
+      posture: z.string().min(1),
+      facialExpression: z.string().min(1),
+      environmentalContext: z.string(),
+      confidence: z.number().min(0).max(100),
+    })
+    .parse(JSON.parse(content || "{}"));
 }
 
 /**
  * Context Agent: Enriches analysis with pet-specific context
  * PHASE 1: Uses faster model for cost optimization
  */
-export async function contextAgent(pet: Pet, visionData: VisionAnalysis): Promise<ContextEnrichment> {
+export async function contextAgent(
+  pet: Pet,
+  visionData: VisionAnalysis
+): Promise<ContextEnrichment> {
   const response = await invokeLLM({
     messages: [
       {
         role: "system",
-        content: "You are a pet behavior expert providing breed and age-specific context.",
+        content:
+          "You are a pet behavior expert providing breed and age-specific context.",
       },
       {
         role: "user",
@@ -125,8 +157,14 @@ Return JSON with: breedTraits, ageConsiderations`,
         schema: {
           type: "object",
           properties: {
-            breedTraits: { type: "string", description: "Breed-specific traits" },
-            ageConsiderations: { type: "string", description: "Age-related considerations" },
+            breedTraits: {
+              type: "string",
+              description: "Breed-specific traits",
+            },
+            ageConsiderations: {
+              type: "string",
+              description: "Age-related considerations",
+            },
           },
           required: ["breedTraits", "ageConsiderations"],
           additionalProperties: false,
@@ -139,7 +177,9 @@ Return JSON with: breedTraits, ageConsiderations`,
   if (typeof content !== "string") {
     throw new Error("Unexpected response format from LLM");
   }
-  return JSON.parse(content || "{}");
+  return z
+    .object({ breedTraits: z.string(), ageConsiderations: z.string() })
+    .parse(JSON.parse(content || "{}"));
 }
 
 /**
@@ -182,16 +222,27 @@ Return JSON with: primaryBehavior, confidence, reasoning, alternativeInterpretat
         schema: {
           type: "object",
           properties: {
-            primaryBehavior: { type: "string", description: "Primary behavior label" },
+            primaryBehavior: {
+              type: "string",
+              description: "Primary behavior label",
+            },
             confidence: { type: "number", description: "Confidence 0-100" },
-            reasoning: { type: "string", description: "Explanation of interpretation" },
+            reasoning: {
+              type: "string",
+              description: "Explanation of interpretation",
+            },
             alternativeInterpretations: {
               type: "array",
               items: { type: "string" },
               description: "Alternative possibilities",
             },
           },
-          required: ["primaryBehavior", "confidence", "reasoning", "alternativeInterpretations"],
+          required: [
+            "primaryBehavior",
+            "confidence",
+            "reasoning",
+            "alternativeInterpretations",
+          ],
           additionalProperties: false,
         },
       },
@@ -202,14 +253,23 @@ Return JSON with: primaryBehavior, confidence, reasoning, alternativeInterpretat
   if (typeof content !== "string") {
     throw new Error("Unexpected response format from LLM");
   }
-  return JSON.parse(content || "{}");
+  return z
+    .object({
+      primaryBehavior: z.string().min(1),
+      confidence: z.number().min(0).max(100),
+      reasoning: z.string(),
+      alternativeInterpretations: z.array(z.string()),
+    })
+    .parse(JSON.parse(content || "{}"));
 }
 
 /**
  * Recommendation Agent: Generates actionable suggestions
  * PHASE 1: Uses faster model for cost optimization
  */
-export async function recommendationAgent(synthesis: BehaviorSynthesis): Promise<Recommendations> {
+export async function recommendationAgent(
+  synthesis: BehaviorSynthesis
+): Promise<Recommendations> {
   const response = await invokeLLM({
     messages: [
       {
@@ -267,7 +327,13 @@ Return JSON with: actions (array of strings), safetyWarnings (array, optional), 
   if (typeof content !== "string") {
     throw new Error("Unexpected response format from LLM");
   }
-  return JSON.parse(content || "{}");
+  return z
+    .object({
+      actions: z.array(z.string()).min(1),
+      safetyWarnings: z.array(z.string()),
+      vetConsultation: z.boolean(),
+    })
+    .parse(JSON.parse(content || "{}"));
 }
 
 /**
@@ -317,7 +383,7 @@ export async function analyzeBehavior(
   options?.onProgress?.("synthesis", { status: "analyzing" });
   const synthesis = await synthesisAgent(vision, enrichedContext, userContext);
   options?.onProgress?.("synthesis", synthesis);
-  
+
   // STEP 4: Recommendations (or skip in quick mode)
   let recommendations: Recommendations;
   if (options?.quickMode) {
@@ -331,12 +397,16 @@ export async function analyzeBehavior(
 
   // STEP 5: Generate personality-based voice interpretation
   options?.onProgress?.("voice", { status: "analyzing" });
-  const personality: PersonalityType = (pet.personality || "goofy") as PersonalityType;
+  const personality: PersonalityType = (pet.personality ||
+    "goofy") as PersonalityType;
   const { generatePersonalityVoice } = await import("./textToSpeech");
-  
+
   // Create a conversational interpretation from the synthesis
   const baseInterpretation = `${synthesis.primaryBehavior}. ${synthesis.reasoning}`;
-  const personalityVoice = await generatePersonalityVoice(baseInterpretation, personality);
+  const personalityVoice = await generatePersonalityVoice(
+    baseInterpretation,
+    personality
+  );
   options?.onProgress?.("voice", { personalityVoice, personality });
 
   return {
@@ -348,4 +418,3 @@ export async function analyzeBehavior(
     personality,
   };
 }
-

@@ -18,6 +18,7 @@ import {
 } from "firebase/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { authConfigured, getFirebaseAuth } from "@/lib/firebase";
+import { SESSION_INVALID } from "@/lib/session";
 
 type Result = { error: Error | null };
 type State = { user: User | null; emailVerified: boolean; loading: boolean };
@@ -55,7 +56,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     emailVerified: false,
     loading: true,
   });
-  const priorIdentity = useRef<string | null>(null);
+  const priorIdentity = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    const invalid = () => {
+      if (authConfigured)
+        void firebaseSignOut(getFirebaseAuth()).catch(() => {});
+      setState({ user: null, emailVerified: false, loading: false });
+      priorIdentity.current = null;
+      queryClient.clear();
+    };
+    window.addEventListener(SESSION_INVALID, invalid);
+    return () => window.removeEventListener(SESSION_INVALID, invalid);
+  }, [queryClient]);
   useEffect(() => {
     if (!authConfigured) {
       setState({ user: null, emailVerified: false, loading: false });
@@ -65,10 +77,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       getFirebaseAuth(),
       user => {
         const identity = user?.uid ?? null;
-        if (identity !== priorIdentity.current) {
+        if (
+          priorIdentity.current !== undefined &&
+          identity !== priorIdentity.current
+        ) {
           queryClient.clear();
-          priorIdentity.current = identity;
         }
+        priorIdentity.current = identity;
         // Snapshot emailVerified as Firebase mutates its User object in place.
         setState({
           user,
