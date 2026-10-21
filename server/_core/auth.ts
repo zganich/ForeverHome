@@ -1,3 +1,4 @@
+import { withAiIdentity } from "../aiAdmission";
 import { TRPCError } from "@trpc/server";
 import type { Request, RequestHandler } from "express";
 import * as db from "../db";
@@ -51,7 +52,7 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
       return;
     }
     res.locals.user = user;
-    next();
+    withAiIdentity(user.id, next);
   } catch {
     res.status(503).json({ error: "Authentication or database unavailable" });
   }

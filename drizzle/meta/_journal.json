@@ -36,6 +36,13 @@
       "when": 1792438625763,
       "tag": "0004_firebase_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792597685891,
+      "tag": "0005_ai_admission",
+      "breakpoints": true
     }
   ]
 }

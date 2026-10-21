@@ -32,6 +32,7 @@ def main():
         subprocess.run([str(pg / "createdb"), "-h", "127.0.0.1", "-p", str(port), "foreverhome_rehearsal"], check=True)
         env = os.environ.copy()
         env.update({
+            "DOTENV_CONFIG_PATH": "/dev/null",
             "REVIVE_TEST_DATABASE_URL": f"postgresql://{os.environ.get('USER', 'postgres')}@127.0.0.1:{port}/foreverhome_rehearsal",
             "GOOGLE_CLOUD_PROJECT": "foreverhome-test",
             "GCS_BUCKET": "foreverhome-test-media",

@@ -10,7 +10,13 @@ const router = Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 4 * 1024 * 1024, // Preserve the existing product limit on Cloud Run.
+    files: 1,
+    fields: 0, // The upload contract is exactly one file and no text fields.
+    parts: 2, // Busboy signals on reaching partsLimit; files:1/fields:0 enforce the contract.
+    fieldNameSize: 100,
+    fieldSize: 1024,
+    headerPairs: 50,
+    fileSize: 4 * 1024 * 1024 + 1, // Busboy signals at >=; handler accepts exactly 4MiB. // Preserve the existing product limit on Cloud Run.
   },
   fileFilter: (_req, file, cb) => {
     cb(
@@ -25,12 +31,13 @@ const upload = multer({
 router.post("/upload", requireAuth, upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
-      return res
-        .status(400)
-        .json({
-          error: "Upload a JPEG, PNG, WebP, or GIF image (maximum 4 MB).",
-        });
+      return res.status(400).json({
+        error: "Upload a JPEG, PNG, WebP, or GIF image (maximum 4 MB).",
+      });
     }
+
+    if (req.file.size > 4 * 1024 * 1024)
+      return res.status(413).json({ error: "Photo exceeds 4 MB." });
 
     // Generate unique filename
     const extensions: Record<string, string> = {
@@ -78,7 +85,9 @@ router.use(
     next: import("express").NextFunction
   ) => {
     if (error instanceof multer.MulterError) {
-      res.status(413).json({ error: "Upload must be smaller than 4 MB." });
+      res.status(413).json({
+        error: "Upload exactly one photo, no additional fields, maximum 4 MB.",
+      });
       return;
     }
     next(error);

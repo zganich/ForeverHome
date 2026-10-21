@@ -1,6 +1,14 @@
 import { invokeLLM } from "./_core/llm";
 import { z } from "zod";
 
+export const photoQualitySchema = z.object({
+  isAcceptable: z.boolean(),
+  score: z.number().min(0).max(100),
+  issues: z.array(z.string().max(2000)).max(20),
+  suggestions: z.array(z.string().max(2000)).max(20),
+  canProceed: z.boolean(),
+});
+
 export interface PhotoQualityResult {
   isAcceptable: boolean;
   score: number; // 0-100
@@ -108,15 +116,7 @@ Return a JSON response with:
         ? message.content
         : JSON.stringify(message.content);
 
-    const result = z
-      .object({
-        isAcceptable: z.boolean(),
-        score: z.number().min(0).max(100),
-        issues: z.array(z.string()),
-        suggestions: z.array(z.string()),
-        canProceed: z.boolean(),
-      })
-      .parse(JSON.parse(content));
+    const result = photoQualitySchema.parse(JSON.parse(content));
     return result;
   } catch (error) {
     // Provider outages and invalid responses are not successful quality checks.

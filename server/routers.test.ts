@@ -1,3 +1,12 @@
+vi.mock("./aiAdmission", () => ({
+  withAiIdentity: (_uid: string, work: () => unknown) => work(),
+  withAiOperation: (
+    _uid: string,
+    _kind: string,
+    work: () => Promise<unknown>
+  ) => work(),
+  qualityDigest: () => "fixture",
+}));
 import { publicObjectUrl, userUploadPrefix } from "./storage";
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { appRouter } from "./routers";
@@ -44,6 +53,7 @@ vi.mock("./breedIdentification", () => ({
 }));
 
 vi.mock("./photoQuality", () => ({
+  photoQualitySchema: { parse: (x: unknown) => x },
   validatePhotoQuality: vi.fn().mockResolvedValue({
     isAcceptable: true,
     score: 95,

@@ -7,7 +7,13 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: "node",
-    include: ["server/**/*.test.ts", "server/**/*.spec.ts", "client/**/*.test.ts", "client/**/*.test.tsx"],
+    fileParallelism: false, // Integration files share only a disposable local database.
+    include: [
+      "server/**/*.test.ts",
+      "server/**/*.spec.ts",
+      "client/**/*.test.ts",
+      "client/**/*.test.tsx",
+    ],
     globals: true,
     setupFiles: ["./tests/setup.ts"],
     coverage: {

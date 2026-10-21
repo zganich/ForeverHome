@@ -1,3 +1,4 @@
+import { withAiOperation } from "./aiAdmission";
 import { assertOwnedImageUrl, ownedImageDataUrl } from "./storage";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -6,8 +7,8 @@ import { getPet, createAnalysis } from "./db";
 import { reserveAnalysisCredit, refundAnalysisCredit } from "./credits";
 
 export const analysisInput = z.object({
-  petId: z.string().min(1),
-  mediaUrl: z.url(),
+  petId: z.string().min(1).max(64),
+  mediaUrl: z.url().max(2048),
   mediaType: z.enum(["image", "video"]),
   userContext: z.string().max(5000).optional(),
   photoDate: z.coerce.date().optional(),
@@ -39,34 +40,36 @@ export async function runAnalysis(
     });
   assertOwnedImageUrl(userId, input.mediaUrl);
   const imageData = await ownedImageDataUrl(userId, input.mediaUrl);
-  const reservation = await reserveAnalysisCredit(userId);
-  if (!reservation.allowed)
-    throw new Error(
-      "Insufficient credits. Please purchase more credits or upgrade your plan."
-    );
-  try {
-    const result = await analyzeBehavior(imageData, pet, input.userContext, {
-      quickMode: input.quickMode,
-      onProgress,
-    });
-    const analysis = await createAnalysis({
-      petId: input.petId,
-      mediaUrl: input.mediaUrl,
-      mediaType: input.mediaType,
-      userContext: input.userContext,
-      photoDate: input.photoDate,
-      petAgeAtPhoto: input.petAgeAtPhoto,
-      visionData: JSON.stringify(result.vision),
-      contextData: JSON.stringify(result.context),
-      synthesisData: JSON.stringify(result.synthesis),
-      recommendations: JSON.stringify(result.recommendations),
-      primaryBehavior: result.synthesis.primaryBehavior,
-      confidenceScore: `${Math.round(result.synthesis.confidence)}%`,
-      personalityVoice: result.personalityVoice,
-    });
-    return { analysis, result };
-  } catch (error) {
-    if (reservation.charged) await refundAnalysisCredit(userId);
-    throw error;
-  }
+  return withAiOperation(userId, "analysis", async () => {
+    const reservation = await reserveAnalysisCredit(userId);
+    if (!reservation.allowed)
+      throw new Error(
+        "Insufficient credits. Please purchase more credits or upgrade your plan."
+      );
+    try {
+      const result = await analyzeBehavior(imageData, pet, input.userContext, {
+        quickMode: input.quickMode,
+        onProgress,
+      });
+      const analysis = await createAnalysis({
+        petId: input.petId,
+        mediaUrl: input.mediaUrl,
+        mediaType: input.mediaType,
+        userContext: input.userContext,
+        photoDate: input.photoDate,
+        petAgeAtPhoto: input.petAgeAtPhoto,
+        visionData: JSON.stringify(result.vision),
+        contextData: JSON.stringify(result.context),
+        synthesisData: JSON.stringify(result.synthesis),
+        recommendations: JSON.stringify(result.recommendations),
+        primaryBehavior: result.synthesis.primaryBehavior,
+        confidenceScore: `${Math.round(result.synthesis.confidence)}%`,
+        personalityVoice: result.personalityVoice,
+      });
+      return { analysis, result };
+    } catch (error) {
+      if (reservation.charged) await refundAnalysisCredit(userId);
+      throw error;
+    }
+  });
 }

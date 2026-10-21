@@ -20,3 +20,30 @@ process.env.GOOGLE_CLOUD_PROJECT = "foreverhome-test";
 process.env.GCS_BUCKET = "foreverhome-test-media";
 process.env.APP_URL = "https://app.example.test";
 process.env.CORS_ALLOWED_ORIGINS = "";
+
+// Always start from deterministic local admission settings, not shell config.
+for (const name of [
+  "AI_USER_IN_FLIGHT",
+  "AI_USER_DAILY_ANALYSES",
+  "AI_USER_DAILY_HELPERS",
+  "AI_USER_DAILY_PROVIDER_CALLS",
+  "AI_PROJECT_DAILY_PROVIDER_CALLS",
+])
+  delete process.env[name];
+process.env.AI_DISABLED = "false";
+
+// Default-deny outbound fetch in local tests. Tests must explicitly replace
+// provider transport; only their disposable loopback HTTP server is real.
+const localFetch = globalThis.fetch.bind(globalThis);
+globalThis.fetch = (input, init) => {
+  const value =
+    typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.href
+        : input.url;
+  const target = new URL(value);
+  if (!["127.0.0.1", "localhost", "[::1]"].includes(target.hostname))
+    return Promise.reject(new Error("External test transport is not mocked"));
+  return localFetch(input, init);
+};

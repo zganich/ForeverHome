@@ -1,4 +1,21 @@
-import { boolean, date, decimal, integer, json, pgEnum, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  check,
+  date,
+  decimal,
+  index,
+  integer,
+  json,
+  jsonb,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uniqueIndex,
+  varchar,
+} from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 // Define all enums FIRST (PostgreSQL requirement)
 export const roleEnum = pgEnum("role", ["user", "admin"]);
@@ -38,6 +55,67 @@ export const users = pgTable("users", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+// Shared admission state, never browser-writable analytics or process counters.
+export const aiUsageDaily = pgTable(
+  "ai_usage_daily",
+  {
+    scope: text("scope").notNull(),
+    subjectId: text("subject_id").notNull(),
+    usageDay: date("usage_day").notNull(),
+    providerAttempts: integer("provider_attempts").default(0).notNull(),
+    helpers: integer("helpers").default(0).notNull(),
+    analyses: integer("analyses").default(0).notNull(),
+  },
+  t => [
+    primaryKey({ columns: [t.scope, t.subjectId, t.usageDay] }),
+    check("ai_usage_scope", sql`${t.scope} in ('project', 'user')`),
+    check(
+      "ai_usage_nonnegative",
+      sql`${t.providerAttempts} >= 0 and ${t.helpers} >= 0 and ${t.analyses} >= 0`
+    ),
+  ]
+).enableRLS();
+
+export const aiRequests = pgTable(
+  "ai_requests",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    userId: varchar("user_id", { length: 128 })
+      .notNull()
+      .references(() => users.id),
+    kind: text("kind").$type<"analysis" | "quality" | "breed">().notNull(),
+    inputDigest: varchar("input_digest", { length: 64 }).notNull(),
+    status: text("status")
+      .$type<"running" | "completed" | "failed">()
+      .notNull(),
+    leaseToken: varchar("lease_token", { length: 64 }).notNull(),
+    leaseExpiresAt: timestamp("lease_expires_at", {
+      withTimezone: true,
+    }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    cacheExpiresAt: timestamp("cache_expires_at", { withTimezone: true }),
+    result: jsonb("result").$type<unknown>(),
+  },
+  t => [
+    index("ai_requests_active_user").on(t.userId, t.status, t.leaseExpiresAt),
+    uniqueIndex("ai_quality_dedup")
+      .on(t.userId, t.inputDigest)
+      .where(sql`${t.kind} = 'quality'`),
+    check(
+      "ai_request_kind",
+      sql`${t.kind} in ('analysis', 'quality', 'breed')`
+    ),
+    check(
+      "ai_request_status",
+      sql`${t.status} in ('running', 'completed', 'failed')`
+    ),
+  ]
+).enableRLS();
+
 
 // Stored in the same transaction as fulfillment so webhook retries are safe.
 export const billingReceipts = pgTable("billing_receipts", {

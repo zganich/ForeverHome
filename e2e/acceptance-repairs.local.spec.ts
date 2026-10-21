@@ -34,6 +34,9 @@ const analysis = {
 async function fixture(page: Page, role = "admin") {
   const state = {
     disabled: false,
+    emailVerified: true,
+    signupCalls: 0,
+    verificationCalls: 0,
     meNull: false,
     authUnavailable: false,
     adminFailure: false,
@@ -73,6 +76,22 @@ async function fixture(page: Page, role = "admin") {
     const req = route.request(),
       url = new URL(req.url());
     if (url.hostname === "identitytoolkit.googleapis.com") {
+      if (url.pathname.endsWith("accounts:signUp")) {
+        state.signupCalls++;
+        return route.fulfill({
+          json: {
+            localId: uid,
+            email,
+            idToken: token,
+            refreshToken: "fictional-refresh",
+            expiresIn: "3600",
+          },
+        });
+      }
+      if (url.pathname.endsWith("accounts:sendOobCode")) {
+        state.verificationCalls++;
+        return route.fulfill({ json: { email } });
+      }
       if (url.pathname.endsWith("accounts:signInWithPassword"))
         return route.fulfill({
           json: {
@@ -92,7 +111,7 @@ async function fixture(page: Page, role = "admin") {
               {
                 localId: uid,
                 email,
-                emailVerified: true,
+                emailVerified: state.emailVerified,
                 displayName: "Local Owner",
                 providerUserInfo: [{ providerId: "password", email }],
               },
@@ -432,4 +451,62 @@ test("provider quality outage stops before another analysis request", async ({
     page.getByRole("img", { name: "Uploaded pet photo" })
   ).toBeVisible();
   expect(state.analysisCalls).toBe(0);
+});
+
+const browserErrors = new WeakMap<Page, string[]>();
+const cspViolations = new WeakMap<Page, unknown[]>();
+test.beforeEach(async ({ page }) => {
+  browserErrors.set(page, []);
+  cspViolations.set(page, []);
+  await page.exposeFunction("__recordLocalCsp", (violation: unknown) =>
+    cspViolations.get(page)!.push(violation)
+  );
+  page.on("pageerror", error => browserErrors.get(page)!.push(error.message));
+  await page.addInitScript(() => {
+    document.addEventListener("securitypolicyviolation", event => {
+      void (window as any).__recordLocalCsp({
+        directive: event.effectiveDirective,
+        blocked: event.blockedURI,
+      });
+    });
+  });
+});
+test.afterEach(async ({ page }) => {
+  expect(browserErrors.get(page)).toEqual([]);
+  expect(cspViolations.get(page)).toEqual([]);
+});
+test("signup and verification notice work under the enforcing production CSP", async ({
+  page,
+}) => {
+  const state = await fixture(page);
+  state.emailVerified = false;
+  const response = await page.goto("/login");
+  const headers = response!.headers();
+  expect(headers["x-frame-options"]).toBe("DENY");
+  expect(headers["x-content-type-options"]).toBe("nosniff");
+  expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+  // Development rehearsal deliberately permits Vite's inline preamble; only
+  // the production static-server config makes this stronger assertion.
+  if (process.env.SECURITY_BROWSER_PRODUCTION === "1") {
+    expect(headers["content-security-policy"]).toContain("script-src 'self'");
+    expect(headers["content-security-policy"]).not.toMatch(
+      /script-src[^;]*unsafe-inline/
+    );
+    expect(headers["content-security-policy-report-only"]).toBeUndefined();
+  }
+  await page.getByRole("button", { name: "Sign up", exact: true }).click();
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill("fictional-local-fixture-password");
+  await page.getByRole("button", { name: "Sign Up", exact: true }).click();
+  await expect(
+    page.getByText("Check your email to confirm your account!", { exact: true })
+  ).toBeVisible();
+  expect(state.signupCalls).toBe(1);
+  expect(state.verificationCalls).toBe(1);
+  await expect(page).toHaveURL(/\/login$/);
+  await page.screenshot({
+    path: "/tmp/foreverhome-security-browser-results/signup-csp.png",
+  });
 });

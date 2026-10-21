@@ -1,3 +1,10 @@
+vi.mock("./aiAdmission", () => ({
+  withAiOperation: (
+    _uid: string,
+    _kind: string,
+    work: () => Promise<unknown>
+  ) => work(),
+}));
 import { publicObjectUrl, userUploadPrefix } from "./storage";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("./db", () => ({ getPet: vi.fn(), createAnalysis: vi.fn() }));

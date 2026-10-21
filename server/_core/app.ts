@@ -1,4 +1,6 @@
+import { jsonBody, formBody, boundedJson, parserError } from "./requestLimits";
 import "dotenv/config";
+import { apiHeaders } from "./securityHeaders";
 import express from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
@@ -17,6 +19,8 @@ export async function createApp(): Promise<express.Express> {
   const app = express();
 
   app.disable("x-powered-by");
+  app.set("query parser", "simple");
+  app.use(apiHeaders);
   app.get(["/health", "/healthz"], (_req, res) => res.json({ ok: true }));
   app.get("/readyz", async (_req, res) => {
     try {
@@ -33,9 +37,8 @@ export async function createApp(): Promise<express.Express> {
   app.use("/api", apiCors());
   registerBillingRoutes(app);
 
-  // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Photos use the separate 4MB multipart route, never these text parsers.
+  app.use(jsonBody, formBody, parserError, boundedJson);
 
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);

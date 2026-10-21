@@ -1,3 +1,4 @@
+import { consumeProviderCall } from "../aiAdmission";
 import { ENV } from "./env";
 
 export type Role = "system" | "user" | "assistant" | "tool" | "function";
@@ -269,6 +270,7 @@ const normalizeResponseFormat = ({
 export async function invokeLLM(
   params: InvokeParams & { model?: string }
 ): Promise<InvokeResult> {
+  await consumeProviderCall();
   assertApiKey();
 
   const {

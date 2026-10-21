@@ -2,7 +2,7 @@
 
 Scope: restore the existing application after Manus retirement. James selected **Cloud SQL (Option A)** and separately approved the prerequisite provisioning, DB bootstrap/migrations, and Firebase Auth/runtime IAM phases. Rebrand, adopter track, Jev and shelter dashboard remain separate work. The InterpWhat UI and GitHub history are preserved.
 
-**Current status:** repair commit `95afb1b` was pushed and deployed to staging on October 20. Hosted retests passed owner analytics and regular-user admin denial, then stopped at disabled-session recovery: the message appeared, but the URL stayed on the protected page. The separately approved automatic sign-in redirect below is local only; it has not been pushed or deployed. Read the private checkpoint and acceptance report for exact hosted evidence. Earlier provisioning sections below are historical snapshots; their not-yet-deployed/owner-unverified/six-binding statements are superseded by the checkpoint. Runtime currently has seven scoped bindings; no IAM change is part of these repairs. No DNS/public-read/Stripe change is authorized.
+**Earlier acceptance snapshot (superseded by the private checkpoint):** repair commit `95afb1b` was pushed and deployed to staging on October 20. Hosted retests passed owner analytics and regular-user admin denial, then stopped at disabled-session recovery: the message appeared, but the URL stayed on the protected page. The separately approved automatic sign-in redirect below is local only; it has not been pushed or deployed. Read the private checkpoint and acceptance report for exact hosted evidence. Earlier provisioning sections below are historical snapshots; their not-yet-deployed/owner-unverified/six-binding statements are superseded by the checkpoint. Runtime currently has seven scoped bindings; no IAM change is part of these repairs. No DNS/public-read/Stripe change is authorized.
 
 ## Local session redirect repair
 
@@ -158,3 +158,50 @@ Local production bundle startup and `/healthz` were checked on Node 25.9.0 with 
 Next approvals remain separate: the missing Firebase user-read runtime binding; any verification/reset email send or end-to-end action; registry/build/trigger; staging Run deploy/public access; Hosting deploy; public GCS policy; Stripe test endpoint changes; domain/DNS cutover. Existing empty Stripe-container imports remain approved once the selected TEST inputs are securely available. No push or deployment approval is inferred from prerequisite completion. The private checkpoint is the current provisioning handoff.
 
 Still missing/deferred: old user/data/media recovery and UID mapping, backup/restore drill, resource spending caps (the configured budget alert is not a cap), storage lifecycle/egress limits, request/AI spend/rate limits, durable analysis-credit recovery after process death, external uptime alerting, GitHub connection/trigger controls and disabling legacy Vercel auto-deploy before any push, test-mode billing acceptance, admin stats real-data wiring, video frame extraction, scheduled user reminder delivery and notification provider configuration. Do not market unbuilt realtime/video/reminder claims as working.
+
+
+## Local security repair batch — October 21, 2026
+
+This code is a **local release candidate**, not a deployment. The private checkpoint records the exact local SHA, verification receipts and hosted baseline. No push, Cloud Build, hosted migration, deployment, IAM, DNS, Stripe or real AI action is part of this batch.
+
+### Shared AI admission and accounting
+
+Migration `0005_ai_admission` adds only `ai_usage_daily` and `ai_requests`, with constraints, indexes and server-only RLS. It has been exercised only on disposable local PostgreSQL. Before any later release, separately approve applying it to Cloud SQL. An absent/unavailable table denies AI work; there is no process-counter fallback.
+
+Authenticated HTTP middleware establishes a server-side identity context. Both tRPC and SSE converge on `withAiOperation`; every `invokeLLM` and the currently unrouted speech function require its live admission context before provider transport. Database transactions use one short shared advisory lock plus persisted counters/leases, released before provider I/O. Provider attempts are counted before transport and never refunded on provider errors. Implicit speech retries are disabled; text transport has no automatic retries. Leases expire after 120 seconds and renew before each bounded 40-second transport attempt. Old lease tokens cannot release a replacement lease.
+
+**Accounting:** a normal full analysis reserves exactly one analysis credit as before. Quality and breed use a separate daily helper allowance, not an additional analysis credit. Every operation requires a verified identity and a positive current balance. Beta/unlimited accounts retain their existing analysis no-decrement entitlement but do not bypass positive-balance eligibility, user limits or the project ceiling. Zero-balance users are denied even for a cached quality result.
+
+Defaults/hard maxima (optional environment overrides may only lower them):
+
+| Variable | Default |
+| --- | --- |
+| `AI_DISABLED` | `false`; `true` or malformed values deny all AI operations/cache delivery |
+| `AI_USER_IN_FLIGHT` | 1 admitted operation |
+| `AI_USER_DAILY_ANALYSES` | 10 admissions per UTC day |
+| `AI_USER_DAILY_HELPERS` | 10 quality/breed admissions combined per UTC day |
+| `AI_USER_DAILY_PROVIDER_CALLS` | 50 attempts per UTC day |
+| `AI_PROJECT_DAILY_PROVIDER_CALLS` | 100 attempts per UTC day |
+
+A successful schema-valid quality response (including an image rejection) is cached for 24 hours, keyed by owner, image-content digest, model/provider endpoint and validator-policy revision. Cache hits consume no new helper allowance or provider attempt; auth/kill/balance checks still apply. Concurrent same-image misses receive an explicit retryable in-flight denial rather than duplicating provider work; a subsequent retry receives the saved result. Failed/invalid provider responses are not successful cache entries. TTL controls reuse, not a promise to erase all historical rows. Cache expiry and user/provider ceilings use database UTC time.
+
+These are **call/allowance ceilings, not a dollar spend cap**. Failed admissions/provider attempts can consume their allowance; completed results do not refund provider counts. General analysis retry idempotency and process-death paid-credit recovery (F07) remain separate work. Lease expiry does not refund a stranded analysis credit.
+
+### Browser headers and request contracts
+
+`firebase.json.example` and the Express production static server share an **enforcing** CSP. Scripts are same-origin with no inline/eval exception; Firebase Auth/refresh and the deterministic staging Run origin are exact connection targets. Private photos use authenticated fetch + Blob URLs, not anonymous GCS image loads. Existing Google Fonts sources are explicit; dormant showcase image hosts are not allowed. Framing is denied; `nosniff` and `strict-origin-when-cross-origin` apply to Hosting/API responses. React/Radix/chart inline styles remain permitted. Development alone permits Vite's inline refresh and loopback WebSocket connections. No report-only production fallback was needed in the local browser flows.
+
+The Hosting change is a **template change only**; an operator must carry/review it in the actual release configuration under separate deployment approval. Actual Firebase edge headers are not changed or re-verified by local tests.
+
+Text JSON is limited to 64KiB, 16Ki characters/string, 128 total object fields, 20 items/array and depth 8 (512 total nodes). This accommodates the 5000-character analysis-context contract and bounded tRPC batching. Flat URL-encoded bodies are limited to 8KiB/20 parameters; compressed text bodies are rejected. Express query parsing is simple, not nested `qs`. Photo multipart is separate: exactly one photo, no extra fields, maximum **4MiB inclusive**. Malformed/oversized inputs return bounded 400/413/415 errors without reflecting bodies. Existing raw Stripe webhook parsing is unchanged.
+
+### Local verification
+
+`python3 scripts/revive-rehearsal.py` creates/stops a dedicated local database, applies through 0005 and runs the full suite. Provider transport is mocked and default outbound fetch rejects non-loopback requests. The DB tests use independent pools to verify shared concurrency/ceilings, helper cache/owner isolation, failed-call accounting, lease replacement, zero-credit and kill-switch denial, normal last-credit persistence/refund behavior, and RLS. Local browser fixtures separately intercept Firebase/API/storage responses; they prove rendering/navigation under the production header policy, not hosted delivery or a single joined real UI/database session.
+
+To build and run that local production-browser fixture (all Firebase settings fictional; empty API base means same-origin):
+```sh
+VITE_FIREBASE_API_KEY=fictional-local-api-key VITE_FIREBASE_AUTH_DOMAIN=foreverhome-local-only.firebaseapp.com VITE_FIREBASE_PROJECT_ID=foreverhome-local-only VITE_FIREBASE_APP_ID=1:123:web:local VITE_API_BASE_URL= VITE_ANALYTICS_ENDPOINT= VITE_ANALYTICS_WEBSITE_ID= pnpm build
+SECURITY_BROWSER_PRODUCTION=1 DOTENV_CONFIG_PATH=/dev/null pnpm exec playwright test --config e2e/security.config.ts
+```
+Do not set an explicit HTTP API origin in a production build; the client correctly rejects that configuration. A later hosted release uses the separately recorded HTTPS Run origin. Review the private batch closeout for the exact audit delta and reachability notes; a nonzero production audit remains expected for conditional unused library features.

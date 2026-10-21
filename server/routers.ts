@@ -1,3 +1,4 @@
+import { withAiOperation, qualityDigest } from "./aiAdmission";
 import { assertOwnedImageUrl, ownedImageDataUrl } from "./storage";
 import {
   billingAvailability,
@@ -46,7 +47,7 @@ export const appRouter = router({
       return getUpcomingReminders(ctx.user.id);
     }),
     forPet: protectedProcedure
-      .input(z.object({ petId: z.string() }))
+      .input(z.object({ petId: z.string().max(64) }))
       .query(async ({ ctx, input }) => {
         const { getPet } = await import("./db");
         const pet = await getPet(input.petId);
@@ -58,9 +59,9 @@ export const appRouter = router({
     create: protectedProcedure
       .input(
         z.object({
-          petId: z.string(),
-          title: z.string().min(1),
-          description: z.string().optional(),
+          petId: z.string().max(64),
+          title: z.string().min(1).max(255),
+          description: z.string().max(5000).optional(),
           type: z.enum(["medication", "vet", "grooming", "training", "custom"]),
           dueDate: z.date(),
           isRecurring: z
@@ -87,13 +88,13 @@ export const appRouter = router({
         });
       }),
     complete: protectedProcedure
-      .input(z.object({ reminderId: z.string() }))
+      .input(z.object({ reminderId: z.string().max(64) }))
       .mutation(async ({ ctx, input }) => {
         const { completeReminder } = await import("./reminders");
         return completeReminder(input.reminderId, ctx.user.id);
       }),
     delete: protectedProcedure
-      .input(z.object({ reminderId: z.string() }))
+      .input(z.object({ reminderId: z.string().max(64) }))
       .mutation(async ({ ctx, input }) => {
         const { deleteReminder } = await import("./reminders");
         return deleteReminder(input.reminderId, ctx.user.id);
@@ -105,16 +106,18 @@ export const appRouter = router({
     identifyBreed: protectedProcedure
       .input(
         z.object({
-          imageUrl: z.string(),
+          imageUrl: z.string().max(2048),
           species: z.enum(["dog", "cat", "other"]),
         })
       )
       .mutation(async ({ ctx, input }) => {
         assertOwnedImageUrl(ctx.user.id, input.imageUrl);
         const { identifyBreed } = await import("./breedIdentification");
-        return identifyBreed(
-          await ownedImageDataUrl(ctx.user.id, input.imageUrl),
-          input.species
+        return withAiOperation(ctx.user.id, "breed", async () =>
+          identifyBreed(
+            await ownedImageDataUrl(ctx.user.id, input.imageUrl),
+            input.species
+          )
         );
       }),
     list: protectedProcedure.query(async ({ ctx }) => {
@@ -124,11 +127,11 @@ export const appRouter = router({
     create: protectedProcedure
       .input(
         z.object({
-          name: z.string().min(1),
+          name: z.string().min(1).max(100),
           species: z.enum(["dog", "cat", "other"]),
-          breed: z.string().optional(),
-          age: z.string().optional(),
-          photoUrl: z.string().optional(),
+          breed: z.string().max(100).optional(),
+          age: z.string().max(50).optional(),
+          photoUrl: z.string().max(500).optional(),
           personality: z
             .enum([
               "goofy",
@@ -140,7 +143,7 @@ export const appRouter = router({
               "dramatic",
             ])
             .optional(),
-          voiceStyle: z.string().optional(),
+          voiceStyle: z.string().max(50).optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -152,14 +155,19 @@ export const appRouter = router({
   // Behavior analysis
   analysis: router({
     validatePhoto: protectedProcedure
-      .input(z.object({ imageUrl: z.string() }))
+      .input(z.object({ imageUrl: z.string().max(2048) }))
       .mutation(async ({ ctx, input }) => {
         assertOwnedImageUrl(ctx.user.id, input.imageUrl);
-        const { validatePhotoQuality, getPhotoTips } = await import(
-          "./photoQuality"
-        );
-        const result = await validatePhotoQuality(
-          await ownedImageDataUrl(ctx.user.id, input.imageUrl)
+        const { validatePhotoQuality, photoQualitySchema, getPhotoTips } =
+          await import("./photoQuality");
+        const imageData = await ownedImageDataUrl(ctx.user.id, input.imageUrl);
+        const result = photoQualitySchema.parse(
+          await withAiOperation(
+            ctx.user.id,
+            "quality",
+            () => validatePhotoQuality(imageData),
+            qualityDigest(imageData)
+          )
         );
         const tips = getPhotoTips(result.issues);
         return { ...result, tips };
@@ -168,7 +176,7 @@ export const appRouter = router({
       .input(analysisInput)
       .mutation(({ ctx, input }) => runAnalysis(ctx.user.id, input)),
     listForPet: protectedProcedure
-      .input(z.object({ petId: z.string() }))
+      .input(z.object({ petId: z.string().max(64) }))
       .query(async ({ ctx, input }) => {
         const { getPet, getPetAnalyses } = await import("./db");
 
@@ -188,7 +196,7 @@ export const appRouter = router({
         return getPetAnalyses(input.petId);
       }),
     get: protectedProcedure
-      .input(z.object({ analysisId: z.string() }))
+      .input(z.object({ analysisId: z.string().max(64) }))
       .query(async ({ ctx, input }) => {
         const { getAnalysis, getPet } = await import("./db");
 
@@ -208,7 +216,7 @@ export const appRouter = router({
     submitFeedback: protectedProcedure
       .input(
         z.object({
-          analysisId: z.string(),
+          analysisId: z.string().max(64),
           feedback: z.enum(["helpful", "not_helpful"]),
         })
       )
@@ -309,7 +317,7 @@ export const appRouter = router({
     validateBetaCode: publicProcedure
       .input(
         z.object({
-          code: z.string(),
+          code: z.string().max(64),
         })
       )
       .mutation(async ({ input }) => {
@@ -319,7 +327,7 @@ export const appRouter = router({
     redeemBetaCode: protectedProcedure
       .input(
         z.object({
-          code: z.string(),
+          code: z.string().max(64),
         })
       )
       .mutation(async ({ input, ctx }) => {
@@ -346,8 +354,8 @@ export const appRouter = router({
             "other",
           ]),
           rating: z.number().min(1).max(5).optional(),
-          message: z.string().min(1),
-          pageUrl: z.string().optional(),
+          message: z.string().min(1).max(5000),
+          pageUrl: z.string().max(500).optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {

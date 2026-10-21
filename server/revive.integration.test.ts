@@ -1,13 +1,14 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import postgres from "postgres";
-import { drizzle } from "drizzle-orm/postgres-js";
-import { migrate } from "drizzle-orm/postgres-js/migrator";
+import { migrateLocal } from "../tests/localDatabase";
 import { createServer, type Server } from "node:http";
 import { readFileSync } from "node:fs";
 import type Stripe from "stripe";
 
 const fixtures = vi.hoisted(() => ({
   failAi: false,
+  providerCalls: 0,
+  verified: true,
   subscription: null as any,
   identity: `rehearsal-${crypto.randomUUID()}-${"x".repeat(64)}`,
   mediaUrl: "",
@@ -21,7 +22,7 @@ vi.mock("./_core/firebase", () => ({
     return {
       uid: fixtures.identity,
       email: "fictional@example.test",
-      email_verified: true,
+      email_verified: fixtures.verified,
     };
   },
 }));
@@ -77,7 +78,7 @@ describe.runIf(Boolean(testUrl))(
 
     beforeAll(async () => {
       sql = postgres(testUrl!, { max: 3 });
-      await migrate(drizzle(sql), { migrationsFolder: "drizzle" });
+      await migrateLocal(sql);
       const storage = await import("./storage");
       fixtures.mediaUrl = storage.publicObjectUrl(
         `${storage.userUploadPrefix(fixtures.identity)}fictional.jpg`
@@ -92,6 +93,7 @@ describe.runIf(Boolean(testUrl))(
       vi.stubGlobal("fetch", async (input: any, init: any) => {
         if (!String(input).startsWith("https://fictional-ai.example/"))
           return realFetch(input, init);
+        fixtures.providerCalls++;
         if (fixtures.failAi)
           return new Response("provider failure", { status: 503 });
         const request = JSON.parse(init.body);
@@ -104,29 +106,37 @@ describe.runIf(Boolean(testUrl))(
         expect(request).not.toHaveProperty("thinking");
         const schema = request.response_format?.json_schema;
         const data =
-          schema?.name === "vision_analysis"
+          schema?.name === "photo_quality_check"
             ? {
-                posture: "Relaxed",
-                facialExpression: "Soft",
-                environmentalContext: "Quiet room",
-                confidence: 85,
+                isAcceptable: true,
+                score: 90,
+                issues: [],
+                suggestions: [],
+                canProceed: true,
               }
-            : schema?.name === "context_enrichment"
-              ? { breedTraits: "Mixed", ageConsiderations: "Adult" }
-              : schema?.name === "behavior_synthesis"
-                ? {
-                    primaryBehavior: "Content",
-                    confidence: 80,
-                    reasoning: "Relaxed posture",
-                    alternativeInterpretations: [],
-                  }
-                : schema?.name === "recommendations"
+            : schema?.name === "vision_analysis"
+              ? {
+                  posture: "Relaxed",
+                  facialExpression: "Soft",
+                  environmentalContext: "Quiet room",
+                  confidence: 85,
+                }
+              : schema?.name === "context_enrichment"
+                ? { breedTraits: "Mixed", ageConsiderations: "Adult" }
+                : schema?.name === "behavior_synthesis"
                   ? {
-                      actions: ["Allow quiet rest"],
-                      safetyWarnings: [],
-                      vetConsultation: false,
+                      primaryBehavior: "Content",
+                      confidence: 80,
+                      reasoning: "Relaxed posture",
+                      alternativeInterpretations: [],
                     }
-                  : null;
+                  : schema?.name === "recommendations"
+                    ? {
+                        actions: ["Allow quiet rest"],
+                        safetyWarnings: [],
+                        vetConsultation: false,
+                      }
+                    : null;
         if (schema?.strict)
           expect(schema.schema.required).toEqual(
             expect.arrayContaining(Object.keys(schema.schema.properties))
@@ -257,6 +267,183 @@ describe.runIf(Boolean(testUrl))(
       expect(await response.text()).toContain('"stage":"error"');
       fixtures.failAi = false;
       expect(await credits.getUserCredits(fixtures.identity)).toBe(2);
+    });
+    it("denies zero-credit users at every HTTP AI entry without calling transport", async () => {
+      const [pet] = await db.getUserPets(fixtures.identity);
+      const before = fixtures.providerCalls;
+      await sql`update users set credits=0 where id=${fixtures.identity}`;
+      for (const [name, input] of [
+        ["pets.identifyBreed", { imageUrl: fixtures.mediaUrl, species: "dog" }],
+        ["analysis.validatePhoto", { imageUrl: fixtures.mediaUrl }],
+        [
+          "analysis.create",
+          { petId: pet.id, mediaUrl: fixtures.mediaUrl, mediaType: "image" },
+        ],
+      ]) {
+        const response = await fetch(origin + "/api/trpc/" + name, {
+          method: "POST",
+          headers: { ...token, "Content-Type": "application/json" },
+          body: JSON.stringify({ json: input }),
+        });
+        expect(response.status).toBe(403);
+      }
+      const response = await fetch(origin + "/api/analysis/stream", {
+        method: "POST",
+        headers: { ...token, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          petId: pet.id,
+          mediaUrl: fixtures.mediaUrl,
+          mediaType: "image",
+        }),
+      });
+      expect(await response.text()).toContain("Insufficient credits");
+      expect(fixtures.providerCalls).toBe(before);
+      await sql`update users set credits=2 where id=${fixtures.identity}`;
+    });
+    it("reuses a valid quality result without another helper debit or provider call", async () => {
+      const before = fixtures.providerCalls;
+      for (let n = 0; n < 2; n++) {
+        const response = await fetch(
+          origin + "/api/trpc/analysis.validatePhoto",
+          {
+            method: "POST",
+            headers: { ...token, "Content-Type": "application/json" },
+            body: JSON.stringify({ json: { imageUrl: fixtures.mediaUrl } }),
+          }
+        );
+        expect(response.status).toBe(200);
+        expect((await response.json()).result.data.json.score).toBe(90);
+      }
+      expect(fixtures.providerCalls - before).toBe(1);
+      expect(await credits.getUserCredits(fixtures.identity)).toBe(2);
+      const [row] =
+        await sql`select helpers from ai_usage_daily where subject_id=${fixtures.identity}`;
+      expect(row.helpers).toBe(1);
+    });
+    it("kill switch blocks all HTTP AI routes including cached quality", async () => {
+      const before = fixtures.providerCalls;
+      const [pet] = await db.getUserPets(fixtures.identity);
+      process.env.AI_DISABLED = "true";
+      try {
+        for (const [name, input] of [
+          [
+            "pets.identifyBreed",
+            { imageUrl: fixtures.mediaUrl, species: "dog" },
+          ],
+          ["analysis.validatePhoto", { imageUrl: fixtures.mediaUrl }],
+          [
+            "analysis.create",
+            { petId: pet.id, mediaUrl: fixtures.mediaUrl, mediaType: "image" },
+          ],
+        ]) {
+          const response = await fetch(origin + "/api/trpc/" + name, {
+            method: "POST",
+            headers: { ...token, "Content-Type": "application/json" },
+            body: JSON.stringify({ json: input }),
+          });
+          expect(response.status).toBe(403);
+        }
+        const response = await fetch(origin + "/api/analysis/stream", {
+          method: "POST",
+          headers: { ...token, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            petId: pet.id,
+            mediaUrl: fixtures.mediaUrl,
+            mediaType: "image",
+          }),
+        });
+        expect(await response.text()).toContain("AI is currently unavailable");
+        expect(fixtures.providerCalls).toBe(before);
+      } finally {
+        delete process.env.AI_DISABLED;
+      }
+    });
+    it("unverified token is denied before all HTTP AI entry points", async () => {
+      fixtures.verified = false;
+      try {
+        for (const path of [
+          "/api/trpc/analysis.create",
+          "/api/trpc/analysis.validatePhoto",
+          "/api/trpc/pets.identifyBreed",
+          "/api/analysis/stream",
+        ])
+          expect(
+            (
+              await fetch(origin + path, {
+                method: "POST",
+                headers: { ...token, "Content-Type": "application/json" },
+                body: "{}",
+              })
+            ).status
+          ).toBe(401);
+      } finally {
+        fixtures.verified = true;
+      }
+    });
+    it("completes the real mocked pipeline using exactly the last available credit", async () => {
+      const [pet] = await db.getUserPets(fixtures.identity);
+      await sql`update users set credits=1 where id=${fixtures.identity}`;
+      const before = fixtures.providerCalls;
+      const response = await fetch(origin + "/api/analysis/stream", {
+        method: "POST",
+        headers: { ...token, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          petId: pet.id,
+          mediaUrl: fixtures.mediaUrl,
+          mediaType: "image",
+        }),
+      });
+      const events = (await response.text())
+        .split("\n\n")
+        .filter(Boolean)
+        .map(line => JSON.parse(line.slice(6)));
+      const completed = events.filter(e => e.stage === "complete");
+      expect(completed).toHaveLength(1);
+      expect(
+        (await db.getAnalysis(completed[0].analysisId))?.personalityVoice
+      ).toBeTruthy();
+      expect(await credits.getUserCredits(fixtures.identity)).toBe(0);
+      expect(fixtures.providerCalls - before).toBe(5);
+      await sql`update users set credits=2 where id=${fixtures.identity}`;
+    });
+    it("retains the 4MB multipart contract and rejects extra fields", async () => {
+      const bytes = new Uint8Array(4 * 1024 * 1024);
+      bytes.set([255, 216, 255]);
+      const form = new FormData();
+      form.append(
+        "file",
+        new Blob([bytes], { type: "image/jpeg" }),
+        "fixture.jpg"
+      );
+      expect(
+        (
+          await fetch(origin + "/api/upload", {
+            method: "POST",
+            headers: token,
+            body: form,
+          })
+        ).status
+      ).toBe(200);
+      for (const extra of [false, true]) {
+        const bad = new FormData();
+        bad.append(
+          "file",
+          new Blob([extra ? bytes : new Uint8Array(bytes.length + 1)], {
+            type: "image/jpeg",
+          }),
+          "fixture.jpg"
+        );
+        if (extra) bad.append("unexpected", "text");
+        expect(
+          (
+            await fetch(origin + "/api/upload", {
+              method: "POST",
+              headers: token,
+              body: bad,
+            })
+          ).status
+        ).toBe(413);
+      }
     });
     it("owner analytics executes on PostgreSQL without fabricated metrics", async () => {
       await sql`update users set role='admin' where id=${fixtures.identity}`;
